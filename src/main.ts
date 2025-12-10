@@ -43,28 +43,34 @@ app.on('activate', () => {
 // --- TYPE DEFINITIONS ---
 
 // 1. PatientData: What the Frontend sends (Age allows empty string)
-interface PatientData {
+interface IncomingPatientData {
   hn: string;
   firstname: string;
   lastname: string;
-  age: number | ''; 
+  age: number | '';
   sex: string;
   dob: Date | null;
+  r1: number[];
+  r2: number[];
+  r3: number[];
 }
 
 // 2. RegistryData: What the Database expects (Age MUST be number)
-interface RegistryData {
+interface DbPatientData {
   hn: string;
   firstname: string;
   lastname: string;
   age: number;
   sex: string;
   dob: Date | null;
+  r1: number[];
+  r2: number[];
+  r3: number[];
 }
 
 interface RegisterPayload {
-  child: PatientData;
-  parent: PatientData;
+  child: IncomingPatientData;
+  parent: IncomingPatientData;
 }
 
 // --- APP STARTUP ---
@@ -90,21 +96,21 @@ app.whenReady().then(async () => {
     return await getAllRelations();
   });
 
-  // --- FIX IS HERE 👇 ---
   ipcMain.handle('db:register-patient-pair', async (_event: IpcMainInvokeEvent, { child, parent }: RegisterPayload) => {
     
-    // Converter function: Turns 'PatientData' (frontend) into 'RegistryData' (backend)
-    // If age is "", convert it to 0.
-    const sanitize = (p: PatientData): RegistryData => ({
+    // Converter: Now passes the vectors through
+    const sanitize = (p: IncomingPatientData): DbPatientData => ({
       hn: p.hn,
       firstname: p.firstname,
       lastname: p.lastname,
       sex: p.sex,
       dob: p.dob,
-      age: p.age === '' ? 0 : Number(p.age) // Force conversion to number
+      age: p.age === '' ? 0 : Number(p.age),
+      r1: p.r1 || [], // Ensure it's at least an empty array if missing
+      r2: p.r2 || [],
+      r3: p.r3 || []
     });
 
-    // Pass the SANITIZED data to the database function
     return await registerPatientPair(sanitize(child), sanitize(parent));
   });
 

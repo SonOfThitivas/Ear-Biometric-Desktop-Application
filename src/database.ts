@@ -5,11 +5,12 @@ const { Client } = pg;
 const client = new Client({
   user: 'postgres',
   host: 'localhost',
-  database: 'ear_db',
-  password: 'cpre888', 
-  port: 5433, 
+  database: 'ear_db', // Double check your DB name (ear_db vs postgres)
+  password: 'cpre888',
+  port: 5433,
 });
 
+// Interface matching the backend expectation (strict types)
 interface RegistryData {
     hn: string;
     firstname: string;
@@ -17,6 +18,9 @@ interface RegistryData {
     age: number;
     sex: string;
     dob: Date | null;
+    r1: number[];
+    r2: number[];
+    r3: number[];
 }
 
 export const connectDB = async () => {
@@ -29,43 +33,57 @@ export const connectDB = async () => {
 };
 
 export const registerPatientPair = async (child: RegistryData, parent: RegistryData) => {
-    console.log("📝 [DB] Starting registration transaction...");
+    console.log("📝 [DB] Starting Full Registration (Data + 3 Vectors)...");
     
     try {
-        await client.query('BEGIN'); // Start Transaction
+        await client.query('BEGIN'); 
 
-        // 1. Insert Child (Standard Insert - Child MUST be new)
+        // 1. Insert Child (With r1, r2, r3)
+        // Use JSON.stringify for pgvector input format "[1,2,3]"
         const childQuery = `
-            INSERT INTO child (hn, firstname, lastname, age, gender, dob, time_create)
-            VALUES ($1, $2, $3, $4, $5, $6, NOW())
+            INSERT INTO child (hn, firstname, lastname, age, gender, dob, r1, r2, r3, time_create)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
         `;
         await client.query(childQuery, [
-            child.hn, child.firstname, child.lastname, child.age, child.sex, child.dob
+            child.hn, 
+            child.firstname, 
+            child.lastname, 
+            child.age, 
+            child.sex, 
+            child.dob, 
+            JSON.stringify(child.r1), 
+            JSON.stringify(child.r2), 
+            JSON.stringify(child.r3)
         ]);
         console.log(`✅ [DB] Inserted Child: ${child.hn}`);
 
-        // 2. Insert Parent (UPSERT Logic)
+        // 2. Insert Parent (With r1, r2, r3) - Optional
         if (parent && parent.hn && parent.hn.trim() !== "") {
             const parentQuery = `
-                INSERT INTO parent (hn, firstname, lastname, age, gender, dob, time_create)
-                VALUES ($1, $2, $3, $4, $5, $6, NOW())
-                ON CONFLICT (hn) DO NOTHING  -- <--- THIS FIXES YOUR ERROR
+                INSERT INTO parent (hn, firstname, lastname, age, gender, dob, r1, r2, r3, time_create)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                ON CONFLICT (hn) DO NOTHING 
             `;
-            
             await client.query(parentQuery, [
-                parent.hn, parent.firstname, parent.lastname, parent.age, parent.sex, parent.dob
+                parent.hn, 
+                parent.firstname, 
+                parent.lastname, 
+                parent.age, 
+                parent.sex, 
+                parent.dob,
+                JSON.stringify(parent.r1),
+                JSON.stringify(parent.r2),
+                JSON.stringify(parent.r3)
             ]);
             console.log(`✅ [DB] Processed Parent: ${parent.hn}`);
 
-            // 3. Create Relation
+            // 3. Link them
             const relationQuery = `
                 INSERT INTO patient_relation (child_hn, parent_hn)
                 VALUES ($1, $2)
             `;
             await client.query(relationQuery, [child.hn, parent.hn]);
             console.log(`✅ [DB] Linked ${child.hn} <-> ${parent.hn}`);
-        } else {
-            console.log("ℹ️ [DB] No parent data provided.");
         }
 
         await client.query('COMMIT');
@@ -76,7 +94,6 @@ export const registerPatientPair = async (child: RegistryData, parent: RegistryD
         console.error("❌ [DB] Registration failed:", error);
         
         if (error.code === '23505') {
-            // If we get here now, it means the CHILD HN is duplicated (which is correct to fail)
             return { success: false, message: "Error: Child HN already exists." };
         }
         return { success: false, message: error.message };
