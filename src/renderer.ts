@@ -34,6 +34,7 @@ export interface IElectronAPI {
   getByHN: (hn: string) => Promise<any[]>;
   getByName: (name: string) => Promise<any[]>;
   getAllPatients: () => Promise<any[]>;
+  getAllRelations: () => Promise<any[]>;
 
 }
 

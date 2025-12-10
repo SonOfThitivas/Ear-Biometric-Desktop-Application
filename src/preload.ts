@@ -6,4 +6,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getByHN: (hn: string) => ipcRenderer.invoke('db:get-by-hn', hn),
   getByName: (name: string) => ipcRenderer.invoke('db:get-by-name', name),
   getAllPatients: () => ipcRenderer.invoke('db:get-all-patients'),
+  getAllRelations: () => ipcRenderer.invoke('db:get-all-relations'),
 });
