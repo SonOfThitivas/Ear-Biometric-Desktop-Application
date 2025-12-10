@@ -29,6 +29,20 @@
 import './index.css';
 import './app';
 
+export interface IElectronAPI {
+  // Add these two new lines:
+  getByHN: (hn: string) => Promise<any[]>;
+  getByName: (name: string) => Promise<any[]>;
+  getAllPatients: () => Promise<any[]>;
+
+}
+
+declare global {
+  interface Window {
+    electronAPI: IElectronAPI;
+  }
+}
+
 // console.log(
 //   '👋 This message is being logged by "renderer.ts", included via Vite',
 // );

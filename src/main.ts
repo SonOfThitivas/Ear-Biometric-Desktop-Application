@@ -1,4 +1,5 @@
-import { app, BrowserWindow, } from 'electron';
+import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent} from 'electron';
+import { connectDB, getRelationsByHN, getRelationsByName, getAllPatients } from './database';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 
@@ -54,3 +55,36 @@ app.on('activate', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+
+// Define the shape of the data you expect
+interface UserPayload {
+  name: string;
+  data: any; // Replace 'any' with your actual biometric type if you have one
+}
+
+// 1. Connect to DB when App Starts
+app.whenReady().then(async () => {
+  await connectDB();
+  // createWindow(); // Your existing window creation function
+  
+  // 2. Set up IPC Handlers (Listening for React)
+
+  ipcMain.handle('db:get-by-hn', async (_event : IpcMainInvokeEvent, hn: string) => {
+    console.log(`📥 [Main IPC] Received request for HN: ${hn}`); // Debug Log
+    const result = await getRelationsByHN(hn);
+    console.log(`out [Main IPC] Sending back ${result.length} records`); // Debug Log
+    return result;
+  });
+
+  ipcMain.handle('db:get-by-name', async (_event : IpcMainInvokeEvent, name: string) => {
+    console.log(`📥 [Main IPC] Received request for Name: ${name}`); // Debug Log
+    const result = await getRelationsByName(name);
+    console.log(`out [Main IPC] Sending back ${result.length} records`); // Debug Log
+    return result;
+  });
+
+  ipcMain.handle('db:get-all-patients', async (_event: IpcMainInvokeEvent) => {
+    console.log("📥 [Main IPC] Received request for ALL patients"); // Debug Log
+    return await getAllPatients();
+  });
+});
