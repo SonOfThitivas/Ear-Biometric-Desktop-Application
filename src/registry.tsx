@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-    Box, Title, Grid, Button, Group, Radio, Input, NumberInput 
+    Box, Title, Grid, Button, Group, Radio, Input, NumberInput, Text, JsonInput
 } from '@mantine/core';
 import { DateInput, DatesProvider } from '@mantine/dates';
 
@@ -11,13 +11,30 @@ interface PatientForm {
     age: number | '';
     sex: string;
     dob: Date | null;
+    r1: number[];
+    r2: number[];
+    r3: number[];
 }
 
 const initialFormState: PatientForm = {
-    hn: '', firstname: '', lastname: '', age: '', sex: '', dob: null
+    hn: '', firstname: '', lastname: '', age: '', sex: '', dob: null,
+    r1: [], r2: [], r3: []
 };
 
-// --- FIX: Move this component OUTSIDE of the Registry function ---
+// Helper to parse string input into number array
+const parseVectorInput = (input: string): number[] => {
+    try {
+        // Try parsing as JSON first (e.g., "[0.1, 0.2]")
+        const parsed = JSON.parse(input);
+        if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+        // If not JSON, try splitting by comma (e.g., "0.1, 0.2")
+        const split = input.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
+        if (split.length > 0) return split;
+    }
+    return [];
+};
+
 const PatientInputSection = ({ 
     title, data, updateFunc 
 }: { title: string, data: PatientForm, updateFunc: (f: keyof PatientForm, v: any) => void }) => (
@@ -62,6 +79,37 @@ const PatientInputSection = ({
                     </Group>
                 </Radio.Group>
             </Grid.Col>
+            
+            {/* NEW: Manual Vector Input Area */}
+            <Grid.Col span={12}>
+                <Text size="sm" fw={500} mt="sm" mb="xs">Biometric Vectors (Paste Dummy Data)</Text>
+                <Grid>
+                    <Grid.Col span={4}>
+                        <Input.Wrapper label="Vector R1" description={data.r1.length > 0 ? "✅ Loaded" : "❌ Empty"}>
+                            <Input 
+                                placeholder="[0.1, 0.2, ...]" 
+                                onChange={(e) => updateFunc('r1', parseVectorInput(e.target.value))}
+                            />
+                        </Input.Wrapper>
+                    </Grid.Col>
+                    <Grid.Col span={4}>
+                        <Input.Wrapper label="Vector R2" description={data.r2.length > 0 ? "✅ Loaded" : "❌ Empty"}>
+                            <Input 
+                                placeholder="[0.1, 0.2, ...]" 
+                                onChange={(e) => updateFunc('r2', parseVectorInput(e.target.value))}
+                            />
+                        </Input.Wrapper>
+                    </Grid.Col>
+                    <Grid.Col span={4}>
+                        <Input.Wrapper label="Vector R3" description={data.r3.length > 0 ? "✅ Loaded" : "❌ Empty"}>
+                            <Input 
+                                placeholder="[0.1, 0.2, ...]" 
+                                onChange={(e) => updateFunc('r3', parseVectorInput(e.target.value))}
+                            />
+                        </Input.Wrapper>
+                    </Grid.Col>
+                </Grid>
+            </Grid.Col>
         </Grid>
     </Box>
 );
@@ -90,6 +138,12 @@ function Registry() {
         if (form.age === '') errors.push("Age");
         if (!form.sex) errors.push("Sex");
         if (!form.dob) errors.push("Date of Birth");
+        
+        // Strict Vector Check
+        if (form.r1.length === 0) errors.push("Vector R1");
+        if (form.r2.length === 0) errors.push("Vector R2");
+        if (form.r3.length === 0) errors.push("Vector R3");
+        
         return errors;
     };
 
@@ -102,18 +156,24 @@ function Registry() {
         }
 
         // --- 2. VALIDATE PARENT (Conditional) ---
-        const isParentStarted = Object.values(parentForm).some(val => val !== '' && val !== null);
+        // Check if user started typing parent info
+        const isParentStarted = Object.values(parentForm).some(val => 
+            (typeof val === 'string' && val !== '') || 
+            (typeof val === 'number') || 
+            (val instanceof Date) ||
+            (Array.isArray(val) && val.length > 0)
+        );
 
         if (isParentStarted) {
             const parentMissing = getMissingFields(parentForm);
             if (parentMissing.length > 0) {
-                alert(`⚠️ Missing Parent Information:\nSince you started filling the Parent section, please complete:\n- ${parentMissing.join('\n- ')}`);
+                alert(`⚠️ Missing Parent Information:\nPlease complete:\n- ${parentMissing.join('\n- ')}`);
                 return;
             }
         }
 
         // --- 3. PROCEED ---
-        console.log("🚀 [UI] Validation Passed. Sending Registration Data...");
+        console.log("🚀 [UI] Sending Full Registration Data...");
         
         try {
             const result = await window.electronAPI.registerPatientPair(childForm, parentForm);
@@ -135,7 +195,6 @@ function Registry() {
             <Title order={3} ta="center" mb="lg">Registry</Title>
 
             <Box p="lg" bd="1px solid #ccc" style={{ borderRadius: '8px' }}>
-                {/* Now using the external component */}
                 <PatientInputSection title="Child" data={childForm} updateFunc={updateChild} />
                 <PatientInputSection title="Parent" data={parentForm} updateFunc={updateParent} />
             </Box>
