@@ -1,0 +1,158 @@
+import React, { useState } from 'react';
+import { 
+    Box, Title, Grid, Button, Group, Radio, Input, NumberInput 
+} from '@mantine/core';
+import { DateInput, DatesProvider } from '@mantine/dates';
+
+interface PatientForm {
+    hn: string;
+    firstname: string;
+    lastname: string;
+    age: number | '';
+    sex: string;
+    dob: Date | null;
+}
+
+const initialFormState: PatientForm = {
+    hn: '', firstname: '', lastname: '', age: '', sex: '', dob: null
+};
+
+// --- FIX: Move this component OUTSIDE of the Registry function ---
+const PatientInputSection = ({ 
+    title, data, updateFunc 
+}: { title: string, data: PatientForm, updateFunc: (f: keyof PatientForm, v: any) => void }) => (
+    <Box p="md" mb="md" bd="1px solid #e0e0e0" style={{ borderRadius: '8px' }}>
+        <Title order={5} mb="sm">{title}</Title>
+        <Grid>
+            <Grid.Col span={4}>
+                <Input.Wrapper label="HN" withAsterisk>
+                    <Input placeholder="HN" value={data.hn} onChange={(e) => updateFunc('hn', e.target.value)} />
+                </Input.Wrapper>
+            </Grid.Col>
+            <Grid.Col span={4}>
+                <Input.Wrapper label="First name" withAsterisk>
+                    <Input placeholder="First Name" value={data.firstname} onChange={(e) => updateFunc('firstname', e.target.value)} />
+                </Input.Wrapper>
+            </Grid.Col>
+            <Grid.Col span={4}>
+                <Input.Wrapper label="Last name" withAsterisk>
+                    <Input placeholder="Last Name" value={data.lastname} onChange={(e) => updateFunc('lastname', e.target.value)} />
+                </Input.Wrapper>
+            </Grid.Col>
+            <Grid.Col span={4}>
+                <NumberInput label="Age" placeholder="Age" withAsterisk value={data.age} onChange={(val) => updateFunc('age', val)} min={0} max={150} />
+            </Grid.Col>
+            <Grid.Col span={4}>
+                <DatesProvider settings={{ locale: "th" }}>
+                    <DateInput 
+                        label="Date of Birth" 
+                        placeholder="DD/MM/YYYY" 
+                        withAsterisk
+                        valueFormat="DD/MM/YYYY"
+                        value={data.dob}
+                        onChange={(val) => updateFunc('dob', val)}
+                    />
+                </DatesProvider>
+            </Grid.Col>
+            <Grid.Col span={4}>
+                <Radio.Group label="Sex" withAsterisk value={data.sex} onChange={(val) => updateFunc('sex', val)}>
+                    <Group mt="xs">
+                        <Radio value="M" label="Male" />
+                        <Radio value="F" label="Female" />
+                    </Group>
+                </Radio.Group>
+            </Grid.Col>
+        </Grid>
+    </Box>
+);
+
+function Registry() {
+    const [childForm, setChildForm] = useState<PatientForm>({ ...initialFormState });
+    const [parentForm, setParentForm] = useState<PatientForm>({ ...initialFormState });
+
+    const updateChild = (field: keyof PatientForm, value: any) => {
+        setChildForm(prev => ({ ...prev, [field]: value }));
+    };
+    const updateParent = (field: keyof PatientForm, value: any) => {
+        setParentForm(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleReset = () => {
+        setChildForm({ ...initialFormState });
+        setParentForm({ ...initialFormState });
+    };
+
+    const getMissingFields = (form: PatientForm) => {
+        const errors: string[] = [];
+        if (!form.hn.trim()) errors.push("HN");
+        if (!form.firstname.trim()) errors.push("First Name");
+        if (!form.lastname.trim()) errors.push("Last Name");
+        if (form.age === '') errors.push("Age");
+        if (!form.sex) errors.push("Sex");
+        if (!form.dob) errors.push("Date of Birth");
+        return errors;
+    };
+
+    const handleNext = async () => {
+        // --- 1. VALIDATE CHILD (Mandatory) ---
+        const childMissing = getMissingFields(childForm);
+        if (childMissing.length > 0) {
+            alert(`⚠️ Missing Child Information:\nPlease fill:\n- ${childMissing.join('\n- ')}`);
+            return;
+        }
+
+        // --- 2. VALIDATE PARENT (Conditional) ---
+        const isParentStarted = Object.values(parentForm).some(val => val !== '' && val !== null);
+
+        if (isParentStarted) {
+            const parentMissing = getMissingFields(parentForm);
+            if (parentMissing.length > 0) {
+                alert(`⚠️ Missing Parent Information:\nSince you started filling the Parent section, please complete:\n- ${parentMissing.join('\n- ')}`);
+                return;
+            }
+        }
+
+        // --- 3. PROCEED ---
+        console.log("🚀 [UI] Validation Passed. Sending Registration Data...");
+        
+        try {
+            const result = await window.electronAPI.registerPatientPair(childForm, parentForm);
+            
+            if (result.success) {
+                alert("✅ Registration Successful!");
+                handleReset();
+            } else {
+                alert("❌ Failed: " + result.message);
+            }
+        } catch (error) {
+            console.error("❌ [UI] Error calling register API:", error);
+            alert("System Error during registration.");
+        }
+    };
+
+    return (
+        <Box p="lg" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <Title order={3} ta="center" mb="lg">Registry</Title>
+
+            <Box p="lg" bd="1px solid #ccc" style={{ borderRadius: '8px' }}>
+                {/* Now using the external component */}
+                <PatientInputSection title="Child" data={childForm} updateFunc={updateChild} />
+                <PatientInputSection title="Parent" data={parentForm} updateFunc={updateParent} />
+            </Box>
+
+            <Group justify="center" mt="xl" gap="md">
+                <Button variant="default" size="md" style={{ width: '100px' }} onClick={() => console.log("Back clicked")}>
+                    Back
+                </Button>
+                <Button color="yellow" size="md" style={{ width: '100px' }} onClick={handleReset}>
+                    Reset
+                </Button>
+                <Button color="blue" size="md" style={{ width: '100px' }} onClick={handleNext}>
+                    Next
+                </Button>
+            </Group>
+        </Box>
+    );
+}
+
+export default Registry;

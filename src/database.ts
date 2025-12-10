@@ -10,6 +10,15 @@ const client = new Client({
   port: 5433, 
 });
 
+interface RegistryData {
+    hn: string;
+    firstname: string;
+    lastname: string;
+    age: number;
+    sex: string;
+    dob: Date | null;
+}
+
 export const connectDB = async () => {
   try {
     await client.connect();
@@ -17,6 +26,61 @@ export const connectDB = async () => {
   } catch (err) {
     console.error('❌ [DB] Connection error:', err);
   }
+};
+
+export const registerPatientPair = async (child: RegistryData, parent: RegistryData) => {
+    console.log("📝 [DB] Starting registration transaction...");
+    
+    try {
+        await client.query('BEGIN'); // Start Transaction
+
+        // 1. Insert Child (Standard Insert - Child MUST be new)
+        const childQuery = `
+            INSERT INTO child (hn, firstname, lastname, age, gender, dob, time_create)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        `;
+        await client.query(childQuery, [
+            child.hn, child.firstname, child.lastname, child.age, child.sex, child.dob
+        ]);
+        console.log(`✅ [DB] Inserted Child: ${child.hn}`);
+
+        // 2. Insert Parent (UPSERT Logic)
+        if (parent && parent.hn && parent.hn.trim() !== "") {
+            const parentQuery = `
+                INSERT INTO parent (hn, firstname, lastname, age, gender, dob, time_create)
+                VALUES ($1, $2, $3, $4, $5, $6, NOW())
+                ON CONFLICT (hn) DO NOTHING  -- <--- THIS FIXES YOUR ERROR
+            `;
+            
+            await client.query(parentQuery, [
+                parent.hn, parent.firstname, parent.lastname, parent.age, parent.sex, parent.dob
+            ]);
+            console.log(`✅ [DB] Processed Parent: ${parent.hn}`);
+
+            // 3. Create Relation
+            const relationQuery = `
+                INSERT INTO patient_relation (child_hn, parent_hn)
+                VALUES ($1, $2)
+            `;
+            await client.query(relationQuery, [child.hn, parent.hn]);
+            console.log(`✅ [DB] Linked ${child.hn} <-> ${parent.hn}`);
+        } else {
+            console.log("ℹ️ [DB] No parent data provided.");
+        }
+
+        await client.query('COMMIT');
+        return { success: true, message: "Registration successful" };
+
+    } catch (error: any) {
+        await client.query('ROLLBACK');
+        console.error("❌ [DB] Registration failed:", error);
+        
+        if (error.code === '23505') {
+            // If we get here now, it means the CHILD HN is duplicated (which is correct to fail)
+            return { success: false, message: "Error: Child HN already exists." };
+        }
+        return { success: false, message: error.message };
+    }
 };
 
 // ---------------------------------------------------------
