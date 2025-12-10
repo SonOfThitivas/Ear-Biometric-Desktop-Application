@@ -16,6 +16,7 @@ import {
 
 import Identify from './identify';
 import Record from './record';
+import Registry from './registry';
 
 // const navbarList = [
 //     {label: "Identify"},
@@ -27,14 +28,14 @@ import Record from './record';
 
 const tabList = [
     {label: "Identify", child:<Identify/>},
-    {label: "Registry", child:null},
+    {label: "Registry", child:<Registry />},
     {label: "Update", child:null},
     {label: "Delete", child:null},
     {label: "Record", child:<Record/>},
 ]
 
 const App = () => {
-    const [active, setActive] = React.useState<string>("Identify");
+    const [active, setActive] = React.useState<string>("Registry");
 
     // const navbarItems = navbarList.map((item, index) => (
     // <NavLink
