@@ -125,3 +125,35 @@ export const getAllPatients = async () => {
     return res.rows;
   } catch (error) { return []; }
 };
+
+export const getAllRelations = async () => {
+  console.log("🔍 [DB] Fetching ALL relations...");
+  const query = `
+    SELECT 
+      pr.relation_id,
+      pr.child_hn,
+      pr.parent_hn,
+      c.firstname as child_firstname,
+      c.lastname as child_lastname,
+      c.age as child_age,
+      c.gender as child_sex,
+      c.dob as child_dob,
+      p.firstname as parent_firstname,
+      p.lastname as parent_lastname,
+      p.age as parent_age,
+      p.gender as parent_sex,
+      p.dob as parent_dob
+    FROM patient_relation pr
+    JOIN child c ON pr.child_hn = c.hn
+    JOIN parent p ON pr.parent_hn = p.hn
+  `;
+
+  try {
+    const res = await client.query(query);
+    console.log(`✅ [DB] Found ${res.rowCount} total relations`);
+    return res.rows;
+  } catch (error) {
+    console.error(`❌ [DB] Error fetching all relations:`, error);
+    return [];
+  }
+};

@@ -48,23 +48,33 @@ function Record() {
     const [relationsData, setRelationsData] = useState<RelationRow[]>([]);
     const [patientsData, setPatientsData] = useState<Patient[]>([]);
 
+    // 1. INITIAL LOAD: Fetch Patients AND Relations
     useEffect(() => {
-        const fetchAll = async () => {
-            console.log("🚀 [UI] Initializing: Fetching all patients..."); 
+        const initData = async () => {
+            console.log("🚀 [UI] Initializing data..."); 
             try {
+                // Fetch Patients
                 const allPatients = await window.electronAPI.getAllPatients();
-                console.log(`✅ [UI] Initial load complete. Received ${allPatients.length} patients.`);
                 setPatientsData(allPatients);
+                console.log(`✅ [UI] Loaded ${allPatients.length} patients`);
+
+                // Fetch Relations
+                const allRelations = await window.electronAPI.getAllRelations();
+                setRelationsData(allRelations);
+                console.log(`✅ [UI] Loaded ${allRelations.length} relations`);
+
             } catch (error) {
-                console.error("❌ [UI] Error loading initial patients:", error);
+                console.error("❌ [UI] Error loading initial data:", error);
             }
         };
 
-        fetchAll();
+        initData();
     }, []);
 
     const handleShow = async () => {
+        console.log("🖱️ [UI] Show button clicked");
         let results: RelationRow[] = [];
+
         try {
             if (searchHN) {
                 results = await window.electronAPI.getByHN(searchHN);
@@ -89,12 +99,17 @@ function Record() {
     };
 
     const handleReset = async () => {
+        console.log("🔄 [UI] Resetting to full view");
         setSearchHN('');
         setSearchName('');
-        setRelationsData([]);
+        
+        // Reload ALL data on reset
         try {
             const allPatients = await window.electronAPI.getAllPatients();
             setPatientsData(allPatients);
+
+            const allRelations = await window.electronAPI.getAllRelations();
+            setRelationsData(allRelations);
         } catch (error) {
             console.error("❌ [UI] Error resetting data:", error);
         }
@@ -139,7 +154,9 @@ function Record() {
         </Table.Tr>
     ));
 
+    // Filter out null relations (ghosts)
     const validRelations = relationsData.filter(r => r.relation_id !== null);
+    
     const relationRows = validRelations.map((rel, index) => (
         <Table.Tr key={`${rel.relation_id}-${index}`}>
             <Table.Td>{rel.relation_id}</Table.Td>
@@ -178,20 +195,9 @@ function Record() {
                 </Grid>
             </Box>
 
-            {/* Patients Table Box */}
-            <Box 
-                component='div' 
-                p={"sm"} 
-                m={"xs"} 
-                bd={"2px black solid"} 
-                bdrs={"sm"} 
-                h={"25svh"}
-                // 1. Flex container to manage internal height
-                style={{ display: 'flex', flexDirection: 'column' }} 
-            >
+            {/* Patients Table */}
+            <Box component='div' p={"sm"} m={"xs"} bd={"2px black solid"} bdrs={"sm"} h={"25svh"} style={{ display: 'flex', flexDirection: 'column' }}>
                 <Title order={4} mb="xs">patients</Title>
-                
-                {/* 2. ScrollContainer takes remaining space (flex: 1) and handles overflow */}
                 <Table.ScrollContainer minWidth={"100%"} type="native" style={{ flex: 1, overflowY: 'auto' }}>
                     <Table stickyHeader withTableBorder layout="fixed">
                         <Table.Thead>
@@ -206,28 +212,16 @@ function Record() {
                         </Table.Thead>
                         <Table.Tbody>
                             {patientsData.length > 0 ? patientRows : (
-                                <Table.Tr>
-                                    <Table.Td colSpan={6} style={{ textAlign: 'center' }}>No patients found</Table.Td>
-                                </Table.Tr>
+                                <Table.Tr><Table.Td colSpan={6} style={{ textAlign: 'center' }}>No patients found</Table.Td></Table.Tr>
                             )}
                         </Table.Tbody>
                     </Table>
                 </Table.ScrollContainer>
             </Box>
 
-            {/* Patient Relations Table Box */}
-            <Box 
-                component='div' 
-                p={"sm"} 
-                m={"xs"} 
-                bd={"2px black solid"} 
-                bdrs={"sm"} 
-                h={"25svh"}
-                // Same flex fix here
-                style={{ display: 'flex', flexDirection: 'column' }}
-            >
+            {/* Patient Relations Table */}
+            <Box component='div' p={"sm"} m={"xs"} bd={"2px black solid"} bdrs={"sm"} h={"25svh"} style={{ display: 'flex', flexDirection: 'column' }}>
                 <Title order={4} mb="xs">patient_relations</Title>
-                
                 <Table.ScrollContainer minWidth={"100%"} type="native" style={{ flex: 1, overflowY: 'auto' }}>
                     <Table stickyHeader withTableBorder layout="fixed">
                         <Table.Thead>
@@ -239,9 +233,7 @@ function Record() {
                         </Table.Thead>
                         <Table.Tbody>
                             {validRelations.length > 0 ? relationRows : (
-                                <Table.Tr>
-                                    <Table.Td colSpan={3} style={{ textAlign: 'center' }}>No relations found</Table.Td>
-                                </Table.Tr>
+                                <Table.Tr><Table.Td colSpan={3} style={{ textAlign: 'center' }}>No relations found</Table.Td></Table.Tr>
                             )}
                         </Table.Tbody>
                     </Table>

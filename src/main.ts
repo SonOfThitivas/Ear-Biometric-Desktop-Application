@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent} from 'electron';
-import { connectDB, getRelationsByHN, getRelationsByName, getAllPatients } from './database';
+import { connectDB, getRelationsByHN, getRelationsByName, getAllPatients, getAllRelations } from './database';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 
@@ -86,5 +86,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:get-all-patients', async (_event: IpcMainInvokeEvent) => {
     console.log("📥 [Main IPC] Received request for ALL patients"); // Debug Log
     return await getAllPatients();
+  });
+
+  ipcMain.handle('db:get-all-relations', async (_event: IpcMainInvokeEvent) => {
+    return await getAllRelations();
   });
 });
