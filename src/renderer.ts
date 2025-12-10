@@ -35,6 +35,7 @@ export interface IElectronAPI {
   getByName: (name: string) => Promise<any[]>;
   getAllPatients: () => Promise<any[]>;
   getAllRelations: () => Promise<any[]>;
+  registerPatientPair: (child: any, parent: any) => Promise<{ success: boolean, message: string }>;
 
 }
 
