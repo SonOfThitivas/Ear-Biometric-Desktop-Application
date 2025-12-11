@@ -1,4 +1,4 @@
-export default interface IResult {
+export default interface IRecord {
     hn?: string | null
     firstname?: string | null
     lastname?: string| null
