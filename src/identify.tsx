@@ -10,14 +10,15 @@ import {
 } from '@mantine/core'
 
 import TableResult from './components/tableResult'
-import IResult from "./interface/IResult"
+import IRecord from "./interface/IRecord"
+import Camera from './components/camera'
 
 export default function Identify() {
     const [camera, setCamera] = React.useState<string>("")
     const [mode, setMode] = React.useState<string>("child")
 
 
-    const childResult: IResult = {
+    const childResult: IRecord = {
         hn: "123456789",
         firstname: "Somsak",
         lastname: "Meesub",
@@ -26,7 +27,7 @@ export default function Identify() {
         dob: "1 January 2025",
     }
 
-    const parentResult: IResult = {
+    const parentResult: IRecord = {
         hn: "987654321",
         firstname: "Somsri",
         lastname: "Meesub",
@@ -105,7 +106,7 @@ export default function Identify() {
             p={"sm"}
         >
             <Text size='md' fw={500}>Camera</Text>
-            
+            <Camera/>
         </Box>
     </Flex>
   )
