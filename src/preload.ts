@@ -7,4 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // NEW Function
   loginOperator: (username: string, password: string) => ipcRenderer.invoke('db:login-operator', { username, password }),
+  searchByHN: (hn: string) => ipcRenderer.invoke('db:search-hn', hn),
+  searchByFirstname: (name: string) => ipcRenderer.invoke('db:search-firstname', name),
+  searchByLastname: (name: string) => ipcRenderer.invoke('db:search-lastname', name),
 });

@@ -34,6 +34,9 @@ export interface IElectronAPI {
   
   // NEW
   loginOperator: (username: string, password: string) => Promise<{ success: boolean, op_number?: string, message?: string }>;
+  searchByHN: (hn: string) => Promise<any[]>;
+  searchByFirstname: (name: string) => Promise<any[]>;
+  searchByLastname: (name: string) => Promise<any[]>;
 }
 
 declare global {

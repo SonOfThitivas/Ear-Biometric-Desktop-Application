@@ -50,13 +50,34 @@ function Record() {
 
     // TODO: fetch the data from databae
     const fetchData = async () => {
-        /* filter variable
-            hn (hospital number)
-            firstname (first name)
-            lastname (last name)
-        */
         try {
-            const res: IRecordChildParent[] =  [] // fetch data
+            let res: any[] = []; 
+
+            // Priority 1: Search by Hospital Number
+            if (hn.trim() !== "") {
+                console.log("🚀 [UI] Searching by HN:", hn);
+                res = await window.electronAPI.searchByHN(hn);
+            } 
+            // Priority 2: Search by Firstname
+            else if (firstname.trim() !== "") {
+                console.log("🚀 [UI] Searching by Firstname:", firstname);
+                res = await window.electronAPI.searchByFirstname(firstname);
+            } 
+            // Priority 3: Search by Lastname
+            else if (lastname.trim() !== "") {
+                console.log("🚀 [UI] Searching by Lastname:", lastname);
+                res = await window.electronAPI.searchByLastname(lastname);
+            } 
+            // No filter provided
+            else {
+                setErrorMessage("Please enter at least one search criteria.");
+                setAlertError(true);
+                setLoading(false);
+                return;
+            }
+
+            console.log(`✅ [UI] Found ${res.length} records`);
+
             if (res.length === 0){
                 // no match data
                 setAlertError(true)
@@ -64,18 +85,18 @@ function Record() {
                 setRecord([])
                 
             } else {
-                // get data suscessfully
+                // get data successfully
+                // Ensure the data matches your IRecordChildParent interface
                 setRecord(res)
-                
             }
             setLoading(false)
 
         } catch (err){
             // cannot fetch data, something went wrong
+            console.error("❌ [UI] Search Failed:", err);
             setAlertError(true)
             setErrorMessage("Cannot get the data. Please, try again.")
             setLoading(false)
-            // console.log(err)
         }
     }
 

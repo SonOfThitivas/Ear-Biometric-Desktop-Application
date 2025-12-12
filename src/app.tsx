@@ -16,13 +16,14 @@ import {
 
 import Identify from './identify';
 import Login from './components/login';
+import Record from './record';
 
 const tabList = [
     {label: "Identify", child:<Identify/>},
     {label: "Registry", child:null},
     {label: "Update", child:null},
     {label: "Delete", child:null},
-    {label: "Record", child:null},
+    {label: "Record", child:<Record/>},
 ]
 
 const App = () => {
