@@ -11,16 +11,16 @@ export default interface IRecord {
 }
 
 export interface IRecordChildParent {
-    c_hn?: string | null
-    c_firstname?: string | null
-    c_lastname?: string| null
-    c_age?: number | null
-    c_sex?: string | null
-    c_dob?: Date | null
-    p_hn?: string | null
-    p_firstname?: string | null
-    p_lastname?: string| null
-    p_age?: number | null
-    p_sex?: string | null
-    p_dob?: Date | null
+    child_hn?: string | null
+    child_fname?: string | null
+    child_lname?: string | null
+    child_age?: number | null
+    child_sex?: string | null
+    child_dob?: Date | null
+    parent_hn?: string | null
+    parent_fname?: string | null
+    parent_lname?: string | null
+    parent_age?: number | null
+    parent_sex?: string | null
+    parent_dob?: Date | null
 }
