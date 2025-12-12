@@ -20,7 +20,7 @@ import Login from './components/login';
 
 const tabList = [
     {label: "Identify", child:<Identify/>},
-    {label: "Registry", child:null},
+    {label: "Registry", child:<Registry/>},
     {label: "Update", child:null},
     {label: "Delete", child:null},
     {label: "Record", child:<Record/>},
