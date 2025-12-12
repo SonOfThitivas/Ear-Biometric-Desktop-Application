@@ -1,28 +1,87 @@
 import React from 'react'
 import { 
     Box, 
-    Text,
+    TextInput,
     Title,
     Grid,
     Button,
-    Select,
     Group,
-    Radio,
-    Input,
-    NumberInput,
-    Table
+    Alert,
+    Transition,
 } from '@mantine/core'
-import { 
-    DateInput,
-    DatesProvider
-} from '@mantine/dates';
-import dayjs from 'dayjs';
-
+import { IRecordChildParent } from './interface/IRecord'
+import TableRecord from './components/tableRecord'
+import { TbAlertCircle } from "react-icons/tb"
 
 function Record() {
 
+    const [record, setRecord] = React.useState<IRecordChildParent[]>([])   // fetch data
+    const [hn, setHn] = React.useState<string>("")  // hospital number fill
+    const [firstname, setFirstname] = React.useState<string>("")  // firstname fill
+    const [lastname, setLastname] = React.useState<string>("")   // lastname fill
+
+    const tbAlertCircle = <TbAlertCircle/>
+    const [alertError, setAlertError] = React.useState<boolean>(false)  // alert error
+    const [errorMessage, setErrorMessage] = React.useState<string>("")  // error message
+    const [loading, setLoading] = React.useState<boolean>(false) // loading icon when click
+    
+    // handle transition and alert
+    const handleTransition = () => {
+        const timeout = setTimeout((e)=>{
+            setErrorMessage("")
+            setAlertError(false)
+            clearTimeout(timeout)
+        }, 5000)
+    }
+
+    // handle when click reset
+    const handleReset = () => {
+        setHn("")
+        setFirstname("")
+        setLastname("")
+        setRecord([])
+    }
+
+    // handle when click show
+    const handleShow = async () => {
+        setLoading(true)
+        await fetchData()
+    }
+
+    // TODO: fetch the data from databae
+    const fetchData = async () => {
+        /* filter variable
+            hn (hospital number)
+            firstname (first name)
+            lastname (last name)
+        */
+        try {
+            const res: IRecordChildParent[] =  [] // fetch data
+            if (res.length === 0){
+                // no match data
+                setAlertError(true)
+                setErrorMessage("No matched data.")
+                setRecord([])
+                
+            } else {
+                // get data suscessfully
+                setRecord(res)
+                
+            }
+            setLoading(false)
+
+        } catch (err){
+            // cannot fetch data, something went wrong
+            setAlertError(true)
+            setErrorMessage("Cannot get the data. Please, try again.")
+            setLoading(false)
+            // console.log(err)
+        }
+    }
+
+
     return (
-        <Box component='div' p={"sm"}>
+        <Box component='div' p={"md"} maw={"100%"}>
 
             {/* Section Filter */}
             <Box component='div' p={"sm"} m={"xs"} bd={"2px black solid"} bdrs={"sm"}>
@@ -32,122 +91,85 @@ function Record() {
                     // bd="1px red solid"
                     h="100%"
                     p="md"
+                    justify='center'
                     align='end'
                 >
                     <Grid.Col span={4}>
-                        <Input.Wrapper label="Hospital Number">
-                            <Input placeholder="Enter hospital number"/>
-                        </Input.Wrapper>
-                    </Grid.Col>
-                    <Grid.Col span={4}>
-                        <Input.Wrapper label="Firstname">
-                            <Input placeholder="Enter firstname"/>
-                        </Input.Wrapper>
-                    </Grid.Col>
-                    <Grid.Col span={4}>
-                        <Input.Wrapper label="Lastname">
-                            <Input placeholder="Enter lastname"/>
-                        </Input.Wrapper>
-                    </Grid.Col>
-                    <Grid.Col span={4}>
-                        <NumberInput
-                            label="Age"
-                            placeholder="Enter age"
-                            min={0}
-                            max={150}
+                        <TextInput
+                            label="Hospital Number"
+                            placeholder="Enter your hospital number"
+                            value={hn}
+                            onChange={(event)=>setHn(event.currentTarget.value)}
                         />
                     </Grid.Col>
                     <Grid.Col span={4}>
-                        <DatesProvider settings={{locale:"th"}}>
-                            <DateInput
-                                // value={}
-                                // onChange={}
-                                valueFormat='DD/MM/YYYY'
-                                clearable
-                                label="Date of Birth"
-                                placeholder="DD/MM/YYYY"
-                            />
-                        </DatesProvider>
+                        <TextInput
+                            label="First Name"
+                            placeholder="Enter your first name"
+                            value={firstname}
+                            onChange={(event)=>setFirstname(event.currentTarget.value)}
+                        />
                     </Grid.Col>
                     <Grid.Col span={4}>
-                        <Radio.Group
-                            name="sexSelection"
-                            label="Sex"
-                        >
-                            <Group mt="xs">
-                                <Radio value="M" label="Male" />
-                                <Radio value="F" label="Female" />
-                            </Group>
-                        </Radio.Group>
+                        <TextInput 
+                            label="Last name"
+                            placeholder="Enter your last name"
+                            value={lastname}
+                            onChange={(event)=>setLastname(event.currentTarget.value)}
+                        />
                     </Grid.Col>
                     <Grid.Col span={4}>
-                        <Input.Wrapper label="Relation ID">
-                            <Input placeholder="Enter relation id"/>
-                        </Input.Wrapper>
-                    </Grid.Col>
-                    <Grid.Col span={4}>
-                        <Group grow justify="space-between">
-                            <Button variant='filled' color='yellow'>Reset</Button>
-                            <Button variant='filled' color='green'>Show</Button>
+                        <Group grow w={"100%"}>
+                            <Button
+                                variant='filled'
+                                color='yellow'
+                                onClick={handleReset}
+                            >
+                                Reset
+                            </Button>
+                            <Button 
+                                variant='filled' 
+                                color='green'
+                                onClick={handleShow}
+                                loading={loading}
+                            >Show</Button>
                         </Group>
                     </Grid.Col>
                 </Grid>
             </Box>
 
-            {/* patients table */}
-            <Box 
-                component='div'
-                p={"sm"} 
-                m={"xs"} 
-                bd={"2px black solid"} 
-                bdrs={"sm"}
-                h={"25svh"}
-            >
-                <Title order={4}>patients</Title>
-                <Table.ScrollContainer minWidth={"100%"}>
-                    <Table stickyHeader withTableBorder layout="fixed">
-                        <Table.Thead>
-                            <Table.Tr>
-                                <Table.Th>hn</Table.Th>
-                                <Table.Th>firstname</Table.Th>
-                                <Table.Th>lastname</Table.Th>
-                                <Table.Th>age</Table.Th>
-                                <Table.Th>sex</Table.Th>
-                                <Table.Th>dob</Table.Th>
-                            </Table.Tr>
-                        </Table.Thead>
-                        <Table.Tbody>
-                            
-                        </Table.Tbody>
-                    </Table>
-                </Table.ScrollContainer>
-            </Box>
+            {/* child parent */}
+            <TableRecord title="child" record={record}/>
 
-            {/* patient_relations */}
-            <Box 
-                component='div' 
-                p={"sm"} 
-                m={"xs"} 
-                bd={"2px black solid"} 
-                bdrs={"sm"}
-                h={"25svh"}
+            {/* parent table */}
+            <TableRecord title="parent" record={record}/>
+
+            {/* alert when error */}
+            <Transition
+                mounted={alertError}
+                transition="fade-left"
+                duration={400}
+                timingFunction="ease"
+                keepMounted
+                onEntered={handleTransition}
             >
-                <Title order={4}>patient_relations</Title>
-                <Table.ScrollContainer minWidth={"100%"}>
-                    <Table stickyHeader withTableBorder layout="fixed">
-                        <Table.Thead>
-                            <Table.Tr>
-                                <Table.Th>relation_id</Table.Th>
-                                <Table.Th>child_hn</Table.Th>
-                                <Table.Th>parent_hb</Table.Th>
-                            </Table.Tr>
-                        </Table.Thead>
-                        <Table.Tbody>
-                            
-                        </Table.Tbody>
-                    </Table>
-                </Table.ScrollContainer>
-            </Box>
+                {(styles) => 
+                <Alert
+                    pos={"fixed"}
+                    w={"25%"}
+                    right={"1rem"}
+                    bottom={"1rem"}
+                    variant="filled" 
+                    color="red" 
+                    title="Error"
+                    icon={tbAlertCircle}
+                    onClose={()=>setAlertError(false)}
+                    withCloseButton
+                    style={styles}
+                >
+                    {errorMessage}
+                </Alert>}
+            </Transition>
         </Box>
     )
 }
