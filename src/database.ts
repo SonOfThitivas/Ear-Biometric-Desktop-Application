@@ -1,27 +1,14 @@
-// src/database.ts
 import pg from 'pg';
 const { Client } = pg;
 
+// Database Connection Config
 const client = new Client({
   user: 'postgres',
   host: 'localhost',
-  database: 'ear_db', // Double check your DB name (ear_db vs postgres)
-  password: 'cpre888',
-  port: 5433,
+  database: 'ear_db', // Ensure this matches your DB name
+  password: 'cpre888', 
+  port: 5433, 
 });
-
-// Interface matching the backend expectation (strict types)
-interface RegistryData {
-    hn: string;
-    firstname: string;
-    lastname: string;
-    age: number;
-    sex: string;
-    dob: Date | null;
-    r1: number[];
-    r2: number[];
-    r3: number[];
-}
 
 export const connectDB = async () => {
   try {
@@ -32,209 +19,212 @@ export const connectDB = async () => {
   }
 };
 
-export const registerPatientPair = async (child: RegistryData, parent: RegistryData) => {
-    console.log("📝 [DB] Starting Full Registration (Data + 3 Vectors)...");
-    
-    try {
-        await client.query('BEGIN'); 
+// ==========================================
+// 1. SELECT & SEARCH (Active Status = 1)
+// ==========================================
 
-        // 1. Insert Child (With r1, r2, r3)
-        // Use JSON.stringify for pgvector input format "[1,2,3]"
-        const childQuery = `
-            INSERT INTO child (hn, firstname, lastname, age, gender, dob, r1, r2, r3, time_create)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-        `;
-        await client.query(childQuery, [
-            child.hn, 
-            child.firstname, 
-            child.lastname, 
-            child.age, 
-            child.sex, 
-            child.dob, 
-            JSON.stringify(child.r1), 
-            JSON.stringify(child.r2), 
-            JSON.stringify(child.r3)
-        ]);
-        console.log(`✅ [DB] Inserted Child: ${child.hn}`);
-
-        // 2. Insert Parent (With r1, r2, r3) - Optional
-        if (parent && parent.hn && parent.hn.trim() !== "") {
-            const parentQuery = `
-                INSERT INTO parent (hn, firstname, lastname, age, gender, dob, r1, r2, r3, time_create)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-                ON CONFLICT (hn) DO NOTHING 
-            `;
-            await client.query(parentQuery, [
-                parent.hn, 
-                parent.firstname, 
-                parent.lastname, 
-                parent.age, 
-                parent.sex, 
-                parent.dob,
-                JSON.stringify(parent.r1),
-                JSON.stringify(parent.r2),
-                JSON.stringify(parent.r3)
-            ]);
-            console.log(`✅ [DB] Processed Parent: ${parent.hn}`);
-
-            // 3. Link them
-            const relationQuery = `
-                INSERT INTO patient_relation (child_hn, parent_hn)
-                VALUES ($1, $2)
-            `;
-            await client.query(relationQuery, [child.hn, parent.hn]);
-            console.log(`✅ [DB] Linked ${child.hn} <-> ${parent.hn}`);
-        }
-
-        await client.query('COMMIT');
-        return { success: true, message: "Registration successful" };
-
-    } catch (error: any) {
-        await client.query('ROLLBACK');
-        console.error("❌ [DB] Registration failed:", error);
-        
-        if (error.code === '23505') {
-            return { success: false, message: "Error: Child HN already exists." };
-        }
-        return { success: false, message: error.message };
-    }
+// 1. Select all active children
+export const getAllActiveChildren = async () => {
+  const query = `SELECT * FROM child WHERE active_status = '1'`;
+  try {
+    const res = await client.query(query);
+    return res.rows;
+  } catch (error) { console.error(error); return []; }
 };
 
-// ---------------------------------------------------------
-// QUERY 1: Search by HN (Finds person + optional relation)
-// ---------------------------------------------------------
-export const getRelationsByHN = async (hn: string) => {
-  console.log(`🔍 [DB] Searching for HN: "${hn}" (Left Join Mode)`);
+// Helper query for joins (Used in 2, 3, 4)
+const joinQuery = `
+  SELECT 
+    c.hn_number as child_hn, c.firstname as child_fname, c.lastname as child_lname, 
+    c.age as child_age, c.sex as child_sex, c.dob as child_dob,
+    p.hn_number as parent_hn, p.firstname as parent_fname, p.lastname as parent_lname, 
+    p.age as parent_age, p.sex as parent_sex, p.dob as parent_dob
+  FROM child c
+  JOIN parent_child pc ON c.hn_number = pc.child_hn_number
+  JOIN parent p ON pc.parent_hn_number = p.hn_number
+  WHERE c.active_status = '1' AND p.active_status = '1'
+`;
 
-  const query = `
-    -- 1. Check if HN is a CHILD (Get child info + optional parent info)
-    SELECT 
-      pr.relation_id,
-      c.hn as child_hn,
-      p.hn as parent_hn,
-      -- Child Data
-      c.firstname as child_firstname, c.lastname as child_lastname, c.age as child_age, c.gender as child_sex, c.dob as child_dob,
-      -- Parent Data (Might be NULL)
-      p.firstname as parent_firstname, p.lastname as parent_lastname, p.age as parent_age, p.gender as parent_sex, p.dob as parent_dob
-    FROM child c
-    LEFT JOIN patient_relation pr ON c.hn = pr.child_hn
-    LEFT JOIN parent p ON pr.parent_hn = p.hn
-    WHERE c.hn = $1
+// 2. Join Child+Parent by Firstname (Matches Child OR Parent)
+export const searchByFirstname = async (firstname: string) => {
+  const query = `${joinQuery} AND (c.firstname ILIKE $1 OR p.firstname ILIKE $1)`;
+  try {
+    const res = await client.query(query, [`%${firstname}%`]);
+    return res.rows;
+  } catch (error) { console.error(error); return []; }
+};
 
-    UNION
-
-    -- 2. Check if HN is a PARENT (Get parent info + optional child info)
-    SELECT 
-      pr.relation_id,
-      c.hn as child_hn,
-      p.hn as parent_hn,
-      -- Child Data (Might be NULL)
-      c.firstname as child_firstname, c.lastname as child_lastname, c.age as child_age, c.gender as child_sex, c.dob as child_dob,
-      -- Parent Data
-      p.firstname as parent_firstname, p.lastname as parent_lastname, p.age as parent_age, p.gender as parent_sex, p.dob as parent_dob
-    FROM parent p
-    LEFT JOIN patient_relation pr ON p.hn = pr.parent_hn
-    LEFT JOIN child c ON pr.child_hn = c.hn
-    WHERE p.hn = $1
-  `;
-
+// 3. Join Child+Parent by HN (Matches Child OR Parent)
+export const searchByHN = async (hn: string) => {
+  const query = `${joinQuery} AND (c.hn_number = $1 OR p.hn_number = $1)`;
   try {
     const res = await client.query(query, [hn]);
-    console.log(`✅ [DB] Found ${res.rowCount} matches for HN`);
     return res.rows;
-  } catch (error) {
-    console.error(`❌ [DB] HN search error:`, error);
-    return [];
-  }
+  } catch (error) { console.error(error); return []; }
 };
 
-// ---------------------------------------------------------
-// QUERY 2: Search by Name (Finds person + optional relation)
-// ---------------------------------------------------------
-export const getRelationsByName = async (name: string) => {
-  console.log(`🔍 [DB] Searching for Name: "${name}" (Left Join Mode)`);
-
-  const query = `
-    -- 1. Search in CHILD table (Get child info + optional parent info)
-    SELECT 
-      pr.relation_id,
-      c.hn as child_hn,
-      p.hn as parent_hn,
-      c.firstname as child_firstname, c.lastname as child_lastname, c.age as child_age, c.gender as child_sex, c.dob as child_dob,
-      p.firstname as parent_firstname, p.lastname as parent_lastname, p.age as parent_age, p.gender as parent_sex, p.dob as parent_dob
-    FROM child c
-    LEFT JOIN patient_relation pr ON c.hn = pr.child_hn
-    LEFT JOIN parent p ON pr.parent_hn = p.hn
-    WHERE c.firstname ILIKE $1 OR c.lastname ILIKE $1 -- Search First OR Last name
-
-    UNION
-
-    -- 2. Search in PARENT table (Get parent info + optional child info)
-    SELECT 
-      pr.relation_id,
-      c.hn as child_hn,
-      p.hn as parent_hn,
-      c.firstname as child_firstname, c.lastname as child_lastname, c.age as child_age, c.gender as child_sex, c.dob as child_dob,
-      p.firstname as parent_firstname, p.lastname as parent_lastname, p.age as parent_age, p.gender as parent_sex, p.dob as parent_dob
-    FROM parent p
-    LEFT JOIN patient_relation pr ON p.hn = pr.parent_hn
-    LEFT JOIN child c ON pr.child_hn = c.hn
-    WHERE p.firstname ILIKE $1 OR p.lastname ILIKE $1 -- Search First OR Last name
-  `;
-
+// 4. Join Child+Parent by Lastname (Matches Child OR Parent)
+export const searchByLastname = async (lastname: string) => {
+  const query = `${joinQuery} AND (c.lastname ILIKE $1 OR p.lastname ILIKE $1)`;
   try {
-    const res = await client.query(query, [`%${name}%`]);
-    console.log(`✅ [DB] Found ${res.rowCount} matches for Name`);
+    const res = await client.query(query, [`%${lastname}%`]);
     return res.rows;
-  } catch (error) {
-    console.error(`❌ [DB] Name search error:`, error);
-    return [];
-  }
+  } catch (error) { console.error(error); return []; }
 };
 
-// ---------------------------------------------------------
-// QUERY 3: Get ALL (Unchanged)
-// ---------------------------------------------------------
-export const getAllPatients = async () => {
+// ==========================================
+// 5 - 7. INSERT ENTITIES
+// ==========================================
+
+// 5. Insert Child
+export const insertChild = async (data: any) => {
   const query = `
-    SELECT hn, firstname, lastname, age, gender as sex, dob, 'child' as type FROM child
-    UNION ALL
-    SELECT hn, firstname, lastname, age, gender as sex, dob, 'parent' as type FROM parent
+    INSERT INTO child (hn_number, firstname, lastname, age, dob, sex, active_status)
+    VALUES ($1, $2, $3, $4, $5, $6, '1')
   `;
   try {
-    const res = await client.query(query);
-    return res.rows;
-  } catch (error) { return []; }
+    await client.query(query, [data.hn, data.firstname, data.lastname, data.age, data.dob, data.sex]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
 };
 
-export const getAllRelations = async () => {
-  console.log("🔍 [DB] Fetching ALL relations...");
+// 6. Insert Parent
+export const insertParent = async (data: any) => {
   const query = `
-    SELECT 
-      pr.relation_id,
-      pr.child_hn,
-      pr.parent_hn,
-      c.firstname as child_firstname,
-      c.lastname as child_lastname,
-      c.age as child_age,
-      c.gender as child_sex,
-      c.dob as child_dob,
-      p.firstname as parent_firstname,
-      p.lastname as parent_lastname,
-      p.age as parent_age,
-      p.gender as parent_sex,
-      p.dob as parent_dob
-    FROM patient_relation pr
-    JOIN child c ON pr.child_hn = c.hn
-    JOIN parent p ON pr.parent_hn = p.hn
+    INSERT INTO parent (hn_number, firstname, lastname, age, dob, sex, active_status)
+    VALUES ($1, $2, $3, $4, $5, $6, '1')
   `;
-
   try {
-    const res = await client.query(query);
-    console.log(`✅ [DB] Found ${res.rowCount} total relations`);
-    return res.rows;
-  } catch (error) {
-    console.error(`❌ [DB] Error fetching all relations:`, error);
-    return [];
-  }
+    await client.query(query, [data.hn, data.firstname, data.lastname, data.age, data.dob, data.sex]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// 7. Insert Operator
+export const insertOperator = async (data: any) => {
+  // Note: data.op_number must be provided or generated before calling this
+  const query = `
+    INSERT INTO operator (op_number, firstname, lastname, username, password)
+    VALUES ($1, $2, $3, $4, $5)
+  `;
+  try {
+    await client.query(query, [data.op_number, data.firstname, data.lastname, data.username, data.password]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// ==========================================
+// 8 - 13. INSERT RELATIONS & VECTORS & LOGS
+// ==========================================
+
+// 8. Insert Child Vectors
+export const insertChildVectors = async (hn: string, v1: number[], v2: number[], v3: number[], path: string) => {
+  const query = `
+    INSERT INTO identity_vector_child (child_hn_number, vector_1, vector_2, vector_3, path_folder, active_status)
+    VALUES ($1, $2, $3, $4, $5, '1')
+  `;
+  try {
+    await client.query(query, [hn, JSON.stringify(v1), JSON.stringify(v2), JSON.stringify(v3), path]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// 9. Link Operator -> Child
+export const linkOperatorChild = async (op_number: string, child_hn: string) => {
+  const query = `INSERT INTO operator_child (operator_op_number, child_hn_number) VALUES ($1, $2)`;
+  try {
+    await client.query(query, [op_number, child_hn]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// 10. Link Parent -> Child
+export const linkParentChild = async (parent_hn: string, child_hn: string) => {
+  const query = `INSERT INTO parent_child (parent_hn_number, child_hn_number) VALUES ($1, $2)`;
+  try {
+    await client.query(query, [parent_hn, child_hn]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// 11. Log Activity Timestamp
+export const logActivity = async (op_number: string, activity: string) => {
+  const query = `INSERT INTO activity_time_stamp (op_number, time_stamp, activity) VALUES ($1, NOW(), $2)`;
+  try {
+    await client.query(query, [op_number, activity]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// 12. Link Operator -> Parent
+export const linkOperatorParent = async (op_number: string, parent_hn: string) => {
+  const query = `INSERT INTO operator_parent (operator_op_number, parent_hn_number) VALUES ($1, $2)`;
+  try {
+    await client.query(query, [op_number, parent_hn]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// 13. Insert Parent Vectors
+export const insertParentVectors = async (hn: string, v1: number[], v2: number[], v3: number[], path: string) => {
+  const query = `
+    INSERT INTO identity_vector_parent (parent_hn_number, vector_1, vector_2, vector_3, path_folder, active_status)
+    VALUES ($1, $2, $3, $4, $5, '1')
+  `;
+  try {
+    await client.query(query, [hn, JSON.stringify(v1), JSON.stringify(v2), JSON.stringify(v3), path]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// ==========================================
+// 14 - 17. UPDATE STATUS (Soft Delete)
+// ==========================================
+
+// 14. Deactivate Child
+export const deactivateChild = async (hn: string) => {
+  try {
+    await client.query(`UPDATE child SET active_status = '0' WHERE hn_number = $1`, [hn]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// 15. Deactivate Parent
+export const deactivateParent = async (hn: string) => {
+  try {
+    await client.query(`UPDATE parent SET active_status = '0' WHERE hn_number = $1`, [hn]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// 16. Deactivate Child Vectors
+export const deactivateChildVectors = async (hn: string) => {
+  try {
+    await client.query(`UPDATE identity_vector_child SET active_status = '0' WHERE child_hn_number = $1`, [hn]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// 17. Deactivate Parent Vectors
+export const deactivateParentVectors = async (hn: string) => {
+  try {
+    await client.query(`UPDATE identity_vector_parent SET active_status = '0' WHERE parent_hn_number = $1`, [hn]);
+    return { success: true };
+  } catch (error: any) { return { success: false, error: error.message }; }
+};
+
+// ==========================================
+// 18. AUTHENTICATION
+// ==========================================
+
+// 18. Operator Login
+export const loginOperator = async (username: string, password: string) => {
+  const query = `SELECT op_number FROM operator WHERE username = $1 AND password = $2`;
+  try {
+    const res = await client.query(query, [username, password]);
+    if (res.rows.length > 0) {
+        return { success: true, op_number: res.rows[0].op_number };
+    }
+    return { success: false, message: "Invalid credentials" };
+  } catch (error: any) { return { success: false, error: error.message }; }
 };
