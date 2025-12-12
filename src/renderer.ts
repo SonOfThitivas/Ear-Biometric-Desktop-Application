@@ -29,6 +29,18 @@
 import './index.css';
 import './app';
 
+export interface IElectronAPI {
+  // ... existing ...
+  
+  // NEW
+  loginOperator: (username: string, password: string) => Promise<{ success: boolean, op_number?: string, message?: string }>;
+}
+
+declare global {
+  interface Window {
+    electronAPI: IElectronAPI;
+  }
+}
 
 // console.log(
 //   '👋 This message is being logged by "renderer.ts", included via Vite',

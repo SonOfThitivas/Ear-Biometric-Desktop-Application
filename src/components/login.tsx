@@ -65,20 +65,29 @@ function Login(
     }
 
     // TODO: get operator number
-    const fetchData = async (username:string, password:string) => {
-        // get operator number from database
-        try{
-            // get operator number
-            // const data = 
-            setOperatorNumber(data)
-            setSuccess(true)
-            return 0
+    const fetchData = async (username: string, password: string) => {
+        try {
+            console.log("🚀 [UI] Attempting login for:", username);
+            
+            // Call the backend API
+            const result = await window.electronAPI.loginOperator(username, password);
 
-        }catch(err){
-            setSuccess(false)
-            setAlertError(true)
-            console.log(err)
-            return 1
+            if (result.success && result.op_number) {
+                console.log("✅ [UI] Login Successful. Operator ID:", result.op_number);
+                setOperatorNumber(result.op_number);
+                setSuccess(true);
+                return 0;
+            } else {
+                console.warn("❌ [UI] Login Failed:", result.message);
+                // Throw error to trigger the catch block below and show alert
+                throw new Error(result.message || "Invalid credentials");
+            }
+
+        } catch (err) {
+            console.error("❌ [UI] System Error during login:", err);
+            setSuccess(false);
+            setAlertError(true);
+            return 1;
         }
     }
 
