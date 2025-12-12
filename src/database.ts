@@ -1,4 +1,5 @@
 import pg from 'pg';
+import crypto from 'crypto';
 const { Client } = pg;
 
 // Connection Config
@@ -17,6 +18,10 @@ const ROLES = {
 
 // Mutable Client (This changes based on who is logged in)
 let client: pg.Client | null = null;
+
+const hashPassword = (password: string) => {
+    return crypto.createHash('sha256').update(password).digest('hex');
+};
 
 // Helper to switch connections
 export const connectAs = async (roleName: 'gatekeeper' | 'user' | 'admin') => {
@@ -142,15 +147,25 @@ export const insertParent = async (data: any) => {
 
 // 7. Insert Operator
 export const insertOperator = async (data: any) => {
-  // Note: data.op_number must be provided or generated before calling this
-  const query = `
-    INSERT INTO operator (op_number, firstname, lastname, username, password)
-    VALUES ($1, $2, $3, $4, $5)
-  `;
-  try {
-    await getClient().query(query, [data.op_number, data.firstname, data.lastname, data.username, data.password]);
-    return { success: true };
-  } catch (error: any) { return { success: false, error: error.message }; }
+    // Hash the password before insertion
+    const securePass = hashPassword(data.password);
+
+    const query = `
+        INSERT INTO operator (op_number, firstname, lastname, username, password, role)
+        VALUES ($1, $2, $3, $4, $5, 'user') -- Default to user role
+    `;
+    try {
+        await getClient().query(query, [
+            data.op_number, 
+            data.firstname, 
+            data.lastname, 
+            data.username, 
+            securePass // <--- Store the hash
+        ]);
+        return { success: true };
+    } catch (error: any) { 
+        return { success: false, error: error.message }; 
+    }
 };
 
 // ==========================================
@@ -261,34 +276,37 @@ export const deactivateParentVectors = async (hn: string) => {
 // --- AUTHENTICATION LOGIC ---
 
 export const loginOperator = async (username: string, pass: string) => {
-  // Ensure we are connected (likely as gatekeeper)
-  if (!client) await connectAs('gatekeeper');
+    // Ensure we are connected (likely as gatekeeper)
+    if (!client) await connectAs('gatekeeper');
 
-  console.log(`🔐 [DB] Checking credentials for: ${username}`);
-  const query = `SELECT op_number, username FROM operator WHERE username = $1 AND password = $2`;
-  
-  try {
-    // Gatekeeper runs this query
-    const res = await client!.query(query, [username, pass]);
+    console.log(`🔐 [DB] Checking credentials for: ${username}`);
+    
+    // 1. Hash the input password immediately
+    const hashedPassword = hashPassword(pass);
 
-    if (res.rows.length > 0) {
-        const op = res.rows[0];
-        console.log(`✅ [DB] Login valid for ${op.username}`);
+    // 2. Compare HASH vs HASH in the database
+    const query = `SELECT op_number, username, role FROM operator WHERE username = $1 AND password = $2`;
+    
+    try {
+        const res = await client!.query(query, [username, hashedPassword]);
 
-        // RECONNECT LOGIC
-        // If username is 'admin', become App Admin. Otherwise, become App User.
-        if (op.username === 'admin') {
-            await connectAs('admin'); 
-        } else {
-            await connectAs('user');
+        if (res.rows.length > 0) {
+            const op = res.rows[0];
+            console.log(`✅ [DB] Login valid for ${op.username}`);
+
+            // Reconnect logic
+            if (op.role === 'admin') {
+                await connectAs('admin'); 
+            } else {
+                await connectAs('user');
+            }
+
+            return { success: true, op_number: op.op_number, role: op.role };
         }
-
-        return { success: true, op_number: op.op_number, role: op.username === 'admin' ? 'admin' : 'user' };
+        return { success: false, message: "Invalid credentials" };
+    } catch (error: any) { 
+        return { success: false, error: error.message }; 
     }
-    return { success: false, message: "Invalid credentials" };
-  } catch (error: any) { 
-      return { success: false, error: error.message }; 
-  }
 };
 
 // 19. Hard Delete (For Admin Use Only)
