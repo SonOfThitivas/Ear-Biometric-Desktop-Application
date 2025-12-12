@@ -15,15 +15,14 @@ import {
 } from '@mantine/core';
 
 import Identify from './identify';
-import Record from './record';
 import Login from './components/login';
 
 const tabList = [
     {label: "Identify", child:<Identify/>},
-    {label: "Registry", child:<Registry/>},
+    {label: "Registry", child:null},
     {label: "Update", child:null},
     {label: "Delete", child:null},
-    {label: "Record", child:<Record/>},
+    {label: "Record", child:null},
 ]
 
 const App = () => {
