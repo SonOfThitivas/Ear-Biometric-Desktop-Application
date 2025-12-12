@@ -1,7 +1,8 @@
 import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
-import { connectDB, getRelationsByHN, getRelationsByName, getAllPatients, getAllRelations, registerPatientPair } from './database';
+import { connectDB } from './database';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { runDatabaseTests } from './test_db';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -42,76 +43,14 @@ app.on('activate', () => {
 
 // --- TYPE DEFINITIONS ---
 
-// 1. PatientData: What the Frontend sends (Age allows empty string)
-interface IncomingPatientData {
-  hn: string;
-  firstname: string;
-  lastname: string;
-  age: number | '';
-  sex: string;
-  dob: Date | null;
-  r1: number[];
-  r2: number[];
-  r3: number[];
-}
-
-// 2. RegistryData: What the Database expects (Age MUST be number)
-interface DbPatientData {
-  hn: string;
-  firstname: string;
-  lastname: string;
-  age: number;
-  sex: string;
-  dob: Date | null;
-  r1: number[];
-  r2: number[];
-  r3: number[];
-}
-
-interface RegisterPayload {
-  child: IncomingPatientData;
-  parent: IncomingPatientData;
-}
 
 // --- APP STARTUP ---
 
 app.whenReady().then(async () => {
   await connectDB();
 
+  await runDatabaseTests();
+
   // --- IPC HANDLERS ---
-
-  ipcMain.handle('db:get-by-hn', async (_event: IpcMainInvokeEvent, hn: string) => {
-    return await getRelationsByHN(hn);
-  });
-
-  ipcMain.handle('db:get-by-name', async (_event: IpcMainInvokeEvent, name: string) => {
-    return await getRelationsByName(name);
-  });
-
-  ipcMain.handle('db:get-all-patients', async (_event: IpcMainInvokeEvent) => {
-    return await getAllPatients();
-  });
-
-  ipcMain.handle('db:get-all-relations', async (_event: IpcMainInvokeEvent) => {
-    return await getAllRelations();
-  });
-
-  ipcMain.handle('db:register-patient-pair', async (_event: IpcMainInvokeEvent, { child, parent }: RegisterPayload) => {
-    
-    // Converter: Now passes the vectors through
-    const sanitize = (p: IncomingPatientData): DbPatientData => ({
-      hn: p.hn,
-      firstname: p.firstname,
-      lastname: p.lastname,
-      sex: p.sex,
-      dob: p.dob,
-      age: p.age === '' ? 0 : Number(p.age),
-      r1: p.r1 || [], // Ensure it's at least an empty array if missing
-      r2: p.r2 || [],
-      r3: p.r3 || []
-    });
-
-    return await registerPatientPair(sanitize(child), sanitize(parent));
-  });
 
 });
