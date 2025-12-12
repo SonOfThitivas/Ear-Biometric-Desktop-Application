@@ -1,23 +1,61 @@
 import pg from 'pg';
 const { Client } = pg;
 
-// Database Connection Config
-const client = new Client({
-  user: 'postgres',
+// Connection Config
+const DB_CONFIG = {
   host: 'localhost',
-  database: 'ear_db', // Ensure this matches your DB name
-  password: 'cpre888', 
-  port: 5433, 
-});
+  database: 'ear_db',
+  port: 5433,
+};
 
-export const connectDB = async () => {
+// Credentials for our 3 Roles
+const ROLES = {
+  gatekeeper: { user: 'app_gatekeeper', password: 'gatekeeper_pass' },
+  user:       { user: 'app_user',       password: 'secure_user_pass' },
+  admin:      { user: 'app_admin',      password: 'secure_admin_pass' }
+};
+
+// Mutable Client (This changes based on who is logged in)
+let client: pg.Client | null = null;
+
+// Helper to switch connections
+export const connectAs = async (roleName: 'gatekeeper' | 'user' | 'admin') => {
+  // 1. Disconnect current session if exists
+  if (client) {
+    await client.end();
+    console.log("🔌 [DB] Disconnecting previous session...");
+  }
+
+  // 2. Create new client with specific role credentials
+  const creds = ROLES[roleName];
+  client = new Client({
+    ...DB_CONFIG,
+    user: creds.user,
+    password: creds.password
+  });
+
+  // 3. Connect
   try {
     await client.connect();
-    console.log('✅ [DB] Connected to PostgreSQL on port 5433');
+    console.log(`✅ [DB] Connected as role: ${roleName.toUpperCase()}`);
   } catch (err) {
-    console.error('❌ [DB] Connection error:', err);
+    console.error(`❌ [DB] Failed to connect as ${roleName}`, err);
   }
 };
+
+
+// Initial Connection (Always Gatekeeper)
+export const connectDB = async () => {
+  await connectAs('gatekeeper');
+};
+
+
+const getClient = () => {
+    if (!client) throw new Error("Database not connected. Call connectDB() first.");
+    return client;
+}
+
+
 
 // ==========================================
 // 1. SELECT & SEARCH (Active Status = 1)
@@ -31,6 +69,8 @@ export const getAllActiveChildren = async () => {
     return res.rows;
   } catch (error) { console.error(error); return []; }
 };
+
+
 
 // Helper query for joins (Used in 2, 3, 4)
 const joinQuery = `
@@ -49,7 +89,7 @@ const joinQuery = `
 export const searchByFirstname = async (firstname: string) => {
   const query = `${joinQuery} AND (c.firstname ILIKE $1 OR p.firstname ILIKE $1)`;
   try {
-    const res = await client.query(query, [`%${firstname}%`]);
+    const res = await getClient().query(query, [`%${firstname}%`]);
     return res.rows;
   } catch (error) { console.error(error); return []; }
 };
@@ -58,7 +98,7 @@ export const searchByFirstname = async (firstname: string) => {
 export const searchByHN = async (hn: string) => {
   const query = `${joinQuery} AND (c.hn_number = $1 OR p.hn_number = $1)`;
   try {
-    const res = await client.query(query, [hn]);
+    const res = await getClient().query(query, [hn]);
     return res.rows;
   } catch (error) { console.error(error); return []; }
 };
@@ -67,7 +107,7 @@ export const searchByHN = async (hn: string) => {
 export const searchByLastname = async (lastname: string) => {
   const query = `${joinQuery} AND (c.lastname ILIKE $1 OR p.lastname ILIKE $1)`;
   try {
-    const res = await client.query(query, [`%${lastname}%`]);
+    const res = await getClient().query(query, [`%${lastname}%`]);
     return res.rows;
   } catch (error) { console.error(error); return []; }
 };
@@ -83,7 +123,7 @@ export const insertChild = async (data: any) => {
     VALUES ($1, $2, $3, $4, $5, $6, '1')
   `;
   try {
-    await client.query(query, [data.hn, data.firstname, data.lastname, data.age, data.dob, data.sex]);
+    await getClient().query(query, [data.hn, data.firstname, data.lastname, data.age, data.dob, data.sex]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -95,7 +135,7 @@ export const insertParent = async (data: any) => {
     VALUES ($1, $2, $3, $4, $5, $6, '1')
   `;
   try {
-    await client.query(query, [data.hn, data.firstname, data.lastname, data.age, data.dob, data.sex]);
+    await getClient().query(query, [data.hn, data.firstname, data.lastname, data.age, data.dob, data.sex]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -108,7 +148,7 @@ export const insertOperator = async (data: any) => {
     VALUES ($1, $2, $3, $4, $5)
   `;
   try {
-    await client.query(query, [data.op_number, data.firstname, data.lastname, data.username, data.password]);
+    await getClient().query(query, [data.op_number, data.firstname, data.lastname, data.username, data.password]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -124,7 +164,7 @@ export const insertChildVectors = async (hn: string, v1: number[], v2: number[],
     VALUES ($1, $2, $3, $4, $5, '1')
   `;
   try {
-    await client.query(query, [hn, JSON.stringify(v1), JSON.stringify(v2), JSON.stringify(v3), path]);
+    await getClient().query(query, [hn, JSON.stringify(v1), JSON.stringify(v2), JSON.stringify(v3), path]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -133,7 +173,7 @@ export const insertChildVectors = async (hn: string, v1: number[], v2: number[],
 export const linkOperatorChild = async (op_number: string, child_hn: string) => {
   const query = `INSERT INTO operator_child (operator_op_number, child_hn_number) VALUES ($1, $2)`;
   try {
-    await client.query(query, [op_number, child_hn]);
+    await getClient().query(query, [op_number, child_hn]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -142,7 +182,7 @@ export const linkOperatorChild = async (op_number: string, child_hn: string) => 
 export const linkParentChild = async (parent_hn: string, child_hn: string) => {
   const query = `INSERT INTO parent_child (parent_hn_number, child_hn_number) VALUES ($1, $2)`;
   try {
-    await client.query(query, [parent_hn, child_hn]);
+    await getClient().query(query, [parent_hn, child_hn]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -151,7 +191,7 @@ export const linkParentChild = async (parent_hn: string, child_hn: string) => {
 export const logActivity = async (op_number: string, activity: string) => {
   const query = `INSERT INTO activity_time_stamp (op_number, time_stamp, activity) VALUES ($1, NOW(), $2)`;
   try {
-    await client.query(query, [op_number, activity]);
+    await getClient().query(query, [op_number, activity]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -160,7 +200,7 @@ export const logActivity = async (op_number: string, activity: string) => {
 export const linkOperatorParent = async (op_number: string, parent_hn: string) => {
   const query = `INSERT INTO operator_parent (operator_op_number, parent_hn_number) VALUES ($1, $2)`;
   try {
-    await client.query(query, [op_number, parent_hn]);
+    await getClient().query(query, [op_number, parent_hn]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -172,7 +212,7 @@ export const insertParentVectors = async (hn: string, v1: number[], v2: number[]
     VALUES ($1, $2, $3, $4, $5, '1')
   `;
   try {
-    await client.query(query, [hn, JSON.stringify(v1), JSON.stringify(v2), JSON.stringify(v3), path]);
+    await getClient().query(query, [hn, JSON.stringify(v1), JSON.stringify(v2), JSON.stringify(v3), path]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -184,7 +224,7 @@ export const insertParentVectors = async (hn: string, v1: number[], v2: number[]
 // 14. Deactivate Child
 export const deactivateChild = async (hn: string) => {
   try {
-    await client.query(`UPDATE child SET active_status = '0' WHERE hn_number = $1`, [hn]);
+    await getClient().query(`UPDATE child SET active_status = '0' WHERE hn_number = $1`, [hn]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -192,7 +232,7 @@ export const deactivateChild = async (hn: string) => {
 // 15. Deactivate Parent
 export const deactivateParent = async (hn: string) => {
   try {
-    await client.query(`UPDATE parent SET active_status = '0' WHERE hn_number = $1`, [hn]);
+    await getClient().query(`UPDATE parent SET active_status = '0' WHERE hn_number = $1`, [hn]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -200,7 +240,7 @@ export const deactivateParent = async (hn: string) => {
 // 16. Deactivate Child Vectors
 export const deactivateChildVectors = async (hn: string) => {
   try {
-    await client.query(`UPDATE identity_vector_child SET active_status = '0' WHERE child_hn_number = $1`, [hn]);
+    await getClient().query(`UPDATE identity_vector_child SET active_status = '0' WHERE child_hn_number = $1`, [hn]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -208,7 +248,7 @@ export const deactivateChildVectors = async (hn: string) => {
 // 17. Deactivate Parent Vectors
 export const deactivateParentVectors = async (hn: string) => {
   try {
-    await client.query(`UPDATE identity_vector_parent SET active_status = '0' WHERE parent_hn_number = $1`, [hn]);
+    await getClient().query(`UPDATE identity_vector_parent SET active_status = '0' WHERE parent_hn_number = $1`, [hn]);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -218,13 +258,60 @@ export const deactivateParentVectors = async (hn: string) => {
 // ==========================================
 
 // 18. Operator Login
-export const loginOperator = async (username: string, password: string) => {
-  const query = `SELECT op_number FROM operator WHERE username = $1 AND password = $2`;
+// --- AUTHENTICATION LOGIC ---
+
+export const loginOperator = async (username: string, pass: string) => {
+  // Ensure we are connected (likely as gatekeeper)
+  if (!client) await connectAs('gatekeeper');
+
+  console.log(`🔐 [DB] Checking credentials for: ${username}`);
+  const query = `SELECT op_number, username FROM operator WHERE username = $1 AND password = $2`;
+  
   try {
-    const res = await client.query(query, [username, password]);
+    // Gatekeeper runs this query
+    const res = await client!.query(query, [username, pass]);
+
     if (res.rows.length > 0) {
-        return { success: true, op_number: res.rows[0].op_number };
+        const op = res.rows[0];
+        console.log(`✅ [DB] Login valid for ${op.username}`);
+
+        // RECONNECT LOGIC
+        // If username is 'admin', become App Admin. Otherwise, become App User.
+        if (op.username === 'admin') {
+            await connectAs('admin'); 
+        } else {
+            await connectAs('user');
+        }
+
+        return { success: true, op_number: op.op_number, role: op.username === 'admin' ? 'admin' : 'user' };
     }
     return { success: false, message: "Invalid credentials" };
-  } catch (error: any) { return { success: false, error: error.message }; }
+  } catch (error: any) { 
+      return { success: false, error: error.message }; 
+  }
+};
+
+// 19. Hard Delete (For Admin Use Only)
+export const hardDeleteChild = async (hn: string) => {
+    // If client is null, ensure we are connected
+    if (!client) throw new Error("Database not connected");
+
+    console.log(`🔥 [DB] Attempting HARD DELETE on ${hn}...`);
+    // This query will FAIL if the current role is 'app_user'
+    await client.query(`DELETE FROM child WHERE hn_number = $1`, [hn]);
+};
+
+
+// 20. Hard Delete Parent (For Admin Use Only)
+export const hardDeleteParent = async (hn: string) => {
+    // If client is null, ensure we are connected
+    if (!client) throw new Error("Database not connected");
+
+    console.log(`🔥 [DB] Attempting HARD DELETE on Parent ${hn}...`);
+    
+    // Because we set up CASCADE in SQL, this single line deletes:
+    // 1. The Parent record
+    // 2. Their Vectors (identity_vector_parent)
+    // 3. Their Relations (parent_child, operator_parent)
+    await client.query(`DELETE FROM parent WHERE hn_number = $1`, [hn]);
 };

@@ -65,26 +65,29 @@ function Login(
     }
 
     // TODO: get operator number
-    const fetchData = async (username: string, password: string) => {
+    const fetchData = async (username: string, pass: string) => {
         try {
-            console.log("🚀 [UI] Attempting login for:", username);
+            console.log("🚀 [UI] Sending login request...");
             
-            // Call the backend API
-            const result = await window.electronAPI.loginOperator(username, password);
+            // Call Electron Main Process
+            // Note: Make sure loginOperator is exposed in preload.ts
+            const result = await window.electronAPI.loginOperator(username, pass);
 
-            if (result.success && result.op_number) {
-                console.log("✅ [UI] Login Successful. Operator ID:", result.op_number);
-                setOperatorNumber(result.op_number);
-                setSuccess(true);
+            if (result.success) {
+                console.log("✅ [UI] Login Success! Operator:", result.op_number);
+                setOperatorNumber(result.op_number); // Store OP Number
+                setSuccess(true); // Triggers useEffect to finish loading
                 return 0;
             } else {
                 console.warn("❌ [UI] Login Failed:", result.message);
-                // Throw error to trigger the catch block below and show alert
-                throw new Error(result.message || "Invalid credentials");
+                // Trigger the error alert
+                setSuccess(false);
+                setAlertError(true);
+                return 1;
             }
 
         } catch (err) {
-            console.error("❌ [UI] System Error during login:", err);
+            console.error("❌ [UI] Error:", err);
             setSuccess(false);
             setAlertError(true);
             return 1;

@@ -1,6 +1,6 @@
 // src/test_db.ts
 import * as db from './database';
-
+// import dayjs from 'dayjs';
 // Helper to create a dummy vector
 const mockVector = () => Array(128).fill(0).map(() => Math.random());
 
@@ -25,6 +25,9 @@ export const runDatabaseTests = async () => {
         console.log("Test 3: Search Join by HN 'C-TEST-01'...");
         const hnSearch = await db.searchByHN('C-001');
         console.log("Search Result:", hnSearch);
+
+        // console.log(typeof hnSearch[0].parent_dob)
+        // console.log(dayjs(hnSearch[0].parent_dob).toString())
 
 
         console.log("✅ --- ALL TESTS COMPLETED SUCCESSFULLY ---");

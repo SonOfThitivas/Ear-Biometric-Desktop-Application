@@ -3,6 +3,7 @@ import * as db from './database';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { runDatabaseTests } from './test_db';
+import { runPermissionTests } from './test_permission'
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -48,7 +49,8 @@ app.on('activate', () => {
 
 app.whenReady().then(async () => {
   await db.connectDB();
-  await runDatabaseTests();
+  // await runDatabaseTests();
+  await runPermissionTests();
 
   ipcMain.handle('db:get-active-children', async () => {
     return await db.getAllActiveChildren();
