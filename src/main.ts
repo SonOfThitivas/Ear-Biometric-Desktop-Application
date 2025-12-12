@@ -122,5 +122,7 @@ app.whenReady().then(async () => {
   });
 
   // --- IPC HANDLERS ---
-
+  ipcMain.handle('db:search-multi', async (_event, { hn, firstname, lastname }) => {
+    return await db.searchMultiCriteria(hn, firstname, lastname);
+  });
 });

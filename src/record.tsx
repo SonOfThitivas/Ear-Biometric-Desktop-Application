@@ -51,52 +51,35 @@ function Record() {
     // TODO: fetch the data from databae
     const fetchData = async () => {
         try {
-            let res: any[] = []; 
-
-            // Priority 1: Search by Hospital Number
-            if (hn.trim() !== "") {
-                console.log("🚀 [UI] Searching by HN:", hn);
-                res = await window.electronAPI.searchByHN(hn);
-            } 
-            // Priority 2: Search by Firstname
-            else if (firstname.trim() !== "") {
-                console.log("🚀 [UI] Searching by Firstname:", firstname);
-                res = await window.electronAPI.searchByFirstname(firstname);
-            } 
-            // Priority 3: Search by Lastname
-            else if (lastname.trim() !== "") {
-                console.log("🚀 [UI] Searching by Lastname:", lastname);
-                res = await window.electronAPI.searchByLastname(lastname);
-            } 
-            // No filter provided
-            else {
+            // 1. Validation: Prevent searching if all boxes are empty
+            if (!hn.trim() && !firstname.trim() && !lastname.trim()) {
                 setErrorMessage("Please enter at least one search criteria.");
                 setAlertError(true);
                 setLoading(false);
                 return;
             }
 
+            console.log(`🚀 [UI] Searching Multi: HN="${hn}", First="${firstname}", Last="${lastname}"`);
+            
+            // 2. CALL THE NEW FUNCTION (Passes all 3 inputs at once)
+            const res = await window.electronAPI.searchMultiCriteria(hn, firstname, lastname);
+
             console.log(`✅ [UI] Found ${res.length} records`);
 
             if (res.length === 0){
-                // no match data
-                setAlertError(true)
-                setErrorMessage("No matched data.")
-                setRecord([])
-                
+                setAlertError(true);
+                setErrorMessage("No matched data.");
+                setRecord([]);
             } else {
-                // get data successfully
-                // Ensure the data matches your IRecordChildParent interface
-                setRecord(res)
+                setRecord(res);
             }
-            setLoading(false)
+            setLoading(false);
 
         } catch (err){
-            // cannot fetch data, something went wrong
             console.error("❌ [UI] Search Failed:", err);
-            setAlertError(true)
-            setErrorMessage("Cannot get the data. Please, try again.")
-            setLoading(false)
+            setAlertError(true);
+            setErrorMessage("Cannot get the data. Please, try again.");
+            setLoading(false);
         }
     }
 

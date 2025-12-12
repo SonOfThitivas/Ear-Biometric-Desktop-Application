@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   searchByHN: (hn: string) => ipcRenderer.invoke('db:search-hn', hn),
   searchByFirstname: (name: string) => ipcRenderer.invoke('db:search-firstname', name),
   searchByLastname: (name: string) => ipcRenderer.invoke('db:search-lastname', name),
+  searchMultiCriteria: (hn: string, f: string, l: string) => ipcRenderer.invoke('db:search-multi', { hn, firstname: f, lastname: l }),
 });
