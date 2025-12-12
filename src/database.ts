@@ -285,26 +285,26 @@ export const loginOperator = async (username: string, pass: string) => {
     const hashedPassword = hashPassword(pass);
 
     // 2. Compare HASH vs HASH in the database
-    const query = `SELECT op_number, username, role FROM operator WHERE username = $1 AND password = $2`;
+    const query = `SELECT op_number, username FROM operator WHERE username = $1 AND password = $2`;
     
     try {
         const res = await client!.query(query, [username, hashedPassword]);
-
         if (res.rows.length > 0) {
             const op = res.rows[0];
             console.log(`✅ [DB] Login valid for ${op.username}`);
 
             // Reconnect logic
-            if (op.role === 'admin') {
+            if (op.username === 'admin') {
                 await connectAs('admin'); 
             } else {
                 await connectAs('user');
             }
 
-            return { success: true, op_number: op.op_number, role: op.role };
+            return { success: true, op_number: op.op_number, role: op.username };
         }
         return { success: false, message: "Invalid credentials" };
     } catch (error: any) { 
+        console.error("❌ [DB] LOGIN QUERY CRASHED:", error.message);
         return { success: false, error: error.message }; 
     }
 };
