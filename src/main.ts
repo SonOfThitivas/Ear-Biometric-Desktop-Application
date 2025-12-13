@@ -5,6 +5,7 @@ import started from 'electron-squirrel-startup';
 import { runDatabaseTests } from './test_db';
 import { runPermissionTests } from './test_permission'
 import { testVectorSearch } from './vector_test';
+import "./server.js"
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -134,5 +135,13 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('db:hard-delete-parent', async (_event, hn: string) => {
     return await db.hardDeleteParent(hn);
+  });
+
+  ipcMain.handle('db:insert-child-vectors', async (_event, { hn, v1, v2, v3, folder }) => {
+    return await db.insertChildVectors(hn, v1, v2, v3, folder);
+  });
+
+  ipcMain.handle('db:insert-parent-vectors', async (_event, { hn, v1, v2, v3, folder }) => {
+    return await db.insertParentVectors(hn, v1, v2, v3, folder);
   });
 });

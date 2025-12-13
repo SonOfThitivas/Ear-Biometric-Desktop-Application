@@ -21,7 +21,7 @@ let cameraProcess = null;
 
 // !!! IMPORTANT: UPDATE THIS PATH TO YOUR PYTHON EXECUTABLE !!!
 // Use double backslashes (\\) for Windows paths.
-const pythonCommand = 'C:\\Users\\user\\Ear Biometric\\.venv\\Scripts\\python.exe';
+const pythonCommand = 'D:\\miniconda33\\envs\\pytorch-gpu\\python.exe';
 
 function startCamera() {
     // Prevent starting multiple instances

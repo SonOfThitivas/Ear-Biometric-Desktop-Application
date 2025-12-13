@@ -20,7 +20,7 @@ export default function UpdatePage() {
 
     const [insideZone, setInsideZone] = React.useState(false);
     const [countdown, setCountdown] = React.useState(0);
-    const [captures, setCaptures] = React.useState([]);
+    const [captures, setCaptures] = React.useState<any[]>([]); // Added type for safety
     const [isCapturing, setIsCapturing] = React.useState(false);
 
     // Start workflow
@@ -71,27 +71,57 @@ export default function UpdatePage() {
         const updated = [...prev, captureResult];
 
         if (updated.length === 3) {
-        setIsCapturing(false);
-        console.log("All 3 captures complete:", updated);
-        sendToDatabase(updated, hn, mode ? "child" : "parent");
+            setIsCapturing(false);
+            console.log("All 3 captures complete:", updated);
+            // FIX: Pass 'mode' (boolean) directly
+            sendToDatabase(updated, hn, mode);
         }
 
         return updated;
     });
     }, [captureResult]);
 
-    const sendToDatabase = (captures, hn, mode) => {
-    const payload = {
-        hn,
-        mode,
-        embeddings: captures.map(c => c.embedding),
-        folder: captures[0]?.folder || null,
-    };
+    // REPLACED PLACEHOLDER WITH REAL DB LOGIC
+    const sendToDatabase = async (captures: any[], hn: string, isChildMode: boolean) => {
+        // 1. Validation
+        if (!hn.trim()) {
+            console.error("❌ Missing HN");
+            return;
+        }
 
-    console.log("DB Payload:", payload);
+        // 2. Prepare Data
+        const v1 = captures[0]?.embedding;
+        const v2 = captures[1]?.embedding;
+        const v3 = captures[2]?.embedding;
+        const folderPath = captures[0]?.folder || "";
 
-    // Your friend will replace this with real DB logic later
-    // e.g. return api.post("/save-embeddings", payload);
+        console.log(`🚀 Sending vectors to DB for HN: ${hn} (${isChildMode ? "Child" : "Parent"})`);
+
+        try {
+            let result;
+
+            // 3. Call Electron API based on mode
+            if (isChildMode) {
+                result = await window.electronAPI.insertChildVectors(hn, v1, v2, v3, folderPath);
+            } else {
+                result = await window.electronAPI.insertParentVectors(hn, v1, v2, v3, folderPath);
+            }
+
+            // 4. Handle Result
+            if (result.success) {
+                console.log("✅ Database Insert Success!");
+                alert(`Successfully saved 3 vectors for ${hn}!`);
+                setHn(""); 
+                setCaptures([]);
+            } else {
+                console.error("❌ Database Insert Failed:", result.error);
+                alert("Failed to save to database: " + result.error);
+            }
+
+        } catch (err: any) {
+            console.error("❌ System Error:", err);
+            alert("System Error: " + err.message);
+        }
     };
 
 

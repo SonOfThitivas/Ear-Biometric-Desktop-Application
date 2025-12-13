@@ -40,6 +40,8 @@ export interface IElectronAPI {
   deactivateChild: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   deactivateParent: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   searchMultiCriteria: (hn: string, fname: string, lname: string) => Promise<any[]>;
+  insertChildVectors: (hn: string, v1: number[], v2: number[], v3: number[], folder: string) => Promise<{ success: boolean; error?: string }>;
+  insertParentVectors: (hn: string, v1: number[], v2: number[], v3: number[], folder: string) => Promise<{ success: boolean; error?: string }>;
   
   hardDeleteChild: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   hardDeleteParent: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;

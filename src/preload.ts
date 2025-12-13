@@ -16,4 +16,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   hardDeleteChild: (hn: string) => ipcRenderer.invoke('db:hard-delete-child', hn),
   hardDeleteParent: (hn: string) => ipcRenderer.invoke('db:hard-delete-parent', hn),
   identifyPerson: (vector: number[]) => ipcRenderer.invoke('db:identify-person', vector),
+  insertChildVectors: (hn: string, v1: number[], v2: number[], v3: number[], folder: string) => 
+    ipcRenderer.invoke('db:insert-child-vectors', { hn, v1, v2, v3, folder }),
+
+  insertParentVectors: (hn: string, v1: number[], v2: number[], v3: number[], folder: string) => 
+    ipcRenderer.invoke('db:insert-parent-vectors', { hn, v1, v2, v3, folder }),
 });
