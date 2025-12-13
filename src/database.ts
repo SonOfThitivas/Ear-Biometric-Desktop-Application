@@ -290,18 +290,41 @@ export const insertParentVectors = async (hn: string, v1: number[], v2: number[]
 // 14 - 17. UPDATE STATUS (Soft Delete)
 // ==========================================
 
-// 14. Deactivate Child
+// 14. Deactivate Child (AND their vectors)
 export const deactivateChild = async (hn: string) => {
   try {
-    await getClient().query(`UPDATE child SET active_status = '0' WHERE hn_number = $1`, [hn]);
+    const client = getClient(); // Ensure we have the active connection
+    
+    // 1. Deactivate the Child Record
+    const res = await client.query(`UPDATE child SET active_status = '0' WHERE hn_number = $1`, [hn]);
+    
+    // Check if the child actually existed
+    if (res.rowCount === 0) {
+        return { success: false, message: `HN ${hn} not found.` };
+    }
+
+    // 2. Deactivate the associated Vectors (Best Practice)
+    await client.query(`UPDATE identity_vector_child SET active_status = '0' WHERE child_hn_number = $1`, [hn]);
+
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
 
-// 15. Deactivate Parent
+// 15. Deactivate Parent (AND their vectors)
 export const deactivateParent = async (hn: string) => {
   try {
-    await getClient().query(`UPDATE parent SET active_status = '0' WHERE hn_number = $1`, [hn]);
+    const client = getClient();
+
+    // 1. Deactivate the Parent Record
+    const res = await client.query(`UPDATE parent SET active_status = '0' WHERE hn_number = $1`, [hn]);
+
+    if (res.rowCount === 0) {
+        return { success: false, message: `HN ${hn} not found.` };
+    }
+
+    // 2. Deactivate the associated Vectors
+    await client.query(`UPDATE identity_vector_parent SET active_status = '0' WHERE parent_hn_number = $1`, [hn]);
+
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -332,27 +355,31 @@ export const loginOperator = async (username: string, pass: string) => {
 
     console.log(`🔐 [DB] Checking credentials for: ${username}`);
     
-    // 1. Hash the input password immediately
     const hashedPassword = hashPassword(pass);
 
-    // 2. Compare HASH vs HASH in the database
-    // IMPORTANT: Select 'role' here so we can use it for the logic below
+    // 1. SELECT ONLY EXISTING COLUMNS (No 'role')
     const query = `SELECT op_number, username FROM operator WHERE username = $1 AND password = $2`;
     
     try {
         const res = await client!.query(query, [username, hashedPassword]);
+
         if (res.rows.length > 0) {
             const op = res.rows[0];
             console.log(`✅ [DB] Login valid for ${op.username}`);
 
-            // Reconnect logic: Check the database Role, not just the username
-            if (op.username === 'admin') {
+            // 2. DETERMINE ROLE IN CODE (Hardcoded Admin Check)
+            // If username is 'admin', they are Admin. Everyone else is User.
+            const determinedRole = (op.username === 'admin') ? 'admin' : 'user';
+
+            // 3. SWITCH CONNECTION BASED ON DETERMINED ROLE
+            if (determinedRole === 'admin') {
                 await connectAs('admin'); 
             } else {
                 await connectAs('user');
             }
 
-            return { success: true, op_number: op.op_number, role: op.username };
+            // 4. Return the determined role to the UI
+            return { success: true, op_number: op.op_number, role: determinedRole };
         }
         return { success: false, message: "Invalid credentials" };
     } catch (error: any) { 
@@ -363,27 +390,22 @@ export const loginOperator = async (username: string, pass: string) => {
 
 // 19. Hard Delete (For Admin Use Only)
 export const hardDeleteChild = async (hn: string) => {
-    // If client is null, ensure we are connected
     if (!client) throw new Error("Database not connected");
-
-    console.log(`🔥 [DB] Attempting HARD DELETE on ${hn}...`);
-    // This query will FAIL if the current role is 'app_user'
-    await client.query(`DELETE FROM child WHERE hn_number = $1`, [hn]);
+    try {
+        const res = await client.query(`DELETE FROM child WHERE hn_number = $1`, [hn]);
+        if (res.rowCount === 0) return { success: false, message: `HN ${hn} not found.` };
+        return { success: true };
+    } catch (error: any) { return { success: false, message: error.message }; }
 };
-
 
 // 20. Hard Delete Parent (For Admin Use Only)
 export const hardDeleteParent = async (hn: string) => {
-    // If client is null, ensure we are connected
     if (!client) throw new Error("Database not connected");
-
-    console.log(`🔥 [DB] Attempting HARD DELETE on Parent ${hn}...`);
-    
-    // Because we set up CASCADE in SQL, this single line deletes:
-    // 1. The Parent record
-    // 2. Their Vectors (identity_vector_parent)
-    // 3. Their Relations (parent_child, operator_parent)
-    await client.query(`DELETE FROM parent WHERE hn_number = $1`, [hn]);
+    try {
+        const res = await client.query(`DELETE FROM parent WHERE hn_number = $1`, [hn]);
+        if (res.rowCount === 0) return { success: false, message: `HN ${hn} not found.` };
+        return { success: true };
+    } catch (error: any) { return { success: false, message: error.message }; }
 };
 
 // 21. Multi-Criteria Search (Handles any combination of HN, Firstname, Lastname)

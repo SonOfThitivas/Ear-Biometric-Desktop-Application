@@ -12,8 +12,11 @@ import {
 import { TbAlertCircle } from "react-icons/tb";
 
 function Login(
-    {setOperatorNumberParent}:
-    {setOperatorNumberParent:React.Dispatch<React.SetStateAction<string>>}
+    {setOperatorNumberParent, setRoleParent}: // <--- ADDED setRoleParent
+    {
+        setOperatorNumberParent:React.Dispatch<React.SetStateAction<string>>,
+        setRoleParent:React.Dispatch<React.SetStateAction<string>> // <--- ADDED TYPE
+    }
 ) {
     const tbAlertCircle = <TbAlertCircle/>
     const [alertError, setAlertError] = React.useState<boolean>(false)  // alert error
@@ -23,6 +26,9 @@ function Login(
     const [usernameError, setUsernameError] = React.useState<string>("")    // username was not filled
     const [passwordError, setPasswordError] = React.useState<string>("")    // password was not filled
     const [operatorNumber, setOperatorNumber] = React.useState<string>("") // operator number
+    
+    const [role, setRole] = React.useState<string>("") // <--- ADDED ROLE STATE
+    
     const [success, setSuccess] = React.useState<boolean>(false)    // when get login and get operator number
     
     React.useEffect(()=>{
@@ -31,12 +37,13 @@ function Login(
         if (success) {
             // get operator number
             setOperatorNumberParent(operatorNumber)
+            setRoleParent(role) // <--- SEND ROLE TO PARENT
             setLoading(false)
         }
         else {
             setLoading(false)
         }
-    }, [username, password, operatorNumber, success, loading])
+    }, [username, password, operatorNumber, role, success, loading, setOperatorNumberParent, setRoleParent]) // Added deps
 
     // handle transition and alert
     const handleTransition = () => {
@@ -70,12 +77,12 @@ function Login(
             console.log("🚀 [UI] Sending login request...");
             
             // Call Electron Main Process
-            // Note: Make sure loginOperator is exposed in preload.ts
             const result = await window.electronAPI.loginOperator(username, pass);
 
             if (result.success) {
                 console.log("✅ [UI] Login Success! Operator:", result.op_number);
                 setOperatorNumber(result.op_number); // Store OP Number
+                setRole(result.role); // <--- STORE ROLE
                 setSuccess(true); // Triggers useEffect to finish loading
                 return 0;
             } else {

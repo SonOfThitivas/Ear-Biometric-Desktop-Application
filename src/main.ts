@@ -125,4 +125,12 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:search-multi', async (_event, { hn, firstname, lastname }) => {
     return await db.searchMultiCriteria(hn, firstname, lastname);
   });
+
+  ipcMain.handle('db:hard-delete-child', async (_event, hn: string) => {
+    return await db.hardDeleteChild(hn);
+  });
+
+  ipcMain.handle('db:hard-delete-parent', async (_event, hn: string) => {
+    return await db.hardDeleteParent(hn);
+  });
 });

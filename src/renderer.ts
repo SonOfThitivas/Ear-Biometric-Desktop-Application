@@ -33,10 +33,15 @@ export interface IElectronAPI {
   // ... existing ...
   
   // NEW
-  loginOperator: (username: string, password: string) => Promise<{ success: boolean, op_number?: string, message?: string }>;
+  loginOperator: (username: string, password: string) => Promise<{ success: boolean, op_number?: string,role?: string, message?: string }>;
   searchByHN: (hn: string) => Promise<any[]>;
   searchByFirstname: (name: string) => Promise<any[]>;
   searchByLastname: (name: string) => Promise<any[]>;
+  deactivateChild: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  deactivateParent: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  
+  hardDeleteChild: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  hardDeleteParent: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
 }
 
 declare global {

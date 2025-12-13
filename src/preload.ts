@@ -11,4 +11,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   searchByFirstname: (name: string) => ipcRenderer.invoke('db:search-firstname', name),
   searchByLastname: (name: string) => ipcRenderer.invoke('db:search-lastname', name),
   searchMultiCriteria: (hn: string, f: string, l: string) => ipcRenderer.invoke('db:search-multi', { hn, firstname: f, lastname: l }),
+  deactivateChild: (hn: string) => ipcRenderer.invoke('db:deactivate-child', hn),
+  deactivateParent: (hn: string) => ipcRenderer.invoke('db:deactivate-parent', hn),
+  hardDeleteChild: (hn: string) => ipcRenderer.invoke('db:hard-delete-child', hn),
+  hardDeleteParent: (hn: string) => ipcRenderer.invoke('db:hard-delete-parent', hn),
 });

@@ -17,29 +17,42 @@ import {
 import Identify from './identify';
 import Login from './components/login';
 import Record from './record';
-
-const tabList = [
-    {label: "Identify", child:<Identify/>},
-    {label: "Registry", child:null},
-    {label: "Update", child:null},
-    {label: "Delete", child:null},
-    {label: "Record", child:<Record/>},
-]
+import Delete from './delete';
 
 const App = () => {
-    const [active, setActive] = React.useState<string>("Identify");
+    const [active, setActive] = React.useState<string | null>("Identify");
     const [operatorNumber, setOperatorNumber] = React.useState<string>("")
+    
+    // 1. Add Role State
+    const [role, setRole] = React.useState<string>("")
+
+    // 2. Move tabList inside to access 'role'
+    const tabList = [
+        {label: "Identify", child:<Identify/>},
+        {label: "Registry", child:null},
+        {label: "Update", child:null},
+        // 3. Pass role to Delete
+        {label: "Delete", child:<Delete role={role}/>}, 
+        {label: "Record", child:<Record/>},
+    ]
 
     return (
         <MantineProvider>
-            {operatorNumber === "" && <Login setOperatorNumberParent={setOperatorNumber}/>}
+            {/* 4. Pass setRoleParent to Login */}
+            {operatorNumber === "" && (
+                <Login 
+                    setOperatorNumberParent={setOperatorNumber} 
+                    setRoleParent={setRole}
+                />
+            )}
+
             {operatorNumber !== "" &&  
                 <Box component='div'>
-                    <Tabs defaultValue={active} variant="default" onChange={setActive}>
+                    <Tabs defaultValue="Identify" variant="default" value={active} onChange={setActive}>
                         <Tabs.List justify='center' grow>
                             {
                             tabList.map((item, index) => (
-                                <Tabs.Tab value={item.label} p={"lg"}>
+                                <Tabs.Tab key={item.label} value={item.label} p={"lg"}>
                                     {item.label}
                                 </Tabs.Tab>
                             ))
@@ -48,6 +61,7 @@ const App = () => {
                         {
                             tabList.map((item, index) => (
                                 <Tabs.Panel 
+                                    key={item.label}
                                     w={"100%"} 
                                     maw={"100%"} 
                                     // bd={"1px red solid"}
@@ -66,8 +80,7 @@ const App = () => {
     )
 }
 
-const root = createRoot(document.getElementById("root"));
+const root = createRoot(document.getElementById("root")!);
 root.render(
     <App/>
 );
-
