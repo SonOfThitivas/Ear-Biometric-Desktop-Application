@@ -15,4 +15,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deactivateParent: (hn: string) => ipcRenderer.invoke('db:deactivate-parent', hn),
   hardDeleteChild: (hn: string) => ipcRenderer.invoke('db:hard-delete-child', hn),
   hardDeleteParent: (hn: string) => ipcRenderer.invoke('db:hard-delete-parent', hn),
+  identifyPerson: (vector: number[]) => ipcRenderer.invoke('db:identify-person', vector),
 });

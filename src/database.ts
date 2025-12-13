@@ -461,3 +461,63 @@ export const searchMultiCriteria = async (hn: string, fname: string, lname: stri
         return []; 
     }
 };
+
+// ==========================================
+// 22. VECTOR SEARCH (Cosine Distance)
+// ==========================================
+
+// Helper query for Vector Search
+// We calculate the distance for v1, v2, and v3, then take the smallest (LEAST)
+// Then we order by that smallest distance to find the absolute closest match.
+export const findClosestChild = async (vector: number[]) => {
+    // Format vector for pgvector (string format "[1,2,3...]")
+    const vectorStr = JSON.stringify(vector);
+
+    const query = `
+        SELECT 
+            child_hn_number as hn,
+            LEAST(
+                vector_1 <=> $1,
+                vector_2 <=> $1,
+                vector_3 <=> $1
+            ) as distance
+        FROM identity_vector_child
+        WHERE active_status = '1'
+        ORDER BY distance ASC
+        LIMIT 1;
+    `;
+
+    try {
+        const res = await getClient().query(query, [vectorStr]);
+        return res.rows[0] || null; // Returns { hn: 'C-001', distance: 0.123 } or null
+    } catch (error: any) {
+        console.error("❌ [DB] Child Vector Search Failed:", error.message);
+        return null;
+    }
+};
+
+export const findClosestParent = async (vector: number[]) => {
+    const vectorStr = JSON.stringify(vector);
+
+    const query = `
+        SELECT 
+            parent_hn_number as hn,
+            LEAST(
+                vector_1 <=> $1,
+                vector_2 <=> $1,
+                vector_3 <=> $1
+            ) as distance
+        FROM identity_vector_parent
+        WHERE active_status = '1'
+        ORDER BY distance ASC
+        LIMIT 1;
+    `;
+
+    try {
+        const res = await getClient().query(query, [vectorStr]);
+        return res.rows[0] || null;
+    } catch (error: any) {
+        console.error("❌ [DB] Parent Vector Search Failed:", error.message);
+        return null;
+    }
+};

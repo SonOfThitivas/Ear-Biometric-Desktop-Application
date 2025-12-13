@@ -42,6 +42,13 @@ export interface IElectronAPI {
   
   hardDeleteChild: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   hardDeleteParent: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  identifyPerson: (vector: number[]) => Promise<{ 
+      success: boolean; 
+      hn?: string; 
+      distance?: number; // The cosine distance score
+      type?: 'child' | 'parent'; // Who did we match?
+      message?: string; 
+  }>;
 }
 
 declare global {
