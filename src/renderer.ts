@@ -39,6 +39,7 @@ export interface IElectronAPI {
   searchByLastname: (name: string) => Promise<any[]>;
   deactivateChild: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   deactivateParent: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  searchMultiCriteria: (hn: string, fname: string, lname: string) => Promise<any[]>;
   
   hardDeleteChild: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   hardDeleteParent: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
