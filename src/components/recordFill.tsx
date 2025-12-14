@@ -11,12 +11,12 @@ import {
     DateInput
 } from "@mantine/dates";
 import dayjs from 'dayjs';
-import IResult from '../interface/IResult';
+import IRecord from '../interface/IRecord';
 
 function RecordFill(
     {record, setRecord}:{
-    record:IResult,
-    setRecord:React.Dispatch<React.SetStateAction<IResult>>
+    record:IRecord,
+    setRecord:React.Dispatch<React.SetStateAction<IRecord>>
 }) {
 
     return (
@@ -27,7 +27,7 @@ function RecordFill(
         p="md"
         align='end'
     >
-        <Grid.Col span={4}>
+        <Grid.Col span={6}>
             <TextInput
                 label="Hospital Number"
                 placeholder="Enter hospital number"
@@ -39,10 +39,11 @@ function RecordFill(
                 required
             />
         </Grid.Col>
-        <Grid.Col span={4}>
+        <Grid.Col span={6}></Grid.Col>
+        <Grid.Col span={6}>
             <TextInput
                 label="First name"
-                placeholder="Enter firstname"
+                placeholder="Enter first name"
                 value={record.firstname}
                 onChange={(event)=>setRecord({
                     ...record,
@@ -51,10 +52,10 @@ function RecordFill(
                 required
             />
         </Grid.Col>
-        <Grid.Col span={4}>
+        <Grid.Col span={6}>
             <TextInput
                 label="Last name"
-                placeholder="Enter lastname"
+                placeholder="Enter last name"
                 value={record.lastname}
                 onChange={(event)=>setRecord({
                     ...record,
@@ -63,7 +64,7 @@ function RecordFill(
                 required
             />
         </Grid.Col>
-        <Grid.Col span={4}>
+        <Grid.Col span={6}>
             <NumberInput
                 label="Age"
                 placeholder="Enter age"
@@ -77,26 +78,25 @@ function RecordFill(
                 required
             />
         </Grid.Col>
-        <Grid.Col span={4}>
-            <DatesProvider settings={{locale:"th"}}>
+        <Grid.Col span={6}>
+            <DatesProvider settings={{locale:"en"}}>
                 <DateInput
                     // value={}
                     // onChange={}
-                    valueFormat='DD/MM/YYYY'
-                    clearable
+                    valueFormat='DD MMM YYYY'
                     label="Date of Birth"
-                    placeholder="DD/MM/YYYY"
+                    placeholder="DD MMM YYYY"
                     value={record.dob}
                     maxDate={dayjs().format('YYYY-MM-DD')}
                     onChange={(value)=>setRecord({
                     ...record,
-                    dob: value
+                    dob: dayjs(value).toDate()
                 })}
                     required
                 />
             </DatesProvider>
         </Grid.Col>
-        <Grid.Col span={4}>
+        <Grid.Col span={6}>
             <Radio.Group
                 // name={}
                 label="Sex"

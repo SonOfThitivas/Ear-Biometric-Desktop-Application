@@ -1,164 +1,216 @@
 import React from "react";
 import { 
     Box,
-    Stepper,
+    Switch,
     Title,
-    Button,
     Flex,
+    Button,
     Group,
     Alert,
+    Transition,
 } from "@mantine/core";
 
-import IResult from "./interface/IResult";
+import IRecord from "./interface/IRecord";
 import RecordFill from "./components/recordFill";
+import { TbAlertCircle } from "react-icons/tb"
 
-const recordInit: IResult = {
+const recordInit: IRecord = {
     hn: "",
     firstname: "",
     lastname: "",
     age: 0,
     sex: "",
-    dob: "",
-    // dob: Date | null
+    dob: null,
 }
 
 const Registry = () => {
-    const [active, setActive] = React.useState<number>(0)   // stepper
-    const [disable, setDisable] = React.useState<boolean>(true)  // next button enable
-    const [childRecord, setChildRecord] = React.useState<IResult>(recordInit)   // child record
-    const [parentRecord, setParentRecord] = React.useState<IResult>(recordInit) // parent record
+    const [patient, setPatient] = React.useState<string>("child")   // patient record fill
+    const [childRecord, setChildRecord] = React.useState<IRecord>(recordInit)   // child record
+    const [parentRecord, setParentRecord] = React.useState<IRecord>(recordInit) // parent record
 
-    const handleReset = () => {
-        
-        if (active===0) {
-            setChildRecord(recordInit)
-            setParentRecord(recordInit)
-        }
-    }
+    const tbAlertCircle = <TbAlertCircle/>
+    const [alertBox, setAlertBox] = React.useState<boolean>(false)  // alert error
+    const [alertTitle, setAlertTitile] = React.useState<string>("") // alert tilte
+    const [alertMsg, setAlertMsg] = React.useState<string>("")  // alert message
+    const [colorAlert, setColorAlert] = React.useState<string>("red")
+    const [loading, setLoading] = React.useState<boolean>(false) // loading icon when click
 
     React.useEffect(()=>{
-        // console.log("child:", childRecord)
-        // console.log("parent:", parentRecord)
-        // console.log("\n\n")
-        if (active === 0){
-            if (
-                childRecord.hn !== "" &&
-                childRecord.firstname !== "" &&
-                childRecord.lastname !== "" &&
-                // childRecord.age !== 0 &&
-                childRecord.sex !== "" &&
-                childRecord.dob !== "" &&
-                parentRecord.hn !== "" &&
-                parentRecord.firstname !== "" &&
-                parentRecord.lastname !== "" &&
-                // parentRecord.age !== 0 &&
-                parentRecord.sex !== "" &&
-                parentRecord.dob !== ""
-            ) setDisable(false)
-            else setDisable(true)
+        console.log(patient)
+    },[patient])
+
+    // handle transition and alert
+    const handleTransition = () => {
+        const timeout = setTimeout((e)=>{
+            setAlertMsg("")
+            setAlertBox(false)
+            clearTimeout(timeout)
+        }, 5000)
+    }
+
+    const handleReset = () => {
+        setChildRecord(recordInit)
+        setParentRecord(recordInit)
+    }
+
+    const handlePatientSwitch = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.currentTarget.value === "parent") setPatient("child")
+        else setPatient("parent")
+    }
+
+    const handleSubmit = async () => {
+        setLoading(true)
+        
+        try {
+            if ((
+                (patient === "child") &&
+                (childRecord.hn === "" ||
+                childRecord.firstname === "" ||
+                childRecord.lastname === "" ||
+                childRecord.sex === "" ||
+                childRecord.dob === null)) ||
+                ((patient === "parent") && 
+                (parentRecord.hn === "" ||
+                parentRecord.firstname === "" ||
+                parentRecord.lastname === "" ||
+                parentRecord.sex === "" ||
+                parentRecord.dob === null))
+            ) {
+                // all the records that were on each mode, were not filled
+                throw new Error("All the records were not filled.")
+            } else if (patient !== "child" && patient !== "parent") {
+                // schematic error
+                throw new Error("Something went wrong. Please, try again.")
+            }
+
+            if (patient === "child") {
+                // insert child
+                const res = await window.electronAPI.insertChild(childRecord);
+            }
+            else {
+                // insert parent
+                const res = await window.electronAPI.insertParent(parentRecord);
+            }
+
+            const res = {success:1}
+
+            if (res.success){
+                // success
+                setAlertBox(true);
+                setAlertTitile("Success")
+                setAlertMsg("Registration Successfully");
+                setColorAlert("green")
+                // reset the record fills.
+                if (patient === "child") setChildRecord(recordInit)
+                else setParentRecord(recordInit)
+            } else {
+                throw new Error("Registration unsuccessfully, something went wrong. Please, try again.")
+            }
+
+        } catch (err){
+            setAlertBox(true);
+            setAlertTitile("Error")
+            setAlertMsg(err.message);
+            setColorAlert("red")
         }
-    },[childRecord, parentRecord])
+       
+        setLoading(false)
+    }
 
+
+    
     return (
-    <Box component="div">
-        {/* registeration step */}
-        <Box component="div" p={"md"}>
-            <Stepper 
-                active={active} 
-                iconPosition="right" 
-                onStepClick={setActive}
-            >
-                <Stepper.Step label="Step 1" description="Fill record">
-                    <Flex 
-                        direction={"column"} 
-                        align={"center"} 
-                        bd={"2 solid black"} 
-                        bdrs={"sm"}
-                        p={"sm"}
-                    >
-                        <Title order={3}>Record</Title>
-                        {/* child record */}
-                        <Box 
-                            component='div' 
-                            w={"100%"}
-                            p={"sm"} 
-                            m={"sm"} 
-                            bd={"2px black solid"} 
-                            bdrs={"sm"}
-                        >
-                            <Title order={4}>Child</Title>
-                            <RecordFill record={childRecord} setRecord={setChildRecord}/>
-                        </Box>
-                        {/* parent record */}
-                        <Box 
-                            component='div' 
-                            w={"100%"}
-                            p={"sm"} 
-                            m={"sm"} 
-                            bd={"2px black solid"} 
-                            bdrs={"sm"}
-                        >
-                            <Title order={4}>Parent</Title>
-                            <RecordFill record={parentRecord} setRecord={setParentRecord}/>
-                        </Box>
-                    </Flex>
-                    
-                </Stepper.Step>
-
-                <Stepper.Step label="Step 2" description="Child's ear capturing" >
-                    Child's ear capturing
-                </Stepper.Step>
-
-                <Stepper.Step label="Step 3" description="Parent's ear capturing" >
-                    Parent's ear capturing
-                </Stepper.Step>
-
-                <Stepper.Completed>
-                    Completed, click back button to get to previous step
-                </Stepper.Completed>
-            </Stepper>
-        </Box>
-
-        {/* button step controller */}
-        <Flex 
-            mb={"md"} 
-            justify={"center"} 
-            bottom={0}
-            w={"100%"}
-            pos={"fixed"}
-        >
-            <Group grow>
-                <Button 
-                    variant="filled" 
-                    color="red" 
-                    size="md"
-                    disabled={active===0}
-                    onClick={()=>setActive(active-1)}
+        <Box component="div">
+            <Box component="div" p={"md"}>
+                <Flex 
+                    direction={"column"} 
+                    align={"center"} 
+                    p={"sm"}
                 >
-                    back
-                </Button>
+                    <Title order={3}>Record</Title>
+                    <Switch
+                        defaultChecked
+                        labelPosition="left"
+                        label="Patient"
+                        size="xl"
+                        radius="xs"
+                        onLabel="Child"
+                        offLabel="Parent"
+                        p="sm"
+                        value={patient}
+                        onChange={(event)=>handlePatientSwitch(event)}
+                    />
+                    {/* record fill*/}
+                    <Box 
+                        component='div' 
+                        maw={"75%"}
+                        p={"sm"} 
+                        m={"sm"} 
+                        bd={"2px black solid"} 
+                        bdrs={"sm"}
+                    >
+                        <Title order={4}>{patient === "child" ? "Child" : "Parent"}</Title>
+                        <RecordFill 
+                            record={patient === "child" ? childRecord : parentRecord} 
+                            setRecord={patient === "child" ? setChildRecord : setParentRecord}
+                        />
+                    </Box>
+                </Flex>
+            </Box>
 
+            {/* button step controller */}
+            <Group
+                pos={"fixed"}
+                justify={"center"} 
+                bottom={0}
+                w={"100%"}
+                pb={"md"}
+            >
                 <Button
                     variant="filled" 
                     color="yellow" 
                     size="md"
                     onClick={handleReset}
                 >
-                    reset
+                    Reset
                 </Button>
-
                 <Button 
                     variant="filled" 
-                    color="blue" 
+                    color="green" 
                     size="md"
-                    disabled={disable || (active === 3)}
-                    onClick={()=>setActive(active+1)}
+                    loading={loading}
+                    onClick={handleSubmit}   
                 >
-                    Next
+                    Submit
                 </Button>
             </Group>
-        </Flex>
-    </Box>
+            {/* alert when error */}
+            <Transition
+                mounted={alertBox}
+                transition="fade-left"
+                duration={400}
+                timingFunction="ease"
+                keepMounted
+                onEntered={handleTransition}
+            >
+                {(styles) => 
+                <Alert
+                    pos={"fixed"}
+                    w={"25%"}
+                    right={"1rem"}
+                    bottom={"1rem"}
+                    variant="filled" 
+                    color={colorAlert} 
+                    title={alertTitle}
+                    icon={tbAlertCircle}
+                    onClose={()=>setAlertBox(false)}
+                    withCloseButton
+                    style={styles}
+                >
+                    {alertMsg}
+                </Alert>}
+            </Transition>
+        </Box>
     )
 }
 
