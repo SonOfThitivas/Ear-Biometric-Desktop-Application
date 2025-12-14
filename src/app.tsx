@@ -19,6 +19,7 @@ import Login from './components/login';
 import Record from './record';
 import Delete from './delete';
 import Update from './update'
+import Registry from './registry';
 
 const App = () => {
     const [active, setActive] = React.useState<string | null>("Identify");
@@ -27,12 +28,12 @@ const App = () => {
     // 1. Add Role State
     const [role, setRole] = React.useState<string>("")
 
+
     // 2. Move tabList inside to access 'role'
     const tabList = [
         {label: "Identify", child:<Identify/>},
         {label: "Registry", child:null},
         {label: "Update", child:<Update/>},
-        // 3. Pass role to Delete
         {label: "Delete", child:<Delete role={role}/>}, 
         {label: "Record", child:<Record/>},
     ]
