@@ -137,11 +137,22 @@ app.whenReady().then(async () => {
     return await db.hardDeleteParent(hn);
   });
 
-  ipcMain.handle('db:insert-child-vectors', async (_event, { hn, v1, v2, v3, folder }) => {
-    return await db.insertChildVectors(hn, v1, v2, v3, folder);
+  // ipcMain.handle('db:insert-child-vectors', async (_event, { hn, v1, v2, v3, folder }) => {
+  //   return await db.insertChildVectors(hn, v1, v2, v3, folder);
+  // });
+
+  // ipcMain.handle('db:insert-parent-vectors', async (_event, { hn, v1, v2, v3, folder }) => {
+  //   return await db.insertParentVectors(hn, v1, v2, v3, folder);
+  // });
+
+
+  ipcMain.handle("findClosestChild", async (event, vector) => {
+      return await db.findClosestChild(vector); // your DB logic
   });
 
-  ipcMain.handle('db:insert-parent-vectors', async (_event, { hn, v1, v2, v3, folder }) => {
-    return await db.insertParentVectors(hn, v1, v2, v3, folder);
+  ipcMain.handle("findClosestParent", async (event, vector) => {
+      return await db.findClosestParent(vector);
   });
+
+
 });
