@@ -52,6 +52,24 @@ export interface IElectronAPI {
       type?: 'child' | 'parent'; // Who did we match?
       message?: string; 
   }>;
+
+  insertChild: (data: { 
+    hn: string; 
+    firstname: string; 
+    lastname: string; 
+    age: number; 
+    dob: string; 
+    sex: string; 
+  }) => Promise<{ success: boolean; error?: string }>;
+
+  insertParent: (data: { 
+    hn: string; 
+    firstname: string; 
+    lastname: string; 
+    age: number; 
+    dob: string; 
+    sex: string; 
+  }) => Promise<{ success: boolean; error?: string }>;
 }
 
 declare global {

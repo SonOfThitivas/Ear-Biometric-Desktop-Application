@@ -32,7 +32,7 @@ const App = () => {
     // 2. Move tabList inside to access 'role'
     const tabList = [
         {label: "Identify", child:<Identify/>},
-        {label: "Registry", child:null},
+        {label: "Registry", child:<Registry/>},
         {label: "Update", child:<Update/>},
         {label: "Delete", child:<Delete role={role}/>}, 
         {label: "Record", child:<Record/>},

@@ -14,6 +14,7 @@ import IRecord from "./interface/IRecord";
 import RecordFill from "./components/recordFill";
 import { TbAlertCircle } from "react-icons/tb"
 
+// Initial state
 const recordInit: IRecord = {
     hn: "",
     firstname: "",
@@ -62,52 +63,56 @@ const Registry = () => {
         setLoading(true)
         
         try {
-            if ((
-                (patient === "child") &&
-                (childRecord.hn === "" ||
-                childRecord.firstname === "" ||
-                childRecord.lastname === "" ||
-                childRecord.sex === "" ||
-                childRecord.dob === null)) ||
-                ((patient === "parent") && 
-                (parentRecord.hn === "" ||
-                parentRecord.firstname === "" ||
-                parentRecord.lastname === "" ||
-                parentRecord.sex === "" ||
-                parentRecord.dob === null))
+            // 1. DETERMINE CURRENT RECORD & VALIDATE
+            const currentRecord = patient === "child" ? childRecord : parentRecord;
+
+            if (
+                !currentRecord.hn ||
+                !currentRecord.firstname ||
+                !currentRecord.lastname ||
+                !currentRecord.sex ||
+                !currentRecord.dob
             ) {
-                // all the records that were on each mode, were not filled
                 throw new Error("All the records were not filled.")
             } else if (patient !== "child" && patient !== "parent") {
-                // schematic error
                 throw new Error("Something went wrong. Please, try again.")
             }
 
+            // 2. PREPARE DATA (Convert Date to String, Force Types)
+            const payload = {
+                hn: currentRecord.hn as string,
+                firstname: currentRecord.firstname as string,
+                lastname: currentRecord.lastname as string,
+                age: Number(currentRecord.age),
+                sex: currentRecord.sex as string,
+                // Convert JS Date to "YYYY-MM-DD" string for Database
+                dob: currentRecord.dob.toISOString().split('T')[0] 
+            };
+
+            // 3. SEND TO DB
+            let res;
             if (patient === "child") {
-                // insert child
-                const res = await window.electronAPI.insertChild(childRecord);
-            }
-            else {
-                // insert parent
-                const res = await window.electronAPI.insertParent(parentRecord);
+                res = await window.electronAPI.insertChild(payload);
+            } else {
+                res = await window.electronAPI.insertParent(payload);
             }
 
-            const res = {success:1}
-
+            // 4. CHECK SUCCESS
             if (res.success){
-                // success
                 setAlertBox(true);
                 setAlertTitile("Success")
                 setAlertMsg("Registration Successfully");
                 setColorAlert("green")
+                
                 // reset the record fills.
                 if (patient === "child") setChildRecord(recordInit)
                 else setParentRecord(recordInit)
             } else {
-                throw new Error("Registration unsuccessfully, something went wrong. Please, try again.")
+                // Backend returned { success: false, error: "..." }
+                throw new Error(res.error || "Registration unsuccessfully.");
             }
 
-        } catch (err){
+        } catch (err: any){
             setAlertBox(true);
             setAlertTitile("Error")
             setAlertMsg(err.message);
@@ -117,8 +122,6 @@ const Registry = () => {
         setLoading(false)
     }
 
-
-    
     return (
         <Box component="div">
             <Box component="div" p={"md"}>

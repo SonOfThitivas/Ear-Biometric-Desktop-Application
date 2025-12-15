@@ -22,7 +22,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   insertParentVectors: (hn: string, v1: number[], v2: number[], v3: number[], folder: string) => 
     ipcRenderer.invoke('db:insert-parent-vectors', { hn, v1, v2, v3, folder }),
 
-  findClosestChild: (vector) => ipcRenderer.invoke("findClosestChild", vector),
-  findClosestParent: (vector) => ipcRenderer.invoke("findClosestParent", vector),
+  findClosestChild: (vector: number[]) => ipcRenderer.invoke("findClosestChild", vector),
+  findClosestParent: (vector: number[]) => ipcRenderer.invoke("findClosestParent", vector),
+
+  insertChild: (data: any) => ipcRenderer.invoke('db:insert-child', data),
+  insertParent: (data: any) => ipcRenderer.invoke('db:insert-parent', data),
 
 });

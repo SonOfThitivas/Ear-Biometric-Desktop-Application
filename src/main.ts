@@ -145,12 +145,19 @@ app.whenReady().then(async () => {
   //   return await db.insertParentVectors(hn, v1, v2, v3, folder);
   // });
 
+  // ipcMain.handle('db:insert-child', async (_event, data) => {
+  //   return await db.insertChild(data);
+  // });
 
-  ipcMain.handle("findClosestChild", async (event, vector) => {
+  // ipcMain.handle('db:insert-parent', async (_event, data) => {
+  //   return await db.insertParent(data);
+  // });
+
+  ipcMain.handle("findClosestChild", async (_event, vector: number[]) => {
       return await db.findClosestChild(vector); // your DB logic
   });
 
-  ipcMain.handle("findClosestParent", async (event, vector) => {
+  ipcMain.handle("findClosestParent", async (_event, vector: number[]) => {
       return await db.findClosestParent(vector);
   });
 
