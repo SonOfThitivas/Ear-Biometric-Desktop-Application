@@ -42,7 +42,7 @@ export interface IElectronAPI {
   searchMultiCriteria: (hn: string, fname: string, lname: string) => Promise<any[]>;
   insertChildVectors: (hn: string, v1: number[], v2: number[], v3: number[], folder: string) => Promise<{ success: boolean; error?: string }>;
   insertParentVectors: (hn: string, v1: number[], v2: number[], v3: number[], folder: string) => Promise<{ success: boolean; error?: string }>;
-  
+  linkParentChild: (parent_hn: string, child_hn: string) => Promise<{ success: boolean; error?: string }>;
   hardDeleteChild: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   hardDeleteParent: (hn: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   identifyPerson: (vector: number[]) => Promise<{ 

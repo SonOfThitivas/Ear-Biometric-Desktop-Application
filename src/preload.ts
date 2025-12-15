@@ -24,7 +24,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   findClosestChild: (vector: number[]) => ipcRenderer.invoke("findClosestChild", vector),
   findClosestParent: (vector: number[]) => ipcRenderer.invoke("findClosestParent", vector),
-
+  linkParentChild: (parent_hn: string, child_hn: string) => 
+      ipcRenderer.invoke('db:link-parent-child', { parent_hn, child_hn }),
   insertChild: (data: any) => ipcRenderer.invoke('db:insert-child', data),
   insertParent: (data: any) => ipcRenderer.invoke('db:insert-parent', data),
 

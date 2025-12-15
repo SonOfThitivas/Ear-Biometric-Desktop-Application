@@ -91,10 +91,7 @@ export default function Camera({ onInsideZoneChange }) {
         </button>
       </div>
 
-      {/* Debug JSON */}
-      <pre style={{ marginTop: "12px", fontSize: "10px", maxHeight: 200, overflow: "auto" }}>
-        {cameraData ? JSON.stringify(cameraData, null, 2) : "No data yet"}
-      </pre>
+
 
       {/* Camera View */}
       <div style={{ position: "relative", width: "640px", maxWidth: "100%" }}>
