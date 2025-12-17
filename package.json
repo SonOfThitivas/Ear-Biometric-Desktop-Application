@@ -45,6 +45,7 @@
   "dependencies": {
     "@mantine/core": "^8.3.9",
     "@mantine/dates": "^8.3.9",
+    "@mantine/form": "^8.3.10",
     "@mantine/hooks": "^8.3.9",
     "dayjs": "^1.11.19",
     "electron-squirrel-startup": "^1.0.1",

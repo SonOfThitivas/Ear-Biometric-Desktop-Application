@@ -6,7 +6,7 @@ const { Client } = pg;
 const DB_CONFIG = {
   host: 'localhost',
   database: 'ear_db',
-  port: 5437,
+  port: 5433,
 };
 
 // Credentials for our 3 Roles

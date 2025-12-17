@@ -1,5 +1,6 @@
 import React from 'react'
 import { 
+    Box,
     Flex,
     Title,
     Input,
@@ -8,8 +9,12 @@ import {
     Button,
     Alert,
     Transition,
+    Group,
+    LoadingOverlay,
 } from '@mantine/core'
 import { TbAlertCircle } from "react-icons/tb";
+import { useForm } from '@mantine/form';
+import { AiOutlineEnter } from "react-icons/ai";
 
 function Login(
     {setOperatorNumberParent, setRoleParent}: // <--- ADDED setRoleParent
@@ -20,30 +25,36 @@ function Login(
 ) {
     const tbAlertCircle = <TbAlertCircle/>
     const [alertError, setAlertError] = React.useState<boolean>(false)  // alert error
-    const [username, setUsername] = React.useState<string>("")  // username state
-    const [password, setPassword] = React.useState<string>("")  // password state
     const [loading, setLoading] = React.useState<boolean>(false) // loading icon when click
-    const [usernameError, setUsernameError] = React.useState<string>("")    // username was not filled
-    const [passwordError, setPasswordError] = React.useState<string>("")    // password was not filled
     const [operatorNumber, setOperatorNumber] = React.useState<string>("") // operator number
-    
     const [role, setRole] = React.useState<string>("") // <--- ADDED ROLE STATE
-    
     const [success, setSuccess] = React.useState<boolean>(false)    // when get login and get operator number
     
+    // React.useEffect(()=>{
+    //     if (visible === true) toggle()
+    // }, [visible])
+
+    const form = useForm({
+        mode: 'uncontrolled',
+        initialValues: {
+            username: "",
+            password: "",
+        },
+
+        validate: {
+            username: (value) => value.length === 0 ? "Username was not filled" : null,
+            password: (value) => value.length === 0 ? "Password was not filled" : null,
+        },
+    });
+    
     React.useEffect(()=>{
-        if (username !== "") setUsernameError("")   // username was filled, remove error
-        if (password !== "") setPasswordError("")   // password was filled, remove error
         if (success) {
             // get operator number
             setOperatorNumberParent(operatorNumber)
             setRoleParent(role) // <--- SEND ROLE TO PARENT
-            setLoading(false)
-        }
-        else {
-            setLoading(false)
-        }
-    }, [username, password, operatorNumber, role, success, loading, setOperatorNumberParent, setRoleParent]) // Added deps
+        } 
+
+    }, [operatorNumber, role, success, setOperatorNumberParent, setRoleParent]) // Added deps
 
     // handle transition and alert
     const handleTransition = () => {
@@ -55,20 +66,15 @@ function Login(
     }
 
     // handle when click confirm button
-    const handleConfirm = async () => {
+    const handleConfirm = async (values:{username:string, password:string}) => {
         setLoading(true)
 
-        if (username === "" || password === ""){
-            // username or password were not filled
-            if (username === "") setUsernameError("Please, enter your username")
-            if (password === "") setPasswordError("Please, enter your password")
-            setAlertError(true)
-        }
-        else
-        {
-            // query
-            const res = await fetchData(username, password) 
-        }
+        const username = values.username
+        const password = values.password
+
+        const res = await fetchData(username, password) 
+
+        setLoading(false)
     }
 
     // TODO: get operator number
@@ -97,6 +103,7 @@ function Login(
             console.error("❌ [UI] Error:", err);
             setSuccess(false);
             setAlertError(true);
+            setLoading(false)
             return 1;
         }
     }
@@ -108,6 +115,7 @@ function Login(
             justify={"center"}
             align={"center"}
         >
+            <LoadingOverlay  visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }}/>
             <Flex 
                 bd={"0.2rem black solid"}
                 bdrs={"xl"}
@@ -118,39 +126,52 @@ function Login(
             >
                 <Title order={1} m={"md"}>Login</Title>
 
-                <Input.Wrapper>
-                    <TextInput
-                        label="Username"
-                        placeholder="Enter your username"
-                        value={username}
-                        onChange={(event)=>setUsername(event.currentTarget.value)}
-                        error={usernameError}
-                        size={"xl"}
-                        m={"md"}
-                    />
-                    <PasswordInput
-                        label="Password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(event)=>setPassword(event.currentTarget.value)}
-                        error={passwordError}
-                        size={"xl"}
-                        m={"md"}
-                    />
-                </Input.Wrapper>
+                <form onSubmit={form.onSubmit((values) => handleConfirm(values))}>
+                    <Input.Wrapper>
+                        <TextInput
+                            label="Username"
+                            placeholder="Enter your username"
+                            // value={username}
+                            // onChange={(event)=>setUsername(event.currentTarget.value)}
+                            // error={usernameError}
+                            size={"xl"}
+                            m={"md"}
+                            key={form.key("username")}
+                            {...form.getInputProps('username')}
+                        />
+                        <PasswordInput
+                            label="Password"
+                            placeholder="Enter your password"
+                            // value={password}
+                            // onChange={(event)=>setPassword(event.currentTarget.value)}
+                            // error={passwordError}
+                            size={"xl"}
+                            m={"md"}
+                            key={form.key("password")}
+                            {...form.getInputProps('password')}
+                        />
+                    </Input.Wrapper>
+                    <Group>
 
-                <Button 
-                    variant='filled' 
-                    color='green'
-                    size='lg'
-                    w={"100%"} 
-                    m="xl"
-                    onClick={handleConfirm}
-                    loading={loading}
-                    loaderProps={{type:"oval"}}
-                >
-                    Confirm
-                </Button>
+                        <Button 
+                            type='submit'
+                            variant='filled' 
+                            color='green'
+                            size='lg'
+                            w={"100%"} 
+                            m="xl"
+                            loading={loading}
+                            loaderProps={{type:"oval"}
+                        }
+                        >   
+                            <Group>
+                                <Title order={4}>Confirm</Title>
+                                <AiOutlineEnter />
+                            </Group>
+                        </Button>
+                    </Group>
+                </form>
+
             </Flex>
 
             {/* alert when error */}
