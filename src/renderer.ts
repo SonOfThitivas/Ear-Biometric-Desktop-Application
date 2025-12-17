@@ -51,6 +51,8 @@ export interface IElectronAPI {
   
   linkParentChild: (parent_hn: string, child_hn: string) => Promise<{ success: boolean; error?: string }>;
   
+  unlinkParentChild: (parent_hn: string, child_hn: string, op_number: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+
   identifyPerson: (vector: number[]) => Promise<{ 
       success: boolean; 
       hn?: string; 
@@ -83,6 +85,7 @@ declare global {
     electronAPI: IElectronAPI;
   }
 }
+
 
 // console.log(
 //   '👋 This message is being logged by "renderer.ts", included via Vite',

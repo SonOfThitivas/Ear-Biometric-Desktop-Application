@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   insertChild: (data: any, op_number: string) => ipcRenderer.invoke('db:insert-child', { data, op_number }),
   insertParent: (data: any, op_number: string) => ipcRenderer.invoke('db:insert-parent', { data, op_number }),
 
-  
+  unlinkParentChild: (parent_hn: string, child_hn: string, op_number: string) => 
+      ipcRenderer.invoke('db:unlink-parent-child', { parent_hn, child_hn, op_number }),
 
 });

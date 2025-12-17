@@ -312,19 +312,24 @@ export const insertParentVectors = async (hn: string, v1: number[], v2: number[]
 // 14. Deactivate Child (AND their vectors)
 export const deactivateChild = async (hn: string, op_number: string) => {
   try {
-    const client = getClient(); // Ensure we have the active connection
+    const client = getClient(); 
     
-    // 1. Deactivate the Child Record
-    const res = await client.query(`UPDATE child SET active_status = '0' WHERE hn_number = $1`, [hn]);
+    // FIX: Add "AND active_status = '1'"
+    // This ensures we only deactivate if they are CURRENTLY active.
+    const res = await client.query(
+        `UPDATE child SET active_status = '0' WHERE hn_number = $1 AND active_status = '1'`, 
+        [hn]
+    );
     
-    // Check if the child actually existed
+    // If 0 rows affected, it means HN doesn't exist OR is already deactivated
     if (res.rowCount === 0) {
-        return { success: false, message: `HN ${hn} not found.` };
+        return { success: false, message: `HN ${hn} not found or already deactivated.` };
     }
 
-    // 2. Deactivate the associated Vectors (Best Practice)
+    // 2. Deactivate the associated Vectors
     await client.query(`UPDATE identity_vector_child SET active_status = '0' WHERE child_hn_number = $1`, [hn]);
 
+    // 3. Log
     await logActivity(op_number, `Soft Deleted Child HN: ${hn}`);
 
     return { success: true };
@@ -336,16 +341,20 @@ export const deactivateParent = async (hn: string, op_number: string) => {
   try {
     const client = getClient();
 
-    // 1. Deactivate the Parent Record
-    const res = await client.query(`UPDATE parent SET active_status = '0' WHERE hn_number = $1`, [hn]);
+    // FIX: Add "AND active_status = '1'"
+    const res = await client.query(
+        `UPDATE parent SET active_status = '0' WHERE hn_number = $1 AND active_status = '1'`, 
+        [hn]
+    );
 
     if (res.rowCount === 0) {
-        return { success: false, message: `HN ${hn} not found.` };
+        return { success: false, message: `HN ${hn} not found or already deactivated.` };
     }
 
     // 2. Deactivate the associated Vectors
     await client.query(`UPDATE identity_vector_parent SET active_status = '0' WHERE parent_hn_number = $1`, [hn]);
 
+    // 3. Log
     await logActivity(op_number, `Soft Deleted Parent HN: ${hn}`);
 
     return { success: true };
@@ -540,5 +549,27 @@ export const findClosestParent = async (vector: number[]) => {
     } catch (error: any) {
         console.error("❌ [DB] Parent Vector Search Failed:", error.message);
         return null;
+    }
+};
+
+// 23: Unlink Parent and Child
+export const unlinkParentChild = async (parent_hn: string, child_hn: string, op_number: string) => {
+    const query = `DELETE FROM parent_child WHERE parent_hn_number = $1 AND child_hn_number = $2`;
+    
+    try {
+        const client = getClient();
+        const res = await client.query(query, [parent_hn, child_hn]);
+
+        if (res.rowCount === 0) {
+            return { success: false, message: "Relation link not found." };
+        }
+
+        // Log the action
+        await logActivity(op_number, `Unlinked Parent ${parent_hn} and Child ${child_hn}`);
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("❌ [DB] Unlink Failed:", error.message);
+        return { success: false, error: error.message };
     }
 };

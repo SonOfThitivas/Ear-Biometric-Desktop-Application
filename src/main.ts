@@ -163,5 +163,8 @@ app.whenReady().then(async () => {
       return await db.findClosestParent(vector);
   });
 
+  ipcMain.handle('db:unlink-parent-child', async (_event, { parent_hn, child_hn, op_number }) => {
+    return await db.unlinkParentChild(parent_hn, child_hn, op_number);
+  });
 
 });
