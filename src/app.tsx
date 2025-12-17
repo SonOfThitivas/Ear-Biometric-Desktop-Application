@@ -14,6 +14,9 @@ import {
     Flex
 } from '@mantine/core';
 
+import {  TbUserScan} from "react-icons/tb";
+import { FcAddDatabase, FcDeleteDatabase, FcButtingIn, FcConferenceCall } from "react-icons/fc";
+
 import Identify from './identify';
 import Login from './components/login';
 import Record from './record';
@@ -23,7 +26,8 @@ import Registry from './registry';
 
 const App = () => {
     const [active, setActive] = React.useState<string | null>("Identify");
-    const [operatorNumber, setOperatorNumber] = React.useState<string>("")
+    // const [operatorNumber, setOperatorNumber] = React.useState<string>("")
+    const [operatorNumber, setOperatorNumber] = React.useState<string>("gfdgdfsgfds")
     
     // 1. Add Role State
     const [role, setRole] = React.useState<string>("")
@@ -31,11 +35,11 @@ const App = () => {
 
     // 2. Move tabList inside to access 'role'
     const tabList = [
-        {label: "Identify", child:<Identify/>},
-        {label: "Registry", child:<Registry/>},
-        {label: "Update", child:<Update/>},
-        {label: "Delete", child:<Delete role={role}/>}, 
-        {label: "Record", child:<Record/>},
+        {label: "Identify", child:<Identify/>, icon:<TbUserScan size={30}/>},
+        {label: "Registry", child:<Registry/>, icon:<FcAddDatabase size={30}/>},
+        {label: "Update", child:<Update/>, icon:<FcButtingIn size={30}/>},
+        {label: "Delete", child:<Delete role={role}/>, icon:<FcDeleteDatabase size={30}/>}, 
+        {label: "Record", child:<Record/>, icon:<FcConferenceCall size={30}/>},
     ]
 
     return (
@@ -54,7 +58,11 @@ const App = () => {
                         <Tabs.List justify='center' grow>
                             {
                             tabList.map((item, index) => (
-                                <Tabs.Tab key={item.label} value={item.label} p={"lg"}>
+                                <Tabs.Tab 
+                                    key={item.label} 
+                                    value={item.label} 
+                                    leftSection={item.icon !== null ? item.icon : null}
+                                >
                                     {item.label}
                                 </Tabs.Tab>
                             ))
