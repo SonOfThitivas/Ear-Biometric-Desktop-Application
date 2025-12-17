@@ -1,6 +1,5 @@
 import React from 'react'
 import { 
-    Box,
     Flex,
     Title,
     Input,
@@ -30,10 +29,6 @@ function Login(
     const [role, setRole] = React.useState<string>("") // <--- ADDED ROLE STATE
     const [success, setSuccess] = React.useState<boolean>(false)    // when get login and get operator number
     
-    // React.useEffect(()=>{
-    //     if (visible === true) toggle()
-    // }, [visible])
-
     const form = useForm({
         mode: 'uncontrolled',
         initialValues: {

@@ -12,28 +12,37 @@ from ultralytics import YOLO
 from PIL import Image
 import onnxruntime as ort
 
-embed_session = ort.InferenceSession("src/model/child_model.onnx")
-yolo_model = YOLO("src/model/best.pt")
-input_name = embed_session.get_inputs()[0].name
-output_name = embed_session.get_outputs()[0].name
+from dotenv import load_dotenv
 
+load_dotenv()
 
 # --- Configuration ---
 # Folders to store output files
-RGB_FOLDER = "saved_images/RGB"
-DEPTH_FOLDER = "saved_images/Depth"
-PLY_FOLDER = "saved_images/PLY"
-EMBED_FOLDER = "saved_images/Embeddings"
+RGB_FOLDER = os.getenv("VITE_RGB_FOLDER")
+DEPTH_FOLDER = os.getenv("VITE_DEPTH_FOLDER")
+PLY_FOLDER = os.getenv("VITE_PLY_FOLDER")
+EMBED_FOLDER = os.getenv("VITE_EMBED_FOLDER")
+# RGB_FOLDER = "saved_images/RGB"
+# DEPTH_FOLDER = "saved_images/Depth"
+# PLY_FOLDER = "saved_images/PLY"
+# EMBED_FOLDER = "saved_images/Embeddings"
+
 # Create directories if they don't exist
 for folder in [RGB_FOLDER, DEPTH_FOLDER, PLY_FOLDER,EMBED_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
+CHILD_MODEL_PATH = os.getenv("VITE_CHILD_MODEL")
+YOLO_MODEL_PATH = os.getenv("VITE_YOLO_MODEL")
+embed_session = ort.InferenceSession(CHILD_MODEL_PATH)
+yolo_model = YOLO(YOLO_MODEL_PATH)
+# embed_session = ort.InferenceSession("src/model/child_model.onnx")
+# yolo_model = YOLO("src/model/best.pt")
+input_name = embed_session.get_inputs()[0].name
+output_name = embed_session.get_outputs()[0].name
 # Global flag to trigger image capture
 save_flag = False
 hn_value = None
 mode_value = None
-
-
 
 frame_count = 0
 YOLO_INTERVAL = 10   # run YOLO every 10 frames

@@ -1,3 +1,7 @@
 pyrealsense2
 numpy
 opencv-python
+ultralytics
+Pillow
+onnxruntime
+python-dotenv

@@ -21,14 +21,17 @@ let cameraProcess = null;
 
 // !!! IMPORTANT: UPDATE THIS PATH TO YOUR PYTHON EXECUTABLE !!!
 // Use double backslashes (\\) for Windows paths.
-const pythonCommand = 'D:\\miniconda33\\envs\\pytorch-gpu\\python.exe';
+// const pythonCommand = 'D:\\miniconda33\\envs\\pytorch-gpu\\python.exe';
+const pythonCommand = import.meta.env.VITE_PATH_PYTHON_ENV;
+// console.log(pythonCommand, typeof pythonCommand)
 
 function startCamera() {
     // Prevent starting multiple instances
     if (cameraProcess) return;
 
     console.log("Starting Python Camera Script...");
-    const scriptPath = path.join('./src/camera.py');
+    const scriptPath = import.meta.env.VITE_PATH_CAMERAPY;
+    // const scriptPath = path.join('./src/camera.py');
     console.log(scriptPath)
     
     // Spawn the Python process with unbuffered output (-u)
