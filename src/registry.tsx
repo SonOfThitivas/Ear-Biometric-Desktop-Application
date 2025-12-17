@@ -16,6 +16,10 @@ import IRecord from "./interface/IRecord";
 import RecordFill from "./components/recordFill";
 import { TbAlertCircle } from "react-icons/tb"
 
+interface RegistryProps {
+    operatorNumber: string;
+}
+
 // Initial state
 const recordInit: IRecord = {
     hn: "",
@@ -26,7 +30,7 @@ const recordInit: IRecord = {
     dob: null,
 }
 
-const Registry = () => {
+const Registry = ({ operatorNumber }: RegistryProps) => {
     const [patient, setPatient] = React.useState<string>("child")   // patient record fill
     const [childRecord, setChildRecord] = React.useState<IRecord>(recordInit)   // child record
     const [parentRecord, setParentRecord] = React.useState<IRecord>(recordInit) // parent record
@@ -73,35 +77,31 @@ const Registry = () => {
         try {
             const currentRecord = patient === "child" ? childRecord : parentRecord;
             const hn = currentRecord.hn;
+            // Check if user is trying to link
             const hasRelation = relationHN.trim() !== "";
             
-            // Check if user filled out the Full Profile (Name, Sex, DOB, etc.)
+            // Check if user filled out the Full Profile
             const isFullProfile = 
                 currentRecord.firstname && 
                 currentRecord.lastname && 
                 currentRecord.sex && 
                 currentRecord.dob;
 
-            // ---------------------------------------------------------
-            // VALIDATION LOGIC
-            // ---------------------------------------------------------
-
-            // 1. HN is always required
+            // 1. Validation
             if (!hn) {
                  throw new Error("Hospital Number (HN) is required.");
             }
 
-            // 2. Decide: Is this "Link Only" or "Full Registration"?
             if (!isFullProfile && !hasRelation) {
-                // If they didn't fill the profile AND didn't provide a relation to link, it's useless.
                 throw new Error("Please fill all fields to register, OR provide a Relation HN to link.");
             }
 
             // ---------------------------------------------------------
-            // STEP 1: INSERT (Only if Full Profile is provided)
+            // STEP 1: INSERT
             // ---------------------------------------------------------
+            let insertSuccess = false;
+
             if (isFullProfile) {
-                // Prepare Payload
                 const payload = {
                     hn: currentRecord.hn as string,
                     firstname: currentRecord.firstname as string,
@@ -111,31 +111,42 @@ const Registry = () => {
                     dob: currentRecord.dob!.toISOString().split('T')[0] 
                 };
 
-                // Insert to Database
+                // Add op_number to the call
                 let insertRes;
                 if (patient === "child") {
-                    insertRes = await window.electronAPI.insertChild(payload);
+                    insertRes = await window.electronAPI.insertChild(payload, operatorNumber);
                 } else {
-                    insertRes = await window.electronAPI.insertParent(payload);
+                    insertRes = await window.electronAPI.insertParent(payload, operatorNumber);
                 }
 
-                if (!insertRes.success) {
-                    // Ignore "Duplicate" errors (it just means the person is already registered)
+                if (insertRes.success) {
+                    insertSuccess = true;
+                } else {
                     const errString = insertRes.error?.toLowerCase() || "";
-                    if (!errString.includes("duplicate") && !errString.includes("unique") && !errString.includes("exists")) {
+                    
+                    // 👇 FIX IS HERE: Only ignore duplicate if we have a relation to link!
+                    if ((errString.includes("duplicate") || errString.includes("unique") || errString.includes("exists")) && hasRelation) {
+                        console.log("⚠️ HN already exists. Proceeding to Link Check...");
+                        insertSuccess = true; 
+                    } else if (errString.includes("duplicate") || errString.includes("unique")) {
+                        // If NO relation provided, this is a real error!
+                        throw new Error(`The HN "${hn}" is already registered.`);
+                    } else {
                         throw new Error(insertRes.error || "Registration unsuccessfully.");
                     }
                 }
             } else {
                 console.log("🔗 Partial Info detected: Skipping Insert, proceeding to Link.");
+                // If they didn't try to insert (partial info), we consider "insert" step valid to proceed
+                insertSuccess = true;
             }
 
             // ---------------------------------------------------------
-            // STEP 2: LINKING (Only if Relation HN is provided)
+            // STEP 2: LINKING
             // ---------------------------------------------------------
             let linkMessage = "";
             
-            if (hasRelation) {
+            if (insertSuccess && hasRelation) {
                 const p_hn = patient === "child" ? relationHN : hn as string;
                 const c_hn = patient === "child" ? hn as string : relationHN;
 
@@ -144,12 +155,13 @@ const Registry = () => {
                 if (linkRes.success) {
                     linkMessage = " & Relation Linked!";
                 } else {
-                    // Check if Link already exists
                     const linkErr = linkRes.error?.toLowerCase() || "";
                     if (linkErr.includes("duplicate") || linkErr.includes("unique")) {
                         linkMessage = " (Relation already linked)";
                     } else {
-                        throw new Error(`Linking failed: ${linkRes.error}`);
+                        // If we just registered them, but linking failed, warn the user
+                        // But don't throw an error if the registration part was actually new
+                        throw new Error(`Patient saved, but linking failed: ${linkRes.error}`);
                     }
                 }
             }
@@ -159,7 +171,6 @@ const Registry = () => {
             // ---------------------------------------------------------
             setAlertBox(true);
             setAlertTitile("Success")
-            // Custom message based on what we actually did
             if (isFullProfile) {
                 setAlertMsg(`Registration Successfully${linkMessage}`);
             } else {
@@ -167,7 +178,6 @@ const Registry = () => {
             }
             setColorAlert("green")
             
-            // Reset forms
             if (patient === "child") setChildRecord(recordInit)
             else setParentRecord(recordInit)
             setRelationHN("")

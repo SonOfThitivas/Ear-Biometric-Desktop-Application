@@ -53,7 +53,7 @@ app.whenReady().then(async () => {
   await db.connectDB();
   // await runDatabaseTests();
   // await runPermissionTests();
-  await testVectorSearch();
+  // await testVectorSearch();
 
   ipcMain.handle('db:get-active-children', async () => {
     return await db.getAllActiveChildren();
@@ -72,12 +72,13 @@ app.whenReady().then(async () => {
   });
 
   // 2. Insert Entities
-  ipcMain.handle('db:insert-child', async (_event: IpcMainInvokeEvent, data: any) => {
-    return await db.insertChild(data);
+  ipcMain.handle('db:insert-child', async (_event, { data, op_number }) => {
+    // Now 'data' is the actual child info, and 'op_number' is separate
+    return await db.insertChild(data, op_number);
   });
 
-  ipcMain.handle('db:insert-parent', async (_event: IpcMainInvokeEvent, data: any) => {
-    return await db.insertParent(data);
+  ipcMain.handle('db:insert-parent', async (_event, { data, op_number }) => {
+    return await db.insertParent(data, op_number);
   });
 
   ipcMain.handle('db:insert-operator', async (_event: IpcMainInvokeEvent, data: any) => {
@@ -85,12 +86,14 @@ app.whenReady().then(async () => {
   });
 
   // 3. Insert Relations & Vectors
-  ipcMain.handle('db:insert-child-vectors', async (_event: IpcMainInvokeEvent, { hn, v1, v2, v3, path }) => {
-    return await db.insertChildVectors(hn, v1, v2, v3, path);
+  ipcMain.handle('db:insert-child-vectors', async (_event, { hn, v1, v2, v3, folder, op_number }) => {
+    // Pass op_number to the database function
+    return await db.insertChildVectors(hn, v1, v2, v3, folder, op_number);
   });
 
-  ipcMain.handle('db:insert-parent-vectors', async (_event: IpcMainInvokeEvent, { hn, v1, v2, v3, path }) => {
-    return await db.insertParentVectors(hn, v1, v2, v3, path);
+  ipcMain.handle('db:insert-parent-vectors', async (_event, { hn, v1, v2, v3, folder, op_number }) => {
+    // Pass op_number to the database function
+    return await db.insertParentVectors(hn, v1, v2, v3, folder, op_number);
   });
 
   ipcMain.handle('db:link-op-child', async (_event: IpcMainInvokeEvent, { op_number, child_hn }) => {
@@ -110,13 +113,12 @@ app.whenReady().then(async () => {
   });
 
   // 4. Deactivate (Soft Delete)
-  ipcMain.handle('db:deactivate-child', async (_event: IpcMainInvokeEvent, hn: string) => {
-    // This could optionally call deactivateChildVectors too
-    return await db.deactivateChild(hn);
+  ipcMain.handle('db:deactivate-child', async (_event, { hn, op_number }) => {
+    return await db.deactivateChild(hn, op_number);
   });
 
-  ipcMain.handle('db:deactivate-parent', async (_event: IpcMainInvokeEvent, hn: string) => {
-    return await db.deactivateParent(hn);
+  ipcMain.handle('db:deactivate-parent', async (_event, { hn, op_number }) => {
+    return await db.deactivateParent(hn, op_number);
   });
 
   // 5. Auth
@@ -129,14 +131,14 @@ app.whenReady().then(async () => {
     return await db.searchMultiCriteria(hn, firstname, lastname);
   });
 
-  ipcMain.handle('db:hard-delete-child', async (_event, hn: string) => {
-    return await db.hardDeleteChild(hn);
+  ipcMain.handle('db:hard-delete-child', async (_event, { hn, op_number }) => {
+    return await db.hardDeleteChild(hn, op_number);
   });
 
-  ipcMain.handle('db:hard-delete-parent', async (_event, hn: string) => {
-    return await db.hardDeleteParent(hn);
+  ipcMain.handle('db:hard-delete-parent', async (_event, { hn, op_number }) => {
+    return await db.hardDeleteParent(hn, op_number);
   });
-
+  
   // ipcMain.handle('db:insert-child-vectors', async (_event, { hn, v1, v2, v3, folder }) => {
   //   return await db.insertChildVectors(hn, v1, v2, v3, folder);
   // });

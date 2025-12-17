@@ -13,7 +13,12 @@ import {
 } from '@mantine/core'
 import { TbAlertCircle, TbCheck, TbTrash } from "react-icons/tb";
 
-function Delete({ role }: { role: string }) {
+interface DeleteProps {
+    role: string;
+    operatorNumber: string;
+}
+
+function Delete({ role, operatorNumber }: DeleteProps) {
 
     const [hn, setHn] = React.useState<string>("");
     const [targetType, setTargetType] = React.useState<string>("child"); // 'child' or 'parent'
@@ -47,16 +52,16 @@ function Delete({ role }: { role: string }) {
             if (role === 'admin') {
                 // ADMIN = HARD DELETE
                 if (targetType === 'child') {
-                    result = await window.electronAPI.hardDeleteChild(hn);
+                    result = await window.electronAPI.hardDeleteChild(hn, operatorNumber);
                 } else {
-                    result = await window.electronAPI.hardDeleteParent(hn);
+                    result = await window.electronAPI.hardDeleteParent(hn, operatorNumber);
                 }
             } else {
                 // USER = SOFT DELETE (Deactivate)
                 if (targetType === 'child') {
-                    result = await window.electronAPI.deactivateChild(hn);
+                    result = await window.electronAPI.deactivateChild(hn, operatorNumber);
                 } else {
-                    result = await window.electronAPI.deactivateParent(hn);
+                    result = await window.electronAPI.deactivateParent(hn, operatorNumber);
                 }
             }
 

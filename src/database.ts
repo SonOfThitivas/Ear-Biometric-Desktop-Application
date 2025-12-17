@@ -176,25 +176,27 @@ export const searchByLastname = async (lastname: string) => {
 // ==========================================
 
 // 5. Insert Child
-export const insertChild = async (data: any) => {
+export const insertChild = async (data: any, op_number: string) => {
   const query = `
     INSERT INTO child (hn_number, firstname, lastname, age, dob, sex, active_status)
     VALUES ($1, $2, $3, $4, $5, $6, '1')
   `;
   try {
     await getClient().query(query, [data.hn, data.firstname, data.lastname, data.age, data.dob, data.sex]);
+    await logActivity(op_number, `Registered Child HN: ${data.hn}`);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
 
 // 6. Insert Parent
-export const insertParent = async (data: any) => {
+export const insertParent = async (data: any, op_number: string) => {
   const query = `
     INSERT INTO parent (hn_number, firstname, lastname, age, dob, sex, active_status)
     VALUES ($1, $2, $3, $4, $5, $6, '1')
   `;
   try {
     await getClient().query(query, [data.hn, data.firstname, data.lastname, data.age, data.dob, data.sex]);
+    await logActivity(op_number, `Registered Parent HN: ${data.hn}`);
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -227,13 +229,20 @@ export const insertOperator = async (data: any) => {
 // ==========================================
 
 // 8. Insert Child Vectors
-export const insertChildVectors = async (hn: string, v1: number[], v2: number[], v3: number[], path: string) => {
+export const insertChildVectors = async (hn: string, v1: number[], v2: number[], v3: number[], path: string, op_number: string) => {
   const query = `
     INSERT INTO identity_vector_child (child_hn_number, vector_1, vector_2, vector_3, path_folder, active_status)
     VALUES ($1, $2, $3, $4, $5, '1')
   `;
   try {
+    // 1. Insert Vectors
     await getClient().query(query, [hn, JSON.stringify(v1), JSON.stringify(v2), JSON.stringify(v3), path]);
+    
+    // 2. NEW: Link Operator to Child (Record who did this)
+    await linkOperatorChild(op_number, hn);
+
+    await logActivity(op_number, `Updated Vectors for Child HN: ${hn}`);
+
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -259,10 +268,13 @@ export const linkParentChild = async (parent_hn: string, child_hn: string) => {
 // 11. Log Activity Timestamp
 export const logActivity = async (op_number: string, activity: string) => {
   const query = `INSERT INTO activity_time_stamp (op_number, time_stamp, activity) VALUES ($1, NOW(), $2)`;
-  try {
-    await getClient().query(query, [op_number, activity]);
-    return { success: true };
-  } catch (error: any) { return { success: false, error: error.message }; }
+  try { 
+      await getClient().query(query, [op_number, activity]); 
+      return { success: true }; 
+  } catch (error: any) { 
+      console.error("Failed to log activity:", error);
+      return { success: false, error: error.message }; 
+  }
 };
 
 // 12. Link Operator -> Parent
@@ -275,13 +287,20 @@ export const linkOperatorParent = async (op_number: string, parent_hn: string) =
 };
 
 // 13. Insert Parent Vectors
-export const insertParentVectors = async (hn: string, v1: number[], v2: number[], v3: number[], path: string) => {
+export const insertParentVectors = async (hn: string, v1: number[], v2: number[], v3: number[], path: string, op_number: string) => {
   const query = `
     INSERT INTO identity_vector_parent (parent_hn_number, vector_1, vector_2, vector_3, path_folder, active_status)
     VALUES ($1, $2, $3, $4, $5, '1')
   `;
   try {
+    // 1. Insert Vectors
     await getClient().query(query, [hn, JSON.stringify(v1), JSON.stringify(v2), JSON.stringify(v3), path]);
+
+    // 2. NEW: Link Operator to Parent (Record who did this)
+    await linkOperatorParent(op_number, hn);
+
+    await logActivity(op_number, `Updated Vectors for Parent HN: ${hn}`);
+
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
@@ -291,7 +310,7 @@ export const insertParentVectors = async (hn: string, v1: number[], v2: number[]
 // ==========================================
 
 // 14. Deactivate Child (AND their vectors)
-export const deactivateChild = async (hn: string) => {
+export const deactivateChild = async (hn: string, op_number: string) => {
   try {
     const client = getClient(); // Ensure we have the active connection
     
@@ -306,12 +325,14 @@ export const deactivateChild = async (hn: string) => {
     // 2. Deactivate the associated Vectors (Best Practice)
     await client.query(`UPDATE identity_vector_child SET active_status = '0' WHERE child_hn_number = $1`, [hn]);
 
+    await logActivity(op_number, `Soft Deleted Child HN: ${hn}`);
+
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
 };
 
 // 15. Deactivate Parent (AND their vectors)
-export const deactivateParent = async (hn: string) => {
+export const deactivateParent = async (hn: string, op_number: string) => {
   try {
     const client = getClient();
 
@@ -324,6 +345,8 @@ export const deactivateParent = async (hn: string) => {
 
     // 2. Deactivate the associated Vectors
     await client.query(`UPDATE identity_vector_parent SET active_status = '0' WHERE parent_hn_number = $1`, [hn]);
+
+    await logActivity(op_number, `Soft Deleted Parent HN: ${hn}`);
 
     return { success: true };
   } catch (error: any) { return { success: false, error: error.message }; }
@@ -377,7 +400,8 @@ export const loginOperator = async (username: string, pass: string) => {
             } else {
                 await connectAs('user');
             }
-
+            // Store login activity
+            await logActivity(op.op_number, `Operator ${username} Logged In`);
             // 4. Return the determined role to the UI
             return { success: true, op_number: op.op_number, role: determinedRole };
         }
@@ -389,21 +413,23 @@ export const loginOperator = async (username: string, pass: string) => {
 };
 
 // 19. Hard Delete (For Admin Use Only)
-export const hardDeleteChild = async (hn: string) => {
+export const hardDeleteChild = async (hn: string, op_number: string) => {
     if (!client) throw new Error("Database not connected");
     try {
         const res = await client.query(`DELETE FROM child WHERE hn_number = $1`, [hn]);
         if (res.rowCount === 0) return { success: false, message: `HN ${hn} not found.` };
+        await logActivity(op_number, `Hard Deleted Child HN: ${hn}`);
         return { success: true };
     } catch (error: any) { return { success: false, message: error.message }; }
 };
 
 // 20. Hard Delete Parent (For Admin Use Only)
-export const hardDeleteParent = async (hn: string) => {
+export const hardDeleteParent = async (hn: string, op_number: string) => {
     if (!client) throw new Error("Database not connected");
     try {
         const res = await client.query(`DELETE FROM parent WHERE hn_number = $1`, [hn]);
         if (res.rowCount === 0) return { success: false, message: `HN ${hn} not found.` };
+        await logActivity(op_number, `Hard Deleted Parent HN: ${hn}`);
         return { success: true };
     } catch (error: any) { return { success: false, message: error.message }; }
 };
