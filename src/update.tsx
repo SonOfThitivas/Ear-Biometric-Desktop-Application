@@ -12,7 +12,11 @@ import {
 import Camera from "./components/camera";
 import useCameraSocket from "./hooks/useCameraSocket";
 
-export default function UpdatePage() {
+interface UpdatePageProps {
+    operatorNumber: string;
+}
+
+export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     const [hn, setHn] = React.useState("");
     const [mode, setMode] = React.useState(true);
 
@@ -102,9 +106,9 @@ export default function UpdatePage() {
 
             // 3. Call Electron API based on mode
             if (isChildMode) {
-                result = await window.electronAPI.insertChildVectors(hn, v1, v2, v3, folderPath);
+                result = await window.electronAPI.insertChildVectors(hn, v1, v2, v3, folderPath, operatorNumber);
             } else {
-                result = await window.electronAPI.insertParentVectors(hn, v1, v2, v3, folderPath);
+                result = await window.electronAPI.insertParentVectors(hn, v1, v2, v3, folderPath, operatorNumber);
             }
 
             // 4. Handle Result

@@ -1,8 +1,8 @@
 import React from 'react'
 import { 
     Box, 
-    TextInput,
-    Title,
+    TextInput, 
+    Title, 
     Grid,
     Button,
     Group,
@@ -25,6 +25,11 @@ function Record() {
     const [errorMessage, setErrorMessage] = React.useState<string>("")  // error message
     const [loading, setLoading] = React.useState<boolean>(false) // loading icon when click
     
+    // Fetch all data automatically when page opens
+    React.useEffect(() => {
+        fetchData();
+    }, []);
+
     // handle transition and alert
     const handleTransition = () => {
         const timeout = setTimeout((e)=>{
@@ -36,10 +41,14 @@ function Record() {
 
     // handle when click reset
     const handleReset = () => {
+        // 1. Clear the inputs visually
         setHn("")
         setFirstname("")
         setLastname("")
-        setRecord([])
+        
+        // 2. Fetch ALL data immediately (passing empty strings explicitly)
+        // We pass "" to override the state which might not have updated yet
+        fetchData("", "", ""); 
     }
 
     // handle when click show
@@ -48,21 +57,18 @@ function Record() {
         await fetchData()
     }
 
-    // TODO: fetch the data from databae
-    const fetchData = async () => {
-        try {
-            // 1. Validation: Prevent searching if all boxes are empty
-            if (!hn.trim() && !firstname.trim() && !lastname.trim()) {
-                setErrorMessage("Please enter at least one search criteria.");
-                setAlertError(true);
-                setLoading(false);
-                return;
-            }
+    // UPDATED: fetchData now accepts optional overrides
+    const fetchData = async (overrideHn?: string, overrideFirst?: string, overrideLast?: string) => {
+        // Determine values: use override if provided, otherwise use current state
+        const searchHn = overrideHn !== undefined ? overrideHn : hn;
+        const searchFirst = overrideFirst !== undefined ? overrideFirst : firstname;
+        const searchLast = overrideLast !== undefined ? overrideLast : lastname;
 
-            console.log(`🚀 [UI] Searching Multi: HN="${hn}", First="${firstname}", Last="${lastname}"`);
+        try {
+            console.log(`🚀 [UI] Searching Multi: HN="${searchHn}", First="${searchFirst}", Last="${searchLast}"`);
             
-            // 2. CALL THE NEW FUNCTION (Passes all 3 inputs at once)
-            const res = await window.electronAPI.searchMultiCriteria(hn, firstname, lastname);
+            // Call API with the determined values
+            const res = await window.electronAPI.searchMultiCriteria(searchHn, searchFirst, searchLast);
 
             console.log(`✅ [UI] Found ${res.length} records`);
 
@@ -91,8 +97,6 @@ function Record() {
             <Box component='div' p={"sm"} m={"xs"} bd={"2px black solid"} bdrs={"sm"}>
                 <Title order={4}>Filter</Title>
                 <Grid
-                    // wrap="wrap"
-                    // bd="1px red solid"
                     h="100%"
                     p="md"
                     justify='center'
