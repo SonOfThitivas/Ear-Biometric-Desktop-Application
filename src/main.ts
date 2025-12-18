@@ -2,9 +2,6 @@ import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
 import * as db from './database';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import { runDatabaseTests } from './test_db';
-import { runPermissionTests } from './test_permission'
-import { testVectorSearch } from './vector_test';
 import "./server.js"
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -44,36 +41,32 @@ app.on('activate', () => {
   }
 });
 
-// --- TYPE DEFINITIONS ---
-
-
-// --- APP STARTUP ---
-
 app.whenReady().then(async () => {
   await db.connectDB();
-  // await runDatabaseTests();
-  // await runPermissionTests();
-  // await testVectorSearch();
 
+  // --- SELECTS ---
   ipcMain.handle('db:get-active-children', async () => {
     return await db.getAllActiveChildren();
   });
 
-  ipcMain.handle('db:search-firstname', async (_event: IpcMainInvokeEvent, firstname: string) => {
+  ipcMain.handle('db:search-firstname', async (_event, firstname: string) => {
     return await db.searchByFirstname(firstname);
   });
 
-  ipcMain.handle('db:search-hn', async (_event: IpcMainInvokeEvent, hn: string) => {
+  ipcMain.handle('db:search-hn', async (_event, hn: string) => {
     return await db.searchByHN(hn);
   });
 
-  ipcMain.handle('db:search-lastname', async (_event: IpcMainInvokeEvent, lastname: string) => {
+  ipcMain.handle('db:search-lastname', async (_event, lastname: string) => {
     return await db.searchByLastname(lastname);
   });
 
-  // 2. Insert Entities
+  ipcMain.handle('db:search-multi', async (_event, { hn, firstname, lastname }) => {
+    return await db.searchMultiCriteria(hn, firstname, lastname);
+  });
+
+  // --- INSERTS (Destructuring fixed) ---
   ipcMain.handle('db:insert-child', async (_event, { data, op_number }) => {
-    // Now 'data' is the actual child info, and 'op_number' is separate
     return await db.insertChild(data, op_number);
   });
 
@@ -81,54 +74,43 @@ app.whenReady().then(async () => {
     return await db.insertParent(data, op_number);
   });
 
-  ipcMain.handle('db:insert-operator', async (_event: IpcMainInvokeEvent, data: any) => {
+  ipcMain.handle('db:insert-operator', async (_event, data: any) => {
     return await db.insertOperator(data);
   });
 
-  // 3. Insert Relations & Vectors
+  // --- VECTORS ---
   ipcMain.handle('db:insert-child-vectors', async (_event, { hn, v1, v2, v3, folder, op_number }) => {
-    // Pass op_number to the database function
     return await db.insertChildVectors(hn, v1, v2, v3, folder, op_number);
   });
 
   ipcMain.handle('db:insert-parent-vectors', async (_event, { hn, v1, v2, v3, folder, op_number }) => {
-    // Pass op_number to the database function
     return await db.insertParentVectors(hn, v1, v2, v3, folder, op_number);
   });
 
-  ipcMain.handle('db:link-op-child', async (_event: IpcMainInvokeEvent, { op_number, child_hn }) => {
-    return await db.linkOperatorChild(op_number, child_hn);
+  ipcMain.handle("findClosestChild", async (_event, vector: number[]) => {
+      return await db.findClosestChild(vector);
   });
 
-  ipcMain.handle('db:link-op-parent', async (_event: IpcMainInvokeEvent, { op_number, parent_hn }) => {
-    return await db.linkOperatorParent(op_number, parent_hn);
+  ipcMain.handle("findClosestParent", async (_event, vector: number[]) => {
+      return await db.findClosestParent(vector);
   });
 
-  ipcMain.handle('db:link-parent-child', async (_event: IpcMainInvokeEvent, { parent_hn, child_hn }) => {
+  // --- LINKING ---
+  ipcMain.handle('db:link-parent-child', async (_event, { parent_hn, child_hn }) => {
     return await db.linkParentChild(parent_hn, child_hn);
   });
 
-  ipcMain.handle('db:log-activity', async (_event: IpcMainInvokeEvent, { op_number, activity }) => {
-    return await db.logActivity(op_number, activity);
+  ipcMain.handle('db:unlink-parent-child', async (_event, { parent_hn, child_hn, op_number }) => {
+    return await db.unlinkParentChild(parent_hn, child_hn, op_number);
   });
 
-  // 4. Deactivate (Soft Delete)
+  // --- DELETE / STATUS (Destructuring fixed) ---
   ipcMain.handle('db:deactivate-child', async (_event, { hn, op_number }) => {
     return await db.deactivateChild(hn, op_number);
   });
 
   ipcMain.handle('db:deactivate-parent', async (_event, { hn, op_number }) => {
     return await db.deactivateParent(hn, op_number);
-  });
-
-  // 5. Auth
-  ipcMain.handle('db:login-operator', async (_event: IpcMainInvokeEvent, { username, password }) => {
-    return await db.loginOperator(username, password);
-  });
-
-  // --- IPC HANDLERS ---
-  ipcMain.handle('db:search-multi', async (_event, { hn, firstname, lastname }) => {
-    return await db.searchMultiCriteria(hn, firstname, lastname);
   });
 
   ipcMain.handle('db:hard-delete-child', async (_event, { hn, op_number }) => {
@@ -138,33 +120,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:hard-delete-parent', async (_event, { hn, op_number }) => {
     return await db.hardDeleteParent(hn, op_number);
   });
-  
-  // ipcMain.handle('db:insert-child-vectors', async (_event, { hn, v1, v2, v3, folder }) => {
-  //   return await db.insertChildVectors(hn, v1, v2, v3, folder);
-  // });
 
-  // ipcMain.handle('db:insert-parent-vectors', async (_event, { hn, v1, v2, v3, folder }) => {
-  //   return await db.insertParentVectors(hn, v1, v2, v3, folder);
-  // });
-
-  // ipcMain.handle('db:insert-child', async (_event, data) => {
-  //   return await db.insertChild(data);
-  // });
-
-  // ipcMain.handle('db:insert-parent', async (_event, data) => {
-  //   return await db.insertParent(data);
-  // });
-
-  ipcMain.handle("findClosestChild", async (_event, vector: number[]) => {
-      return await db.findClosestChild(vector); // your DB logic
+  // --- AUTH ---
+  ipcMain.handle('db:login-operator', async (_event, { username, password }) => {
+    return await db.loginOperator(username, password);
   });
-
-  ipcMain.handle("findClosestParent", async (_event, vector: number[]) => {
-      return await db.findClosestParent(vector);
-  });
-
-  ipcMain.handle('db:unlink-parent-child', async (_event, { parent_hn, child_hn, op_number }) => {
-    return await db.unlinkParentChild(parent_hn, child_hn, op_number);
-  });
-
 });
