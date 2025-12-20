@@ -15,92 +15,74 @@ import {
 } from '@mantine/core';
 
 import Identify from './identify';
+import Login from './components/login';
 import Record from './record';
-
-// const navbarList = [
-//     {label: "Identify"},
-//     {label: "Registry"},
-//     {label: "Update"},
-//     {label: "Delete"},
-//     {label: "Record"},
-// ]
-
-const tabList = [
-    {label: "Identify", child:<Identify/>},
-    {label: "Registry", child:null},
-    {label: "Update", child:null},
-    {label: "Delete", child:null},
-    {label: "Record", child:<Record/>},
-]
+import Delete from './delete';
+import Update from './update'
+import Registry from './registry';
 
 const App = () => {
-    const [active, setActive] = React.useState<string>("Identify");
+    const [active, setActive] = React.useState<string | null>("Identify");
+    const [operatorNumber, setOperatorNumber] = React.useState<string>("")
+    
+    // 1. Add Role State
+    const [role, setRole] = React.useState<string>("")
 
-    // const navbarItems = navbarList.map((item, index) => (
-    // <NavLink
-    // key={item.label}
-    // active={index === active}
-    // label={item.label}
-    // onClick={() => setActive(index)}
-    // //   href="#required-for-focus"
-    // //   description={item.description}
-    // //   rightSection={item.rightSection}
-    // //   leftSection={<item.icon size={16} stroke={1.5} />}
 
-    // />))
+    // 2. Move tabList inside to access 'role'
+    const tabList = [
+        {label: "Identify", child:<Identify/>},
+        {label: "Registry", child:<Registry operatorNumber={operatorNumber}/>},
+        {label: "Update", child:<Update operatorNumber={operatorNumber}/>},
+        {label: "Delete", child:<Delete role={role} operatorNumber={operatorNumber}/>}, 
+        {label: "Record", child:<Record/>},
+    ]
 
     return (
         <MantineProvider>
+            {/* 4. Pass setRoleParent to Login */}
+            {operatorNumber === "" && (
+                <Login 
+                    setOperatorNumberParent={setOperatorNumber} 
+                    setRoleParent={setRole}
+                />
+            )}
 
-            {/* <AppShell
-            // padding="md"
-            // header={{ height: "100"}} 
-            navbar={{width:200, breakpoint:null}}
-            >
-                <AppShell.Navbar>
-                    {navbarItems}
-                </AppShell.Navbar>
-
-                <AppShell.Main>
-                    {active === 0 && <Identify/>}
-                    {active === 4 && <Record/>}
-                </AppShell.Main>
-
-            </AppShell> */}
-
-            <Box component='div'>
-                <Tabs defaultValue={active} variant="default" onChange={setActive}>
-                    <Tabs.List justify='center' grow>
+            {operatorNumber !== "" &&  
+                <Box component='div'>
+                    <Tabs defaultValue="Identify" variant="default" value={active} onChange={setActive}>
+                        <Tabs.List justify='center' grow>
+                            {
+                            tabList.map((item, index) => (
+                                <Tabs.Tab key={item.label} value={item.label} p={"lg"}>
+                                    {item.label}
+                                </Tabs.Tab>
+                            ))
+                            }
+                        </Tabs.List>
                         {
-                        tabList.map((item, index) => (
-                            <Tabs.Tab value={item.label} p={"lg"}>
-                                {item.label}
-                            </Tabs.Tab>
-                        ))
+                            tabList.map((item, index) => (
+                                <Tabs.Panel 
+                                    key={item.label}
+                                    w={"100%"} 
+                                    maw={"100%"} 
+                                    // bd={"1px red solid"}
+                                    value={item.label}
+                                >
+                                    {item.child}
+                                </Tabs.Panel>
+                            ))
                         }
-                    </Tabs.List>
-                    {
-                        tabList.map((item, index) => (
-                            <Tabs.Panel 
-                                w={"100%"} 
-                                maw={"100%"} 
-                                // bd={"1px red solid"}
-                                value={item.label}
-                            >
-                                {item.child}
-                            </Tabs.Panel>
-                        ))
-                    }
-                    
-                </Tabs>
-            </Box>
+                        
+                    </Tabs>
+                </Box>
+            }
 
         </MantineProvider>
     )
 }
 
-const root = createRoot(document.getElementById("root"));
+const root = createRoot(document.getElementById("root")!);
 root.render(
     <App/>
 );
-

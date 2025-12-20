@@ -1,6 +1,8 @@
-import { app, BrowserWindow, } from 'electron';
+import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
+import * as db from './database';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import "./server.js"
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -8,16 +10,14 @@ if (started) {
 }
 
 const createWindow = () => {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1000,
+    height: 800,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
 
-  // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
@@ -25,19 +25,10 @@ const createWindow = () => {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
-
-  // Open the DevTools.
-//   mainWindow.webContents.openDevTools();
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.on('ready', createWindow);
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
@@ -45,12 +36,93 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+app.whenReady().then(async () => {
+  await db.connectDB();
+
+  // --- SELECTS ---
+  ipcMain.handle('db:get-active-children', async () => {
+    return await db.getAllActiveChildren();
+  });
+
+  ipcMain.handle('db:search-firstname', async (_event, firstname: string) => {
+    return await db.searchByFirstname(firstname);
+  });
+
+  ipcMain.handle('db:search-hn', async (_event, hn: string) => {
+    return await db.searchByHN(hn);
+  });
+
+  ipcMain.handle('db:search-lastname', async (_event, lastname: string) => {
+    return await db.searchByLastname(lastname);
+  });
+
+  ipcMain.handle('db:search-multi', async (_event, { hn, firstname, lastname }) => {
+    return await db.searchMultiCriteria(hn, firstname, lastname);
+  });
+
+  // --- INSERTS (Destructuring fixed) ---
+  ipcMain.handle('db:insert-child', async (_event, { data, op_number }) => {
+    return await db.insertChild(data, op_number);
+  });
+
+  ipcMain.handle('db:insert-parent', async (_event, { data, op_number }) => {
+    return await db.insertParent(data, op_number);
+  });
+
+  ipcMain.handle('db:insert-operator', async (_event, data: any) => {
+    return await db.insertOperator(data);
+  });
+
+  // --- VECTORS ---
+  ipcMain.handle('db:insert-child-vectors', async (_event, { hn, v1, v2, v3, folder, op_number }) => {
+    return await db.insertChildVectors(hn, v1, v2, v3, folder, op_number);
+  });
+
+  ipcMain.handle('db:insert-parent-vectors', async (_event, { hn, v1, v2, v3, folder, op_number }) => {
+    return await db.insertParentVectors(hn, v1, v2, v3, folder, op_number);
+  });
+
+  ipcMain.handle("findClosestChild", async (_event, vector: number[]) => {
+      return await db.findClosestChild(vector);
+  });
+
+  ipcMain.handle("findClosestParent", async (_event, vector: number[]) => {
+      return await db.findClosestParent(vector);
+  });
+
+  // --- LINKING ---
+  ipcMain.handle('db:link-parent-child', async (_event, { parent_hn, child_hn }) => {
+    return await db.linkParentChild(parent_hn, child_hn);
+  });
+
+  ipcMain.handle('db:unlink-parent-child', async (_event, { parent_hn, child_hn, op_number }) => {
+    return await db.unlinkParentChild(parent_hn, child_hn, op_number);
+  });
+
+  // --- DELETE / STATUS (Destructuring fixed) ---
+  ipcMain.handle('db:deactivate-child', async (_event, { hn, op_number }) => {
+    return await db.deactivateChild(hn, op_number);
+  });
+
+  ipcMain.handle('db:deactivate-parent', async (_event, { hn, op_number }) => {
+    return await db.deactivateParent(hn, op_number);
+  });
+
+  ipcMain.handle('db:hard-delete-child', async (_event, { hn, op_number }) => {
+    return await db.hardDeleteChild(hn, op_number);
+  });
+
+  ipcMain.handle('db:hard-delete-parent', async (_event, { hn, op_number }) => {
+    return await db.hardDeleteParent(hn, op_number);
+  });
+
+  // --- AUTH ---
+  ipcMain.handle('db:login-operator', async (_event, { username, password }) => {
+    return await db.loginOperator(username, password);
+  });
+});
