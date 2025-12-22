@@ -1,12 +1,15 @@
 import pg from 'pg';
 import crypto from 'crypto';
+import dotenv from "dotenv"
+dotenv.config()
+
 const { Client } = pg;
 
 // Connection Config
 const DB_CONFIG = {
   host: 'localhost',
   database: 'ear_db',
-  port: 5438,
+  port: process.env.VITE_DATABASE_PORT,
 };
 
 // Credentials

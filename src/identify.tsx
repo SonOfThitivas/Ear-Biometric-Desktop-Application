@@ -5,6 +5,9 @@ import {
     Box, 
     Button,
     Text,
+    Title,
+    SegmentedControl,
+    Center,
     Switch,
     Alert,
     Transition
@@ -15,6 +18,7 @@ import {IRecordChildParent} from "./interface/IRecord"
 import { TbAlertCircle } from "react-icons/tb"
 import Camera from "./components/camera"
 import useCameraSocket from "./hooks/useCameraSocket"
+import PatientModeSelector from './components/patientMode'
 
 const recordInit: IRecordChildParent = {
     child_hn: "",
@@ -59,12 +63,11 @@ export default function Identify() {
         }, 5000)
     }
 
-    const handlePatientSwitch = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.currentTarget.value === "parent") setPatient("child")
-        else setPatient("parent")
-    }
-
     const handleReset = () => {
+        setInsideZone(false)
+        setIsCapturing(false)
+        setLoading(false)
+        setCountdown(0)
         setChildParentRecord(recordInit)
         setVector(null)
     }
@@ -118,6 +121,8 @@ export default function Identify() {
 
         runIdentification(captureResult.embedding)
     }, [captureResult])
+
+    React.useEffect(()=>console.log("Patient:", patient),[patient])
 
     // ✅ Your existing DB lookup logic, unchanged
 const runIdentification = async (vector: number[]) => {
@@ -191,18 +196,7 @@ const runIdentification = async (vector: number[]) => {
             {/* Left Section */}
             <Box w={"30%"} maw={"30%"}>
                 <Box component='div'>
-                    <Switch
-                        defaultChecked
-                        labelPosition="left"
-                        label="Patient Mode"
-                        size="xl"
-                        radius="xs"
-                        onLabel="Child"
-                        offLabel="Parent"
-                        p="sm"
-                        value={patient}
-                        onChange={handlePatientSwitch}
-                    />
+                    <PatientModeSelector patient={patient} setPatient={setPatient}/>
 
                     <Group grow justify={"space-between"} m={"sm"}>
                         <Button variant='filled' color='blue' onClick={handleDetect} loading={loading}>
@@ -214,53 +208,54 @@ const runIdentification = async (vector: number[]) => {
                     </Group>
                 </Box>
 
-                <Box mt="md">
-                    <Text fw={500}>Inside Zone: {insideZone ? "✅ Yes" : "❌ No"}</Text>
-                    <Text fw={500}>Countdown: {countdown}</Text>
-                    <Text fw={500}>Status: {isCapturing ? "Capturing..." : "Idle"}</Text>
+                <Box component='div' mt="md">
+                    <Title order={4}>Inside Zone - {insideZone ? "✅ Yes" : "❌ No"}</Title>
+                    <Title order={4}>Countdown - {countdown}</Title>
+                    <Title order={4}>Status - {isCapturing ? "Capturing..." : "Idle"}</Title>
                 </Box>
 
                 <Flex w={"100%"} direction={"column"} align={"center"} p={"sm"}>
-  <Text size='xl' fw={500}>Result</Text>
+                    <Text size='xl' fw={500}>Result</Text>
 
-  {/* Child */}
-  <Box component='div' w={"100%"} mt="sm">
-    <Text size='sm' fw={500}>Child</Text>
-    <TableResult
-  hn={childParentRecord.child_hn}
-  firstname={childParentRecord.child_fname}
-  lastname={childParentRecord.child_lname}
-  age={childParentRecord.child_age}
-  sex={childParentRecord.child_sex}
-  dob={
-    childParentRecord.child_dob
-      ? new Date(childParentRecord.child_dob).toLocaleDateString()
-      : "-"
-  }
-/>
-  </Box>
+                    {/* Child */}
+                    <Box component='div' w={"100%"} mt="sm">
+                        <Text size='sm' fw={500}>Child</Text>
+                        <TableResult
+                    hn={childParentRecord.child_hn}
+                    firstname={childParentRecord.child_fname}
+                    lastname={childParentRecord.child_lname}
+                    age={childParentRecord.child_age}
+                    sex={childParentRecord.child_sex}
+                    dob={
+                        childParentRecord.child_dob
+                        ? new Date(childParentRecord.child_dob).toLocaleDateString()
+                        : "-"
+                    }
+                    />
+                    </Box>
 
-  {/* Parent */}
-  <Box component='div' w={"100%"} mt="sm">
-    <TableResult
-  hn={childParentRecord.parent_hn}
-  firstname={childParentRecord.parent_fname}
-  lastname={childParentRecord.parent_lname}
-  age={childParentRecord.parent_age}
-  sex={childParentRecord.parent_sex}
-  dob={
-    childParentRecord.parent_dob
-      ? new Date(childParentRecord.parent_dob).toLocaleDateString()
-      : "-"
-  }
-/>
-  </Box>
-</Flex>
+                    {/* Parent */}
+                    <Box component='div' w={"100%"} mt="sm">
+                        <Text size='sm' fw={500}>Parent</Text>
+                        <TableResult
+                    hn={childParentRecord.parent_hn}
+                    firstname={childParentRecord.parent_fname}
+                    lastname={childParentRecord.parent_lname}
+                    age={childParentRecord.parent_age}
+                    sex={childParentRecord.parent_sex}
+                    dob={
+                        childParentRecord.parent_dob
+                        ? new Date(childParentRecord.parent_dob).toLocaleDateString()
+                        : "-"
+                    }
+                    />
+                    </Box>
+                </Flex>
 
             </Box>
 
             {/* Camera Section */}
-            <Box component='div' bd={"2px black solid"} bdrs={"sm"} w={"70%"} maw={"70%"} p={"sm"}>
+            <Box component='div' w={"70%"} maw={"70%"} p={"sm"}>
                 <Text size='md' fw={500}>Camera</Text>
                 <Camera onInsideZoneChange={setInsideZone} />
             </Box>

@@ -48,6 +48,7 @@
     "@mantine/form": "^8.3.10",
     "@mantine/hooks": "^8.3.9",
     "dayjs": "^1.11.19",
+    "dotenv": "^17.2.3",
     "electron-squirrel-startup": "^1.0.1",
     "express": "^5.2.1",
     "image-decode": "^1.2.2",
