@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
 import * as db from './database';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import "./server.js"
+import "./server"
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {

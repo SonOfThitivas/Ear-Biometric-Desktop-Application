@@ -1,23 +1,27 @@
-const express = require('express');
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import { spawn } from 'child_process';
+import path from 'path';
+
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const { spawn } = require('child_process');
-const path = require('path');
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
 
 // --- Configuration ---
 // Serve the index.html file for the root URL
 app.get('/', (req, res) => {
-    // console.log(path.join(__dirname, "..", "index.html"))
-    // res.sendFile(path.join(__dirname, "..", "index.html"));
-    res.sendFile(path.join(__dirname, "index.html"))
+    // In Electron production, __dirname points to the bundled file location
+    res.sendFile(path.join(__dirname, "../renderer/main_window/index.html"));
 });
 
-// Serve the 'saved_images' folder so users can view saved photos (optional)
-// app.use('/saved_images', express.static(path.join(__dirname, 'saved_images')));
-
 // --- Python Process Management ---
-let cameraProcess = null;
+let cameraProcess: any = null;
 
 // !!! IMPORTANT: UPDATE THIS PATH TO YOUR PYTHON EXECUTABLE !!!
 // Use double backslashes (\\) for Windows paths.
@@ -28,19 +32,22 @@ function startCamera() {
     if (cameraProcess) return;
 
     console.log("Starting Python Camera Script...");
-    const scriptPath = path.join('./src/camera.py');
-    console.log(scriptPath)
+    // When packaged, we need to make sure we find the python script correctly
+    // Depending on how you pack files, you might need path.join(process.resourcesPath, 'src/camera.py')
+    // For now, we assume it's in the same relative location or unpacked.
+    const scriptPath = path.join(__dirname, '../../src/camera.py'); 
+    console.log("Script Path:", scriptPath);
     
     // Spawn the Python process with unbuffered output (-u)
     cameraProcess = spawn(pythonCommand, ['-u', scriptPath]);
 
     // Listen for data from Python (stdout)
-    cameraProcess.stdout.on('data', (data) => {
+    cameraProcess.stdout.on('data', (data: any) => {
         const str = data.toString().trim();
         // Split data by newlines in case multiple JSON objects come together
         const lines = str.split('\n');
         
-        lines.forEach(line => {
+        lines.forEach((line: string) => {
             try {
                 if(!line) return;
                 const jsonData = JSON.parse(line);
@@ -53,12 +60,12 @@ function startCamera() {
     });
 
     // Listen for errors from Python (stderr)
-    cameraProcess.stderr.on('data', (data) => {
+    cameraProcess.stderr.on('data', (data: any) => {
         console.error(`Python Error: ${data}`);
     });
 
     // Handle Python process exit
-    cameraProcess.on('close', (code) => {
+    cameraProcess.on('close', (code: any) => {
         console.log(`Camera process exited with code ${code}`);
         cameraProcess = null;
         io.emit('camera-status', { running: false });
@@ -77,7 +84,7 @@ function stopCamera() {
 }
 
 // Send "save" command to Python via Standard Input (stdin)
-function captureImage(data = {}) {
+function captureImage(data: any = {}) {
     if (!cameraProcess) return;
 
     const payload = {
@@ -114,6 +121,6 @@ io.on('connection', (socket) => {
 
 // --- Start Server ---
 // Listen on all network interfaces (0.0.0.0) so other devices can connect
-http.listen(3000, '0.0.0.0', () => {
+server.listen(3000, '0.0.0.0', () => {
     console.log('Server running at http://localhost:3000');
 });
