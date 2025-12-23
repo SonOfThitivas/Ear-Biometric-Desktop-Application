@@ -1,20 +1,19 @@
 import React from "react";
 import { 
     Box,
-    Switch,
     Title,
     Flex,
     Button,
     Group,
     Alert,
     Transition,
-    TextInput,
-    Text
 } from "@mantine/core";
 
 import IRecord from "./interface/IRecord";
+import { IRecordChildParent, IRecordChildParentInit } from "./interface/IRecord";
 import RecordFill from "./components/recordFill";
 import { TbAlertCircle } from "react-icons/tb"
+import PatientModeSelector from "./components/patientMode";
 
 interface RegistryProps {
     operatorNumber: string;
@@ -32,11 +31,7 @@ const recordInit: IRecord = {
 
 const Registry = ({ operatorNumber }: RegistryProps) => {
     const [patient, setPatient] = React.useState<string>("child")   // patient record fill
-    const [childRecord, setChildRecord] = React.useState<IRecord>(recordInit)   // child record
-    const [parentRecord, setParentRecord] = React.useState<IRecord>(recordInit) // parent record
-
-    // NEW: Relation HN State
-    const [relationHN, setRelationHN] = React.useState<string>("");
+    const [record, setRecord] = React.useState<IRecordChildParent>(IRecordChildParentInit)  
 
     const tbAlertCircle = <TbAlertCircle/>
     const [alertBox, setAlertBox] = React.useState<boolean>(false)  // alert error
@@ -46,10 +41,8 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
     const [loading, setLoading] = React.useState<boolean>(false) // loading icon when click
 
     React.useEffect(()=>{
-        console.log("Current Mode:", patient);
-        // Clear relation HN when switching modes to avoid confusion
-        setRelationHN("");
-    },[patient])
+        setRecord(IRecordChildParentInit)
+    }, [patient])
 
     // handle transition and alert
     const handleTransition = () => {
@@ -61,24 +54,29 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
     }
 
     const handleReset = () => {
-        setChildRecord(recordInit)
-        setParentRecord(recordInit)
-        setRelationHN("")
-    }
-
-    const handlePatientSwitch = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.currentTarget.value === "parent") setPatient("child")
-        else setPatient("parent")
+        setRecord(IRecordChildParentInit)
     }
 
     const handleSubmit = async () => {
         setLoading(true)
+        console.log(record)
         
         try {
-            const currentRecord = patient === "child" ? childRecord : parentRecord;
-            const hn = currentRecord.hn;
-            // Check if user is trying to link
-            const hasRelation = relationHN.trim() !== "";
+            const currentRecord:IRecord = (patient === "child" ? {
+                hn: record.child_hn,
+                firstname: record.child_fname,
+                lastname: record.child_lname,
+                age: record.child_age,
+                sex: record.child_sex,
+                dob: record.child_dob,
+            } : {
+                hn: record.parent_hn,
+                firstname: record.parent_fname,
+                lastname: record.parent_lname,
+                age: record.parent_age,
+                sex: record.parent_sex,
+                dob: record.parent_dob,
+            })
             
             // Check if user filled out the Full Profile
             const isFullProfile = 
@@ -88,14 +86,14 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 currentRecord.dob;
 
             // 1. Validation
-            if (!hn) {
-                 throw new Error("Hospital Number (HN) is required.");
+            if (!isFullProfile) {
+                throw new Error("Please fill all fields to register");
             }
 
-            if (!isFullProfile && !hasRelation) {
-                throw new Error("Please fill all fields to register, OR provide a Relation HN to link.");
-            }
-
+            const hasRelation:boolean = (patient === "child" ?
+                record.parent_hn.trim() !== "" :
+                record.child_hn.trim() !== ""
+            )
             // ---------------------------------------------------------
             // STEP 1: INSERT
             // ---------------------------------------------------------
@@ -130,7 +128,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                         insertSuccess = true; 
                     } else if (errString.includes("duplicate") || errString.includes("unique")) {
                         // If NO relation provided, this is a real error!
-                        throw new Error(`The HN "${hn}" is already registered.`);
+                        throw new Error(`The HN "${payload.hn}" is already registered.`);
                     } else {
                         throw new Error(insertRes.error || "Registration unsuccessfully.");
                     }
@@ -145,12 +143,11 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
             // STEP 2: LINKING
             // ---------------------------------------------------------
             let linkMessage = "";
-            
-            if (insertSuccess && hasRelation) {
-                const p_hn = patient === "child" ? relationHN : hn as string;
-                const c_hn = patient === "child" ? hn as string : relationHN;
 
-                const linkRes = await window.electronAPI.linkParentChild(p_hn, c_hn);
+
+            if (insertSuccess && hasRelation) {
+
+                const linkRes = await window.electronAPI.linkParentChild(record.parent_hn, record.child_hn);
 
                 if (linkRes.success) {
                     linkMessage = " & Relation Linked!";
@@ -178,9 +175,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
             }
             setColorAlert("green")
             
-            if (patient === "child") setChildRecord(recordInit)
-            else setParentRecord(recordInit)
-            setRelationHN("")
+            setRecord(IRecordChildParentInit)
 
         } catch (err: any){
             setAlertBox(true);
@@ -201,18 +196,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                     p={"sm"}
                 >
                     <Title order={3}>Record</Title>
-                    <Switch
-                        defaultChecked
-                        labelPosition="left"
-                        label="Patient"
-                        size="xl"
-                        radius="xs"
-                        onLabel="Child"
-                        offLabel="Parent"
-                        p="sm"
-                        value={patient}
-                        onChange={(event)=>handlePatientSwitch(event)}
-                    />
+                    <PatientModeSelector patient={patient} setPatient={setPatient} />
                     
                     {/* Record Fill Container */}
                     <Box 
@@ -224,27 +208,12 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                         bdrs={"sm"}
                     >
                         {/* Header with Relation Input */}
-                        <Group justify="space-between" mb="md" align="flex-end">
-                            <Title order={4}>{patient === "child" ? "Child Info" : "Parent Info"}</Title>
-                            
-                            {/* NEW: Relation Box */}
-                            <Flex align="center" gap="xs">
-                                <Text size="sm" fw={500}>
-                                    Link with {patient === "child" ? "Parent" : "Child"} HN:
-                                </Text>
-                                <TextInput 
-                                    placeholder={patient === "child" ? "Enter Parent HN" : "Enter Child HN"}
-                                    value={relationHN}
-                                    onChange={(e) => setRelationHN(e.currentTarget.value)}
-                                    size="xs"
-                                    w={150}
-                                />
-                            </Flex>
-                        </Group>
+                        <Title order={4}>{patient === "child" ? "Child Info" : "Parent Info"}</Title>
 
                         <RecordFill 
-                            record={patient === "child" ? childRecord : parentRecord} 
-                            setRecord={patient === "child" ? setChildRecord : setParentRecord}
+                            record={record} 
+                            setRecord={setRecord}
+                            patient={patient}
                         />
                     </Box>
                 </Flex>

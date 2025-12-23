@@ -24,3 +24,18 @@ export interface IRecordChildParent {
     parent_sex?: string | null
     parent_dob?: Date | null
 }
+
+export const IRecordChildParentInit: IRecordChildParent = {
+    child_hn: "",
+    child_fname: "",
+    child_lname:"",
+    child_age: 0,
+    child_sex: "",
+    child_dob: null,
+    parent_hn: "",
+    parent_fname: "",
+    parent_lname: "",
+    parent_age: 0,
+    parent_sex: "",
+    parent_dob: null,
+}
