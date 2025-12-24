@@ -505,3 +505,69 @@ export const findClosestParent = async (vector: number[]) => {
         return null; 
     }
 };
+
+// ==========================================
+// 8. UPDATE ENTITIES
+// ==========================================
+
+export const updateChild = async (hn: string, data: { firstname: string, lastname: string, age: number, dob: string, sex: string }, op_number: string) => {
+  const query = `
+    UPDATE child 
+    SET firstname = $2, lastname = $3, age = $4, dob = $5, sex = $6
+    WHERE hn_number = $1 AND active_status = '1'
+  `;
+  
+  try {
+    const client = getClient();
+    const res = await client.query(query, [
+      hn, 
+      data.firstname, 
+      data.lastname, 
+      data.age, 
+      data.dob, 
+      data.sex
+    ]);
+
+    if (res.rowCount === 0) {
+      return { success: false, message: `Update failed: Child HN ${hn} not found or inactive.` };
+    }
+
+    await logActivity(op_number, `Updated Info for Child HN: ${hn}`);
+    return { success: true };
+
+  } catch (error: any) {
+    console.error("❌ [DB] Update Child Failed:", error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+export const updateParent = async (hn: string, data: { firstname: string, lastname: string, age: number, dob: string, sex: string }, op_number: string) => {
+  const query = `
+    UPDATE parent 
+    SET firstname = $2, lastname = $3, age = $4, dob = $5, sex = $6
+    WHERE hn_number = $1 AND active_status = '1'
+  `;
+
+  try {
+    const client = getClient();
+    const res = await client.query(query, [
+      hn, 
+      data.firstname, 
+      data.lastname, 
+      data.age, 
+      data.dob, 
+      data.sex
+    ]);
+
+    if (res.rowCount === 0) {
+      return { success: false, message: `Update failed: Parent HN ${hn} not found or inactive.` };
+    }
+
+    await logActivity(op_number, `Updated Info for Parent HN: ${hn}`);
+    return { success: true };
+
+  } catch (error: any) {
+    console.error("❌ [DB] Update Parent Failed:", error.message);
+    return { success: false, error: error.message };
+  }
+};
