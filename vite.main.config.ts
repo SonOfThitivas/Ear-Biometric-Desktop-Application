@@ -1,13 +1,20 @@
 import { defineConfig } from 'vite';
 
-// https://vitejs.dev/config
 export default defineConfig({
-    build: {
+  build: {
+    // This helps bundling commonjs libraries like Express
+    commonjsOptions: {
+      ignoreDynamicRequires: true,
+    },
     rollupOptions: {
-      // 1. Add this 'external' section
       external: [
-        'pg', 
-        'pg-hstore', // Often needed if you use Sequelize, but good to include just in case
+        // ⚠️ ONLY Native Modules go here
+        // Do NOT put 'pg' or 'express' here. They must be bundled.
+        'sharp',
+        'onnxruntime-node',
+        'opencv.js',
+        'pg-native', 
+        'mock-aws-s3', 'aws-sdk', 'nock'
       ], 
     },
   },
