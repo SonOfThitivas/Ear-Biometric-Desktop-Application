@@ -25,7 +25,7 @@ let cameraProcess: any = null;
 
 // !!! IMPORTANT: UPDATE THIS PATH TO YOUR PYTHON EXECUTABLE !!!
 // Use double backslashes (\\) for Windows paths.
-const pythonCommand = 'D:\\miniconda33\\envs\\pytorch-gpu\\python.exe';
+const pythonCommand = import.meta.env.VITE_PATH_PYTHON_ENV;
 
 function startCamera() {
     // Prevent starting multiple instances

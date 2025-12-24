@@ -14,7 +14,9 @@ export default defineConfig({
         'onnxruntime-node',
         'opencv.js',
         'pg-native', 
-        'mock-aws-s3', 'aws-sdk', 'nock'
+        'mock-aws-s3', 'aws-sdk', 'nock',
+        'bufferutil',
+        'utf-8-validate',
       ], 
     },
   },
