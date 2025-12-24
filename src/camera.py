@@ -11,34 +11,33 @@ import threading
 from ultralytics import YOLO
 from PIL import Image
 import onnxruntime as ort
-
 from dotenv import load_dotenv
 
+# --- Load environment variables ---
 load_dotenv()
 
-# --- Configuration ---
-# Folders to store output files
+
+
+# --- Configuration: Folders from .env ---
 RGB_FOLDER = os.getenv("VITE_RGB_FOLDER")
 DEPTH_FOLDER = os.getenv("VITE_DEPTH_FOLDER")
 PLY_FOLDER = os.getenv("VITE_PLY_FOLDER")
 EMBED_FOLDER = os.getenv("VITE_EMBED_FOLDER")
-# RGB_FOLDER = "saved_images/RGB"
-# DEPTH_FOLDER = "saved_images/Depth"
-# PLY_FOLDER = "saved_images/PLY"
-# EMBED_FOLDER = "saved_images/Embeddings"
+PATIENTS_FOLDER = os.getenv("VITE_PATIENTS_FOLDER")
+
 
 # Create directories if they don't exist
-for folder in [RGB_FOLDER, DEPTH_FOLDER, PLY_FOLDER,EMBED_FOLDER]:
+for folder in [RGB_FOLDER, DEPTH_FOLDER, PLY_FOLDER, EMBED_FOLDER, PATIENTS_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
+# --- Model paths from .env ---
 CHILD_MODEL_PATH = os.getenv("VITE_CHILD_MODEL")
-YOLO_MODEL_PATH = os.getenv("VITE_YOLO_MODEL")
-embed_session = ort.InferenceSession(CHILD_MODEL_PATH)
-yolo_model = YOLO(YOLO_MODEL_PATH)
-# embed_session = ort.InferenceSession("src/model/child_model.onnx")
-# yolo_model = YOLO("src/model/best.pt")
-input_name = embed_session.get_inputs()[0].name
-output_name = embed_session.get_outputs()[0].name
+MOM_MODEL_PATH   = os.getenv("VITE_MOM_MODEL")
+YOLO_MODEL_PATH  = os.getenv("VITE_YOLO_MODEL")
+
+embed_session_child = ort.InferenceSession(CHILD_MODEL_PATH)
+embed_session_mom   = ort.InferenceSession(MOM_MODEL_PATH)
+yolo_model          = YOLO(YOLO_MODEL_PATH)
 # Global flag to trigger image capture
 save_flag = False
 hn_value = None
@@ -110,18 +109,16 @@ def preprocess_ear(ear_crop):
 
     return img
 
-# --- Embedding Extraction Function ---
-def extract_embedding(ear_crop):
+# --- Embedding Extraction ---
+def extract_embedding(ear_crop, model_type="child"):
+    if ear_crop is None:
+        return None
+    embed_session = embed_session_child if model_type == "child" else embed_session_mom
+    input_name = embed_session.get_inputs()[0].name
+    output_name = embed_session.get_outputs()[0].name
     img = preprocess_ear(ear_crop)
-
-    embedding = embed_session.run(
-        [output_name],
-        {input_name: img}
-    )[0].flatten()
-
-    # L2 normalize
+    embedding = embed_session.run([output_name], {input_name: img})[0].flatten()
     embedding = embedding / np.linalg.norm(embedding)
-
     return embedding
 
 
@@ -212,7 +209,7 @@ def main():
             # --- CAPTURE LOGIC ---
             if save_flag:
 
-                folder_path = f"patients/{hn_value}_{mode_value}"
+                folder_path = f"{PATIENTS_FOLDER}/{hn_value}_{mode_value}"
                 os.makedirs(folder_path, exist_ok=True)
                 timestamp = int(time.time())
                 
@@ -246,17 +243,20 @@ def main():
 
                     ear_crop = color_image[y1:y2, x1:x2]
                     ear_path = f"{RGB_FOLDER}/ear_{timestamp}.jpg"
+                    cv2.imwrite(ear_path, ear_crop)
                     ear_path = f"{folder_path}/ear_{timestamp}.jpg"
                     cv2.imwrite(ear_path, ear_crop)
                 else:
                     ear_path = None
 
                 # E. Extract and Save Embedding
-                embedding = extract_embedding(ear_crop)
+                embedding = extract_embedding(ear_crop, model_type=mode_value)
 
                 embed_path = f"{EMBED_FOLDER}/embed_{timestamp}.json"
+                with open(embed_path, "w") as f:
+                    json.dump(embedding.tolist(), f)
+                    
                 embed_path = f"{folder_path}/embed_{timestamp}.json"
-
                 with open(embed_path, "w") as f:
                     json.dump(embedding.tolist(), f)
 
@@ -283,14 +283,6 @@ def main():
                 last_bbox = detect_ear(color_image)
 
             bbox = last_bbox
-
-
-            # Draw bounding box on the preview frame
-            # if bbox:
-            #     cv2.rectangle(color_image, (bbox["x1"], bbox["y1"]), (bbox["x2"], bbox["y2"]), (0, 255, 0), 2)
-            #     cv2.putText(color_image, f"{bbox['score']:.2f}", (bbox["x1"], bbox["y1"] - 10),
-            #                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-
 
             # --- PREVIEW STREAM LOGIC ---
             # Resize image to 50% to reduce bandwidth and latency

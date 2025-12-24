@@ -94,4 +94,8 @@ typings/
 out/
 
 saved_images
+depth_folder
+rgb_folder
+ply_folder
+embed_folder
 patients

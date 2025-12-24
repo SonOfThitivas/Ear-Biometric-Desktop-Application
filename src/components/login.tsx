@@ -14,6 +14,7 @@ import {
 import { TbAlertCircle } from "react-icons/tb";
 import { useForm } from '@mantine/form';
 import { AiOutlineEnter } from "react-icons/ai";
+import useCameraSocket from "../hooks/useCameraSocket";
 
 function Login(
     {setOperatorNumberParent, setRoleParent}: // <--- ADDED setRoleParent
@@ -29,6 +30,8 @@ function Login(
     const [role, setRole] = React.useState<string>("") // <--- ADDED ROLE STATE
     const [success, setSuccess] = React.useState<boolean>(false)    // when get login and get operator number
     
+    const { startCamera } = useCameraSocket();
+
     const form = useForm({
         mode: 'uncontrolled',
         initialValues: {
@@ -47,6 +50,7 @@ function Login(
             // get operator number
             setOperatorNumberParent(operatorNumber)
             setRoleParent(role) // <--- SEND ROLE TO PARENT
+            startCamera();
         } 
 
     }, [operatorNumber, role, success, setOperatorNumberParent, setRoleParent]) // Added deps

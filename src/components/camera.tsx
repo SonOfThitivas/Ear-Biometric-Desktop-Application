@@ -34,8 +34,8 @@ export default function Camera({ onInsideZoneChange }) {
       ctx.clearRect(0, 0, imgWidth, imgHeight);
 
       // Target zone
-      const zoneWidth = imgWidth * 0.4;
-      const zoneHeight = imgHeight * 0.4;
+      const zoneWidth = imgWidth * 0.25;
+      const zoneHeight = imgHeight * 0.5;
       const zoneX = (imgWidth - zoneWidth) / 2;
       const zoneY = (imgHeight - zoneHeight) / 2;
 
