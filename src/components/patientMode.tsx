@@ -9,17 +9,21 @@ import { MdChildCare } from "react-icons/md";
 import { IoIosPerson } from "react-icons/io";
 
 export interface IPatientMode {
+    title?: string
     patient: string
     setPatient: React.Dispatch<React.SetStateAction<string>>
 }
 
-function PatientModeSelector({patient, setPatient}:IPatientMode) {
+function PatientModeSelector({title="Patient Mode", patient, setPatient}:IPatientMode) {
   return (
-    <Group justify='center'>
-        <Title order={4}>
-            Patient Mode
-        </Title>
+    <Group justify="center" wrap='nowrap'>
+        {title && 
+            <Title order={4} textWrap='nowrap'>
+                {title}
+            </Title>
+        }
         <SegmentedControl
+            w={"100%"}
             value={patient}
             // defaultValue={patient}
             color={patient === "child" ? "orange" : "green"}

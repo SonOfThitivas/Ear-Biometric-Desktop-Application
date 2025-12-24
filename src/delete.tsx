@@ -10,9 +10,9 @@ import {
     Group,
     Text,
     Badge,
-    Divider
 } from '@mantine/core'
 import { TbAlertCircle, TbCheck, TbTrash, TbLinkOff } from "react-icons/tb";
+import PatientModeSelector from './components/patientMode';
 
 interface DeleteProps {
     role: string;
@@ -120,9 +120,17 @@ function Delete({ role, operatorNumber }: DeleteProps) {
                     { label: 'Unlink Relation', value: 'relation' },
                 ]}
                 mb="lg"
+                color={mode === "relation" ? "violet.4" : "blue.6"}
             />
 
-            <Box p="lg" bd="2px black solid" bdrs="sm">
+            <Box 
+                p="lg" 
+                bd={
+                    `5px solid ` + (mode === "relation" ? "black" : targetType === "child" ? "orange" : "green")
+                } 
+                bdrs="md" 
+                style={{transition:"border-color 0.3s ease"}}
+            >
                 
                 {/* ================= MODE 1: DELETE RECORD ================= */}
                 {mode === 'record' && (
@@ -135,16 +143,8 @@ function Delete({ role, operatorNumber }: DeleteProps) {
                         </Group>
 
                         <Text mb="xs" fw={500}>Select Target:</Text>
-                        <SegmentedControl
-                            fullWidth
-                            value={targetType}
-                            onChange={setTargetType}
-                            data={[
-                                { label: 'Child', value: 'child' },
-                                { label: 'Parent', value: 'parent' },
-                            ]}
-                            mb="md"
-                        />
+
+                        <PatientModeSelector title={null} patient={targetType} setPatient={setTargetType}/>
 
                         <TextInput
                             label="Hospital Number (HN)"
@@ -173,7 +173,7 @@ function Delete({ role, operatorNumber }: DeleteProps) {
                     <>
                          <Group justify="space-between" mb="md">
                             <Title order={3}>Unlink Relation</Title>
-                            <Badge color="orange" size="lg">Relation</Badge>
+                            <Badge color="violet.5" size="lg">Relation</Badge>
                         </Group>
 
                         <Text c="dimmed" size="sm" mb="md">
@@ -200,7 +200,7 @@ function Delete({ role, operatorNumber }: DeleteProps) {
 
                         <Button 
                             fullWidth 
-                            color="orange" 
+                            color="violet.5" 
                             size="lg" 
                             onClick={handleUnlink} 
                             loading={loading}
