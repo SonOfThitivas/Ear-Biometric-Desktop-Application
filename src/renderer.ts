@@ -27,6 +27,19 @@ export interface IElectronAPI {
 
   insertChild: (data: any, op_number: string) => Promise<{ success: boolean; error?: string }>;
   insertParent: (data: any, op_number: string) => Promise<{ success: boolean; error?: string }>;
+
+  updateChild: (
+      hn: string, 
+      data: { firstname: string, lastname: string, age: number, dob: string, sex: string }, 
+      op_number: string
+  ) => Promise<{ success: boolean; message?: string; error?: string }>;
+
+  updateParent: (
+      hn: string, 
+      data: { firstname: string, lastname: string, age: number, dob: string, sex: string }, 
+      op_number: string
+  ) => Promise<{ success: boolean; message?: string; error?: string }>;
+
 }
 
 declare global {

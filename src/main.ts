@@ -125,4 +125,13 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:login-operator', async (_event, { username, password }) => {
     return await db.loginOperator(username, password);
   });
+
+  ipcMain.handle('db:update-child', async (_event, hn, data, op_number) => {
+    return await db.updateChild(hn, data, op_number);
+  });
+
+  // Handle Parent Update
+  ipcMain.handle('db:update-parent', async (_event, hn, data, op_number) => {
+    return await db.updateParent(hn, data, op_number);
+  });
 });
