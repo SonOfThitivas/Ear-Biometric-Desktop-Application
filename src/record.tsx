@@ -13,7 +13,11 @@ import { IRecordChildParent } from './interface/IRecord'
 import TableRecord from './components/tableRecord'
 import { TbAlertCircle } from "react-icons/tb"
 
-function Record() {
+function Record({
+    tab="Record"
+}:{
+    tab?:string
+}) {
 
     const [record, setRecord] = React.useState<IRecordChildParent[]>([])   // fetch data
     const [hn, setHn] = React.useState<string>("")  // hospital number fill
@@ -27,8 +31,8 @@ function Record() {
     
     // Fetch all data automatically when page opens
     React.useEffect(() => {
-        fetchData();
-    }, []);
+        if (tab === "Record") fetchData();
+    }, [tab]);
 
     // handle transition and alert
     const handleTransition = () => {

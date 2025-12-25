@@ -120,7 +120,7 @@ function Delete({ role, operatorNumber }: DeleteProps) {
                     { label: 'Unlink Relation', value: 'relation' },
                 ]}
                 mb="lg"
-                color={mode === "relation" ? "violet.4" : "blue.6"}
+                color={mode === "relation" ? "violet.4" : "red.6"}
             />
 
             <Box 

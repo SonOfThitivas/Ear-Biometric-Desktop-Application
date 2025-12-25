@@ -48,6 +48,7 @@ VITE_DEPTH_FOLDER=path/to/depth_folder
 VITE_PLY_FOLDER=path/to/ply_folder
 VITE_EMBED_FOLDER=path/to/embed_folder
 VITE_CHILD_MODEL=path/to/child_model
+VITE_MOM_MODEL=path/to/mom_model
 VITE_YOLO_MODEL=path/to/yolo_model
 VITE_DATABASE_PORT=database-port
 ```
@@ -75,6 +76,7 @@ interface ImportMetaEnv {
   readonly VITE_PLY_FOLDER: string
   readonly VITE_EMBED_FOLDER: string
   readonly VITE_CHILD_MODEL: string
+  readonly VITE_MOM_MODEL: string
   readonly VITE_YOLO_MODEL: string
   readonly VITE_DATABASE_PORT: number
 }
