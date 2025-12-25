@@ -1,6 +1,6 @@
 {
   "name": "ear-biometric",
-  "productName": "ear-biometric",
+  "productName": "Ear Biometric",
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
@@ -13,7 +13,7 @@
   },
   "keywords": [],
   "author": {
-    "name": "Karn Suksomkit",
+    "name": "Ear Biometric",
     "email": "karnssk123@gmail.com"
   },
   "license": "MIT",
@@ -50,6 +50,7 @@
     "@mantine/dates": "^8.3.9",
     "@mantine/form": "^8.3.10",
     "@mantine/hooks": "^8.3.9",
+    "@mantine/notifications": "^8.3.9",
     "dayjs": "^1.11.19",
     "dotenv": "^17.2.3",
     "electron-squirrel-startup": "^1.0.1",

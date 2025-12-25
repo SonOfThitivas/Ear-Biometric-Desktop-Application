@@ -10,6 +10,15 @@ export default interface IRecord {
     r3?: number[] | null
 }
 
+export const IRecordInit: IRecord = {
+    hn: "",
+    firstname: "",
+    lastname:"",
+    age: 0,
+    sex: "",
+    dob: null,
+}
+
 export interface IRecordChildParent {
     child_hn?: string | null
     child_fname?: string | null

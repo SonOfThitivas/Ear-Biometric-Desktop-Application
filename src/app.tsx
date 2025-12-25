@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 import "@mantine/core/styles.css"
 import '@mantine/dates/styles.css';
+import '@mantine/notifications/styles.css';
 import "dayjs/locale/th"
 
 import {
@@ -15,7 +16,7 @@ import {
 } from '@mantine/core';
 
 import {  TbUserScan} from "react-icons/tb";
-import { FcAddDatabase, FcDeleteDatabase, FcButtingIn, FcConferenceCall } from "react-icons/fc";
+import { FcAddDatabase, FcDeleteDatabase, FcButtingIn, FcConferenceCall, FcSettings } from "react-icons/fc";
 
 import Identify from './identify';
 import Login from './components/login';
@@ -23,6 +24,7 @@ import Record from './record';
 import Delete from './delete';
 import Update from './update'
 import Registry from './registry';
+import EditRecord from './editRecord';
 
 const App = () => {
     const [active, setActive] = React.useState<string | null>("Identify")
@@ -39,6 +41,7 @@ const App = () => {
         {label: "Update", child:<Update operatorNumber={operatorNumber}/>, icon:<FcButtingIn size={30}/>},
         {label: "Delete", child:<Delete role={role} operatorNumber={operatorNumber}/>, icon:<FcDeleteDatabase size={30}/>}, 
         {label: "Record", child:<Record/>, icon:<FcConferenceCall size={30}/>},
+        {label: "Edit Record", child: <EditRecord operatorNumber={operatorNumber} />, icon:<FcSettings size={30}/>},
     ]
 
     return (

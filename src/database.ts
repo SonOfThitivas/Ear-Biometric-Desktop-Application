@@ -510,7 +510,7 @@ export const findClosestParent = async (vector: number[]) => {
 // 8. UPDATE ENTITIES
 // ==========================================
 
-export const updateChild = async (hn: string, data: { firstname: string, lastname: string, age: number, dob: string, sex: string }, op_number: string) => {
+export const ed = async (hn: string, data: { firstname: string, lastname: string, age: number, dob: string, sex: string }, op_number: string) => {
   const query = `
     UPDATE child 
     SET firstname = $2, lastname = $3, age = $4, dob = $5, sex = $6
