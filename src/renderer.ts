@@ -40,6 +40,9 @@ export interface IElectronAPI {
       op_number: string
   ) => Promise<{ success: boolean; message?: string; error?: string }>;
 
+  getChildByHN: (hn: string) => Promise<any>; // Returns object or null
+  getParentByHN: (hn: string) => Promise<any>; // Returns object or null
+
 }
 
 declare global {

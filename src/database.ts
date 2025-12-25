@@ -510,7 +510,7 @@ export const findClosestParent = async (vector: number[]) => {
 // 8. UPDATE ENTITIES
 // ==========================================
 
-export const ed = async (hn: string, data: { firstname: string, lastname: string, age: number, dob: string, sex: string }, op_number: string) => {
+export const updateChild = async (hn: string, data: { firstname: string, lastname: string, age: number, dob: string, sex: string }, op_number: string) => {
   const query = `
     UPDATE child 
     SET firstname = $2, lastname = $3, age = $4, dob = $5, sex = $6
@@ -570,4 +570,40 @@ export const updateParent = async (hn: string, data: { firstname: string, lastna
     console.error("❌ [DB] Update Parent Failed:", error.message);
     return { success: false, error: error.message };
   }
+};
+
+// ==========================================
+// 9. SELECT SINGLE BY HN (INDIVIDUAL TABLES)
+// ==========================================
+
+export const getChildByHN = async (hn: string) => {
+    const query = `
+        SELECT hn_number, firstname, lastname, age, dob, sex 
+        FROM child 
+        WHERE hn_number = $1 AND active_status = '1'
+        LIMIT 1
+    `;
+    try {
+        const res = await getClient().query(query, [hn]);
+        return res.rows[0]; // Returns the object or undefined
+    } catch (error: any) {
+        console.error("❌ [DB] Get Child By HN Failed:", error.message);
+        return null;
+    }
+};
+
+export const getParentByHN = async (hn: string) => {
+    const query = `
+        SELECT hn_number, firstname, lastname, age, dob, sex 
+        FROM parent 
+        WHERE hn_number = $1 AND active_status = '1'
+        LIMIT 1
+    `;
+    try {
+        const res = await getClient().query(query, [hn]);
+        return res.rows[0]; // Returns the object or undefined
+    } catch (error: any) {
+        console.error("❌ [DB] Get Parent By HN Failed:", error.message);
+        return null;
+    }
 };

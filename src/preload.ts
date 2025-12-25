@@ -44,4 +44,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateParent: (hn: string, data: any, op_number: string) => 
     ipcRenderer.invoke('db:update-parent', hn, data, op_number),
 
+  getChildByHN: (hn: string) => ipcRenderer.invoke('db:get-child-by-hn', hn),
+  getParentByHN: (hn: string) => ipcRenderer.invoke('db:get-parent-by-hn', hn),
+
 });

@@ -53,26 +53,26 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
         setLoading(true);
 
         try {
-            const record:Array<IRecordChildParent> = await window.electronAPI.searchByHN(values.hn);
+            // 1. Select the correct API based on the patient mode (child vs parent)
+            let record: any = null;
+            if (patient === "child") {
+                record = await window.electronAPI.getChildByHN(values.hn);
+            } else {
+                record = await window.electronAPI.getParentByHN(values.hn);
+            }
             
-            if (record.length !== 0) {
-                const data: IRecord = (patient === "child" ?
-                    {
-                        hn: record[0].child_hn,
-                        firstname: record[0].child_fname,
-                        lastname: record[0].child_lname,
-                        sex: record[0].child_sex,
-                        age: record[0].child_age,
-                        dob: record[0].child_dob
-                    } : {
-                        hn: record[0].parent_hn,
-                        firstname: record[0].parent_fname,
-                        lastname: record[0].parent_lname,
-                        sex: record[0].parent_sex,
-                        age: record[0].parent_age,
-                        dob: record[0].parent_dob
-                    }
-                ) 
+            // 2. Check if a record was returned (it will be null if not found)
+            if (record) {
+                // 3. Map the database columns to your form fields
+                // The new queries return: hn_number, firstname, lastname, sex, age, dob
+                const data: IRecord = {
+                    hn: record.hn_number,
+                    firstname: record.firstname,
+                    lastname: record.lastname,
+                    sex: record.sex,
+                    age: record.age,
+                    dob: new Date(record.dob) // Ensure it is a valid Date object for Mantine
+                };
 
                 formEditStep.setValues(data);
                 setStep('edit');
@@ -85,16 +85,16 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                     autoClose:4000,
                 })
             }
-            } catch (err) {
-                notifications.show({
-                    title:"Error",
-                    message: 'An error occurred while fetching patient record. Please try again.',
-                    color:"red",
-                    autoClose:4000,
-                })
-            } finally {
-                setLoading(false);
-            }
+        } catch (err) {
+            notifications.show({
+                title:"Error",
+                message: 'An error occurred while fetching patient record. Please try again.',
+                color:"red",
+                autoClose:4000,
+            })
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleRecordSubmit = async (values: IRecord) => {
@@ -275,7 +275,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
 
                                 <Group justify="space-between" mt="md">
                                     <Button 
-                                        color='red'
+                                        color='red' 
                                         onClick={handleBack}
                                     >
                                     Back

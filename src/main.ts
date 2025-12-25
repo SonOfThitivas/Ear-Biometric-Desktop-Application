@@ -134,4 +134,13 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:update-parent', async (_event, hn, data, op_number) => {
     return await db.updateParent(hn, data, op_number);
   });
+
+  ipcMain.handle('db:get-child-by-hn', async (_event, hn: string) => {
+    return await db.getChildByHN(hn);
+  });
+
+  ipcMain.handle('db:get-parent-by-hn', async (_event, hn: string) => {
+    return await db.getParentByHN(hn);
+  });
+
 });
