@@ -35,7 +35,7 @@ function startCamera() {
     // When packaged, we need to make sure we find the python script correctly
     // Depending on how you pack files, you might need path.join(process.resourcesPath, 'src/camera.py')
     // For now, we assume it's in the same relative location or unpacked.
-    const scriptPath = path.join(__dirname, '../../src/camera.py'); 
+    const scriptPath = import.meta.env.VITE_PATH_CAMERAPY; 
     console.log("Script Path:", scriptPath);
     
     // Spawn the Python process with unbuffered output (-u)
