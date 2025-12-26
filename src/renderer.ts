@@ -2,6 +2,7 @@ import './index.css';
 import './app';
 
 export interface IElectronAPI {
+    beep: () => Promise<void>;
   loginOperator: (username: string, password: string) => Promise<{ success: boolean, op_number?: string, role?: string, message?: string }>;
   
   searchByHN: (hn: string) => Promise<any[]>;

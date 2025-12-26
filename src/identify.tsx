@@ -107,6 +107,7 @@ export default function Identify() {
         if (countdown !== 0) return
         if (!insideZone) return
         if (hasCaptured) return
+        if (countdown === 0) window.electronAPI.beep()
         
         setHasCaptured(true);
         capture("IDENTIFY", patient)

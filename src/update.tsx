@@ -78,6 +78,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     if (!isCapturing) return;
     if (countdown !== 0) return;
     if (!insideZone) return;
+    if (countdown === 0) window.electronAPI.beep()
 
     capture(hn, patient);
     setCountdown(4);

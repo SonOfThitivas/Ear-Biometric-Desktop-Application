@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
+import { app, BrowserWindow, ipcMain, shell} from 'electron';
 import * as db from './database';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
@@ -44,6 +44,9 @@ app.on('activate', () => {
 app.whenReady().then(async () => {
   await db.connectDB();
 
+    ipcMain.handle('beep', () => {
+        shell.beep();
+    });
   // --- SELECTS ---
   ipcMain.handle('db:get-active-children', async () => {
     return await db.getAllActiveChildren();

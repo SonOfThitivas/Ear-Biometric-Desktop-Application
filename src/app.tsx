@@ -33,7 +33,6 @@ const App = () => {
     // 1. Add Role State
     const [role, setRole] = React.useState<string>("")
 
-
     // 2. Move tabList inside to access 'role'
     const tabList = [
         {label: "Identify", child:<Identify/>, icon:<TbUserScan size={30}/>},
