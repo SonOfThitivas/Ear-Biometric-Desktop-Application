@@ -97,10 +97,6 @@ def preprocess_ear(ear_crop):
     # Normalize to [0,1]
     img = img.astype(np.float32) / 255.0
 
-    # ImageNet normalization
-    img -= np.array([0.485, 0.456, 0.406], dtype=np.float32)
-    img /= np.array([0.229, 0.224, 0.225], dtype=np.float32)
-
     # HWC → CHW
     img = np.transpose(img, (2, 0, 1))
 
