@@ -37,6 +37,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
   const [alertMsg, setAlertMsg] = React.useState("");
   const [colorAlert, setColorAlert] = React.useState("red");
   const tbAlertCircle = <TbAlertCircle />;
+  const [loading, setLoading] = React.useState<boolean>(false)
 
   const handleTransition = () => {
     const timeout = setTimeout(() => {
@@ -46,12 +47,21 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     }, 4000);
   };
 
+    const handleReset = () => {
+        setInsideZone(false)
+        setIsCapturing(false)
+        setLoading(false)
+        setCountdown(0)
+        setHn("")
+    }
+
   // Start workflow
   const handleCapture = () => {
     if (isCapturing) return;
     setCaptures([]);
     setCountdown(4);
     setIsCapturing(true);
+    setLoading(true)
   };
 
   // Reset countdown when ear leaves zone
@@ -178,9 +188,12 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         />
 
         <Group grow justify={"space-between"} m={"sm"}>
-          <Button variant="filled" color="blue" onClick={handleCapture}>
-            Start 3‑Capture
-          </Button>
+            <Button variant="filled" color="blue" onClick={handleCapture} loading={loading}>
+                Start 3‑Capture
+            </Button>
+            <Button variant='filled' color='yellow' onClick={handleReset}>
+                Reset
+            </Button>
         </Group>
 
         <Box mt="md">
