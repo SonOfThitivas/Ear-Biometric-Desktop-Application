@@ -14,7 +14,7 @@ import {
   Loader,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { DateInput } from '@mantine/dates';
+import { DateInput, DatesProvider } from '@mantine/dates';
 import { notifications, Notifications } from '@mantine/notifications';
 import IRecord, {IRecordInit, IRecordChildParent} from './interface/IRecord';
 import PatientModeSelector from './components/patientMode';
@@ -40,6 +40,10 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
     const formEditStep = useForm<IRecord>({
         mode: "uncontrolled",
         initialValues: IRecordInit,
+        transformValues: (values:IRecord) => ({
+            ...values,
+            dob: values.dob ? new Date(values.dob) : null,
+        }),
         validate: {
             hn: (value: string) => (value.trim().length === 0 ? 'Hospital number is required' : null),
             firstname: (value: string) => (value.trim().length === 0 ? 'First name is required' : null),
@@ -248,14 +252,17 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                                         />
                                     </Grid.Col>
                                     <Grid.Col span={6}>
-                                        <DateInput
-                                            label="Date of Birth"
-                                            placeholder="Select date"
-                                            leftSection={<MdDateRange size={20} color='black'/>}
-                                            withAsterisk
-                                            key={formEditStep.key("dob")}
-                                            {...formEditStep.getInputProps('dob')}
-                                        />
+                                        <DatesProvider settings={{locale:"en"}}>
+                                            <DateInput
+                                                valueFormat='DD MMM YYYY'
+                                                label="Date of Birth"
+                                                placeholder="Select date"
+                                                leftSection={<MdDateRange size={20} color='black'/>}
+                                                withAsterisk
+                                                key={formEditStep.key("dob")}
+                                                {...formEditStep.getInputProps('dob')}
+                                            />
+                                        </DatesProvider>
                                     </Grid.Col>
                                     <Grid.Col span={6}>
                                         <Radio.Group
