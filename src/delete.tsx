@@ -181,6 +181,15 @@ function Delete({ role, operatorNumber }: DeleteProps) {
                         </Text>
 
                         <TextInput
+                            label="Child HN"
+                            placeholder="e.g. C-001"
+                            value={childHn}
+                            onChange={(e) => setChildHn(e.currentTarget.value)}
+                            size="md"
+                            mb="lg"
+                        />
+                        
+                        <TextInput
                             label="Parent HN"
                             placeholder="e.g. P-001"
                             value={parentHn}
@@ -189,14 +198,6 @@ function Delete({ role, operatorNumber }: DeleteProps) {
                             mb="sm"
                         />
 
-                        <TextInput
-                            label="Child HN"
-                            placeholder="e.g. C-001"
-                            value={childHn}
-                            onChange={(e) => setChildHn(e.currentTarget.value)}
-                            size="md"
-                            mb="lg"
-                        />
 
                         <Button 
                             fullWidth 

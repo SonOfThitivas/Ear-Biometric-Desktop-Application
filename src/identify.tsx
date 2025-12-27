@@ -75,6 +75,7 @@ export default function Identify() {
     // ✅ Start auto-capture workflow
     const handleDetect = () => {
         if (isCapturing) return
+        setChildParentRecord(recordInit)
         setCountdown(3)
         setIsCapturing(true)
         setVector(null)
