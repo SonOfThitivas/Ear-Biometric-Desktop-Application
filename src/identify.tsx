@@ -60,14 +60,14 @@ export default function Identify() {
             setAlertMsg("")
             setAlertBox(false)
             clearTimeout(timeout)
-        }, 5000)
+        }, 4000)
     }
 
     const handleReset = () => {
         setInsideZone(false)
         setIsCapturing(false)
         setLoading(false)
-        setCountdown(0)
+        setCountdown(3)
         setChildParentRecord(recordInit)
         setVector(null)
     }
@@ -75,7 +75,7 @@ export default function Identify() {
     // ✅ Start auto-capture workflow
     const handleDetect = () => {
         if (isCapturing) return
-        setCountdown(4)
+        setCountdown(3)
         setIsCapturing(true)
         setVector(null)
         setHasCaptured(false);
@@ -85,7 +85,7 @@ export default function Identify() {
     // ✅ Reset countdown when ear leaves zone
     React.useEffect(() => {
         if (!isCapturing) return
-        if (!insideZone) setCountdown(4)
+        if (!insideZone) setCountdown(3)
     }, [insideZone, isCapturing])
 
     // ✅ Drive countdown

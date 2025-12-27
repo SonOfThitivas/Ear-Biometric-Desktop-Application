@@ -59,7 +59,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
   const handleCapture = () => {
     if (isCapturing) return;
     setCaptures([]);
-    setCountdown(4);
+    setCountdown(3);
     setIsCapturing(true);
     setLoading(true)
   };
@@ -67,7 +67,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
   // Reset countdown when ear leaves zone
   React.useEffect(() => {
     if (!isCapturing) return;
-    if (!insideZone) setCountdown(4);
+    if (!insideZone) setCountdown(3);
   }, [insideZone, isCapturing]);
 
   // Drive countdown every second
@@ -89,9 +89,9 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     if (countdown !== 0) return;
     if (!insideZone) return;
     if (countdown === 0) window.electronAPI.beep()
-
+    setLoading(false)
     capture(hn, patient);
-    setCountdown(4);
+    setCountdown(3);
   }, [countdown, isCapturing, insideZone, capture, hn, patient]);
 
   // Store each capture result
