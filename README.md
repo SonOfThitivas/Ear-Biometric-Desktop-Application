@@ -158,3 +158,43 @@ Generates platform-specific installers (e.g., `.exe`, `.dmg`, `.deb`).
 ---
 
 Happy coding 🚀
+
+---
+
+# Program Overview
+
+### Identify Patient Page
+
+<img width="984" height="614" alt="image" src="https://github.com/user-attachments/assets/a367d3ff-009a-4199-8d02-5592c7c17c00" />
+
+Identify patient ear using deep learning model ViT-16 and custom embedding layer.
+
+### Registry Page
+
+<img width="825" height="514" alt="image" src="https://github.com/user-attachments/assets/75a0476c-61ba-4433-bfab-725fb775c309" />
+
+Registry page for getting patient record then store into our database
+
+### Update Page
+
+<img width="825" height="515" alt="image" src="https://github.com/user-attachments/assets/fa7a9e7f-54ed-4a2a-b7e4-cb28cec88a99" />
+
+Update patient ear embedding vector or create one
+
+### Delete Page
+
+<img width="829" height="517" alt="image" src="https://github.com/user-attachments/assets/807f2722-d7f5-4fbb-a489-5276d1afd6ad" />
+
+Delte patient recoed having hard delete and also soft delete
+
+### Record Page
+
+<img width="828" height="517" alt="image" src="https://github.com/user-attachments/assets/4f6c56a4-1220-4ad1-9a96-7ba9064a4555" />
+
+Record page for quering patient records and look for patient relation between parent and child
+
+### Edit Record Page
+
+<img width="826" height="517" alt="image" src="https://github.com/user-attachments/assets/3f420e72-c904-4314-9754-0c26b0822d06" />
+
+Query and edit patient record
