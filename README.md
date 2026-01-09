@@ -198,3 +198,8 @@ Record page for quering patient records and look for patient relation between pa
 <img width="826" height="517" alt="image" src="https://github.com/user-attachments/assets/3f420e72-c904-4314-9754-0c26b0822d06" />
 
 Query and edit patient record
+
+# Manual Instructions
+
+[Click Here for Manual](https://www.canva.com/design/DAG8oFvtDZA/MbobvI6DjvS6xA5vJrbZLA/view?utm_content=DAG8oFvtDZA&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h3a68b1a9e6)
+
