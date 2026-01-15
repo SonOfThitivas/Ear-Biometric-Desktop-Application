@@ -69,7 +69,7 @@ function RecordFill(
                         withAsterisk
                     />
                 </Grid.Col>
-                <Grid.Col span={6}>
+                {/* <Grid.Col span={6}>
                     <NumberInput
                         label="Age"
                         placeholder="Enter age"
@@ -79,7 +79,7 @@ function RecordFill(
                         max={150}
                         withAsterisk
                     />
-                </Grid.Col>
+                </Grid.Col> */}
                 <Grid.Col span={6}>
                     <DatesProvider settings={{locale:"en"}}>
                         <DateInput

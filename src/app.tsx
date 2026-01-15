@@ -8,11 +8,8 @@ import "dayjs/locale/th"
 
 import {
     MantineProvider, 
-    AppShell, 
-    NavLink,
     Tabs,
     Box,
-    Flex
 } from '@mantine/core';
 
 import {  TbUserScan} from "react-icons/tb";

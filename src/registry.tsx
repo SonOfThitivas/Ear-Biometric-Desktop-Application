@@ -18,6 +18,8 @@ import { MdChildCare } from "react-icons/md";
 import { IoIosPerson } from "react-icons/io";
 import PatientModeSelector from "./components/patientMode";
 import { useForm } from "@mantine/form"
+import "dayjs"
+import dayjs from "dayjs";
 
 interface RegistryProps {
     operatorNumber: string;
@@ -207,14 +209,14 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 hn: record.child_hn,
                 firstname: record.child_fname,
                 lastname: record.child_lname,
-                age: record.child_age,
+                age: dayjs().diff(record.child_dob, "year"),
                 sex: record.child_sex,
                 dob: record.child_dob,
             } : {
                 hn: record.parent_hn,
                 firstname: record.parent_fname,
                 lastname: record.parent_lname,
-                age: record.parent_age,
+                age: dayjs().diff(record.parent_dob, "year"),
                 sex: record.parent_sex,
                 dob: record.parent_dob,
             })
