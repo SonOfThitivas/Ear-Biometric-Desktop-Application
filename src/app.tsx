@@ -27,9 +27,11 @@ import Registry from './registry';
 import EditRecord from './editRecord';
 
 const App = () => {
-    const [active, setActive] = React.useState<string | null>("Identify")
+    // const [active, setActive] = React.useState<string | null>("Identify")
+    // const [operatorNumber, setOperatorNumber] = React.useState<string>("")
+    const [active, setActive] = React.useState<string | null>("Edit Record")
     const [operatorNumber, setOperatorNumber] = React.useState<string>("")
-        
+    
     // 1. Add Role State
     const [role, setRole] = React.useState<string>("")
 

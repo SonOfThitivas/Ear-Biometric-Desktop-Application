@@ -20,6 +20,7 @@ import IRecord, {IRecordInit, IRecordChildParent} from './interface/IRecord';
 import PatientModeSelector from './components/patientMode';
 import { MdChildCare, MdDateRange  } from "react-icons/md";
 import { IoIosPerson, IoMdMale, IoMdFemale  } from "react-icons/io";
+import dayjs from 'dayjs';
 
 function EditRecord({operatorNumber}:{operatorNumber:string}) {
     const [step, setStep] = React.useState<'identify' | 'edit'>('identify');
@@ -109,7 +110,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
             const data = {
                 firstname: values.firstname,
                 lastname: values.lastname,
-                age: values.age,
+                age: dayjs().diff(values.dob, "year"),
                 sex: values.sex,
                 dob: values.dob.toISOString().split('T')[0],
             }
@@ -240,7 +241,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                                             {...formEditStep.getInputProps('lastname')}
                                         />
                                     </Grid.Col>
-                                    <Grid.Col span={6}>
+                                    {/* <Grid.Col span={6}>
                                         <NumberInput
                                             label="Age"
                                             placeholder="Enter age"
@@ -250,7 +251,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                                             key={formEditStep.key("age")}
                                             {...formEditStep.getInputProps('age')}
                                         />
-                                    </Grid.Col>
+                                    </Grid.Col> */}
                                     <Grid.Col span={6}>
                                         <DatesProvider settings={{locale:"en"}}>
                                             <DateInput
