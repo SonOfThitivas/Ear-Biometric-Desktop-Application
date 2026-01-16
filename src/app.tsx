@@ -8,11 +8,8 @@ import "dayjs/locale/th"
 
 import {
     MantineProvider, 
-    AppShell, 
-    NavLink,
     Tabs,
     Box,
-    Flex
 } from '@mantine/core';
 
 import {  TbUserScan} from "react-icons/tb";
@@ -29,7 +26,7 @@ import EditRecord from './editRecord';
 const App = () => {
     const [active, setActive] = React.useState<string | null>("Identify")
     const [operatorNumber, setOperatorNumber] = React.useState<string>("")
-        
+    
     // 1. Add Role State
     const [role, setRole] = React.useState<string>("")
 
