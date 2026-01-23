@@ -37,13 +37,15 @@ export const connectAs = async (roleName: 'gatekeeper' | 'user' | 'admin') => {
   try {
     await client.connect();
     console.log(`✅ [DB] Connected as role: ${roleName.toUpperCase()}`);
+    return {success: true, message: "Database has connected"}
   } catch (err) {
     console.error(`❌ [DB] Failed to connect as ${roleName}`, err);
+    return {success: false, message: err}
   }
 };
 
 export const connectDB = async () => {
-  await connectAs('gatekeeper');
+    return await connectAs('gatekeeper');
 };
 
 const getClient = () => {
