@@ -6,11 +6,6 @@ import {
     Button,
     Text,
     Title,
-    SegmentedControl,
-    Center,
-    Switch,
-    Alert,
-    Transition
 } from '@mantine/core'
 
 import TableResult from './components/tableResult'
@@ -19,6 +14,8 @@ import { TbAlertCircle } from "react-icons/tb"
 import Camera from "./components/camera"
 import useCameraSocket from "./hooks/useCameraSocket"
 import PatientModeSelector from './components/patientMode'
+import CaptureNoti from './components/captureNoti'
+import { notifications } from '@mantine/notifications'
 
 const recordInit: IRecordChildParent = {
     child_hn: "",
@@ -45,7 +42,8 @@ export default function Identify() {
     const [countdown, setCountdown] = React.useState(0)
     const [isCapturing, setIsCapturing] = React.useState(false)
     const [vector, setVector] = React.useState<number[] | null>(null)
-    const [hasCaptured, setHasCaptured] = React.useState(false);
+    const [hasCaptured, setHasCaptured] = React.useState<boolean>(false);
+    const [bgcolor, setBgcolor] = React.useState<string>("white")
 
     const tbAlertCircle = <TbAlertCircle/>
     const [alertBox, setAlertBox] = React.useState<boolean>(false)
@@ -54,15 +52,6 @@ export default function Identify() {
     const [colorAlert, setColorAlert] = React.useState<string>("red")
     const [loading, setLoading] = React.useState<boolean>(false)
 
-    // ✅ Auto-hide alert
-    const handleTransition = () => {
-        const timeout = setTimeout(() => {
-            setAlertMsg("")
-            setAlertBox(false)
-            clearTimeout(timeout)
-        }, 4000)
-    }
-
     const handleReset = () => {
         setInsideZone(false)
         setIsCapturing(false)
@@ -70,6 +59,7 @@ export default function Identify() {
         setCountdown(3)
         setChildParentRecord(recordInit)
         setVector(null)
+        setBgcolor("white")
     }
 
     // ✅ Start auto-capture workflow
@@ -82,12 +72,6 @@ export default function Identify() {
         setHasCaptured(false);
         setLoading(true)
     }
-
-    // ✅ Reset countdown when ear leaves zone
-    React.useEffect(() => {
-        if (!isCapturing) return
-        if (!insideZone) setCountdown(3)
-    }, [insideZone, isCapturing])
 
     // ✅ Drive countdown
     React.useEffect(() => {
@@ -170,10 +154,15 @@ const runIdentification = async (vector: number[]) => {
             console.log("✅ [Identify] Match found:", data[0]);
 
             setChildParentRecord(data[0]);
-            setAlertBox(true);
-            setAlertTitile("Success");
-            setAlertMsg("Detection Successfully");
-            setColorAlert("green");
+            notifications.show({
+                title: "Success",
+                color:"green",
+                message: "Detection Successfully",
+                bg:"green.1",
+                withBorder: true,
+                autoClose: 4000,
+                withCloseButton: true,
+            })
         } else {
             console.error("❌ [Identify] No record found for HN:", hn);
             throw new Error("Detection unsuccessfully, something went wrong. Please, try again.");
@@ -181,11 +170,15 @@ const runIdentification = async (vector: number[]) => {
 
     } catch (err) {
         console.error("❌ [Identify] Identification error:", err);
-
-        setAlertBox(true);
-        setAlertTitile("Error");
-        setAlertMsg(err.message);
-        setColorAlert("red");
+        notifications.show({
+            title: "Error",
+            message: err,
+            color:"red",
+            bg:"red.1",
+            withBorder: true,
+            autoClose: 4000,
+            withCloseButton: true,
+        })
     }
 
     console.log("✅ [Identify] Identification process finished.");
@@ -194,7 +187,17 @@ const runIdentification = async (vector: number[]) => {
 
 
     return (
-        <Flex gap="sm" justify="center" direction="row" p="xs" w={"100%"}>
+        <Flex 
+            gap="sm" 
+            justify="center" 
+            direction="row" 
+            p="xs" 
+            w={"100%"}
+            bg={bgcolor}
+            style={{
+                transition: "background-color 0.5s ease"
+            }}      
+        >
             {/* Left Section */}
             <Box w={"30%"} maw={"30%"}>
                 <Box component='div'>
@@ -211,7 +214,7 @@ const runIdentification = async (vector: number[]) => {
                 </Box>
 
                 <Box component='div' mt="md">
-                    <Title order={4}>Inside Zone - {insideZone ? "✅ Yes" : "❌ No"}</Title>
+                    {/* <Title order={4}>Inside Zone - {insideZone ? "✅ Yes" : "❌ No"}</Title> */}
                     <Title order={4}>Countdown - {countdown}</Title>
                     <Title order={4}>Status - {isCapturing ? "Capturing..." : "Idle"}</Title>
                 </Box>
@@ -220,7 +223,7 @@ const runIdentification = async (vector: number[]) => {
                     <Text size='xl' fw={500}>Result</Text>
 
                     {/* Child */}
-                    <Box component='div' w={"100%"} mt="sm">
+                    <Box component='div' w={"100%"}>
                         <Text size='sm' fw={500}>Child</Text>
                         <TableResult
                     hn={childParentRecord.child_hn}
@@ -237,7 +240,7 @@ const runIdentification = async (vector: number[]) => {
                     </Box>
 
                     {/* Parent */}
-                    <Box component='div' w={"100%"} mt="sm">
+                    <Box component='div' w={"100%"}>
                         <Text size='sm' fw={500}>Parent</Text>
                         <TableResult
                     hn={childParentRecord.parent_hn}
@@ -262,32 +265,8 @@ const runIdentification = async (vector: number[]) => {
                 <Camera onInsideZoneChange={setInsideZone} />
             </Box>
 
-            {/* Alerts */}
-            <Transition
-                mounted={alertBox}
-                transition="fade-left"
-                duration={400}
-                timingFunction="ease"
-                keepMounted
-                onEntered={handleTransition}
-            >
-                {(styles) => 
-                <Alert
-                    pos={"fixed"}
-                    w={"25%"}
-                    right={"1rem"}
-                    bottom={"1rem"}
-                    variant="filled" 
-                    color={colorAlert} 
-                    title={alertTitle}
-                    icon={tbAlertCircle}
-                    onClose={()=>setAlertBox(false)}
-                    withCloseButton
-                    style={styles}
-                >
-                    {alertMsg}
-                </Alert>}
-            </Transition>
+            <CaptureNoti isCapture={isCapturing} insideZone={insideZone} countdown={countdown} setBgcolor={setBgcolor}/>
+
         </Flex>
     )
 }
