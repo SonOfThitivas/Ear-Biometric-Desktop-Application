@@ -1,206 +1,266 @@
-import React from 'react'
-import { 
-    Flex,
-    Title,
-    Input,
-    TextInput,
-    PasswordInput,
-    Button,
-    Alert,
-    Transition,
-    Group,
-    LoadingOverlay,
-} from '@mantine/core'
-import { TbAlertCircle } from "react-icons/tb";
-import { useForm } from '@mantine/form';
-import { AiOutlineEnter } from "react-icons/ai";
-import useCameraSocket from "../hooks/useCameraSocket";
+    import React from 'react'
+    import { 
+        Flex,
+        Title,
+        Input,
+        TextInput,
+        PasswordInput,
+        Button,
+        Group,
+        LoadingOverlay,
+    } from '@mantine/core'
+    import { TbAlertCircle } from "react-icons/tb";
+    import { useForm } from '@mantine/form';
+    import { AiOutlineEnter } from "react-icons/ai";
+    import useCameraSocket from "../hooks/useCameraSocket";
+    import { notifications, Notifications } from '@mantine/notifications';
 
-function Login(
-    {setOperatorNumberParent, setRoleParent}: // <--- ADDED setRoleParent
-    {
-        setOperatorNumberParent:React.Dispatch<React.SetStateAction<string>>,
-        setRoleParent:React.Dispatch<React.SetStateAction<string>> // <--- ADDED TYPE
-    }
-) {
-    const tbAlertCircle = <TbAlertCircle/>
-    const [alertError, setAlertError] = React.useState<boolean>(false)  // alert error
-    const [loading, setLoading] = React.useState<boolean>(false) // loading icon when click
-    const [operatorNumber, setOperatorNumber] = React.useState<string>("") // operator number
-    const [role, setRole] = React.useState<string>("") // <--- ADDED ROLE STATE
-    const [success, setSuccess] = React.useState<boolean>(false)    // when get login and get operator number
-    
-    const { startCamera } = useCameraSocket();
+    function Login(
+        {setOperatorNumberParent, setRoleParent}: // <--- ADDED setRoleParent
+        {
+            setOperatorNumberParent:React.Dispatch<React.SetStateAction<string>>,
+            setRoleParent:React.Dispatch<React.SetStateAction<string>> // <--- ADDED TYPE
+        }
+    ) {
+        const [loading, setLoading] = React.useState<boolean>(false) // loading icon when click
+        const [operatorNumber, setOperatorNumber] = React.useState<string>("") // operator number
+        const [role, setRole] = React.useState<string>("") // <--- ADDED ROLE STATE
+        const [success, setSuccess] = React.useState<boolean>(false)    // when get login and get operator number
 
-    const form = useForm({
-        mode: 'uncontrolled',
-        initialValues: {
-            username: "",
-            password: "",
-        },
+        const [isConnect, setIsConnect] = React.useState<boolean>(false)
+        const [cooldown, setCooldown] = React.useState<number>(0)
+        const [dbError, setDbError] = React.useState<boolean>(false)
+        
+        const { startCamera } = useCameraSocket();
 
-        validate: {
-            username: (value) => value.length === 0 ? "Username was not filled" : null,
-            password: (value) => value.length === 0 ? "Password was not filled" : null,
-        },
-    });
-    
-    React.useEffect(()=>{
-        if (success) {
-            // get operator number
-            setOperatorNumberParent(operatorNumber)
-            setRoleParent(role) // <--- SEND ROLE TO PARENT
-            startCamera();
-        } 
+        const form = useForm({
+            mode: 'uncontrolled',
+            initialValues: {
+                username: "",
+                password: "",
+            },
 
-    }, [operatorNumber, role, success, setOperatorNumberParent, setRoleParent]) // Added deps
+            validate: {
+                username: (value) => value.length === 0 ? "Username was not filled" : null,
+                password: (value) => value.length === 0 ? "Password was not filled" : null,
+            },
+        });
 
-    // handle transition and alert
-    const handleTransition = () => {
-        const timeout = setTimeout(()=>{
-            setAlertError(false)
-            clearTimeout(timeout)
-        }, 5000)
-        return 0
-    }
+        // Try to connect to database
+        React.useEffect(() => {
+            if (cooldown < 0 && !isConnect) {
+                
+                setLoading(true)
+                notifications.clean()
 
-    // handle when click confirm button
-    const handleConfirm = async (values:{username:string, password:string}) => {
-        setLoading(true)
 
-        const username = values.username
-        const password = values.password
+                const connectDB = async () => {
+                    try {
+                        const res = await window.electronAPI.connectDB() // ✅ Now awaiting
+                        
+                        if (res.success) {
+                            setIsConnect(true)
+                            setDbError(false)
+                            setLoading(false)
+                            console.log("✅ [DB] Connection successful", res.message);
+                    
+                        } else {
+                            setIsConnect(false)
+                            setDbError(true)
+                            setLoading(false)
+                            setCooldown(15) // Set 15 seconds cooldown
+                            console.warn("❌ [DB] Connection failed, retrying in 15 seconds...", res.message);
+                        }
 
-        const res = await fetchData(username, password) 
+                    } catch (error) {
+                        setIsConnect(false)
+                        setDbError(true)
+                        setLoading(false)
+                        setCooldown(15)
+                        console.error("❌ [DB] Connection error:", error);
+                    }
+                }
 
-        setLoading(false)
-    }
+                connectDB() // Call the async function
+            }
+        }, [cooldown, isConnect])
 
-    // TODO: get operator number
-    const fetchData = async (username: string, pass: string) => {
-        try {
-            console.log("🚀 [UI] Sending login request...");
+        // Cooldown timer
+        React.useEffect(() => {
+            if (cooldown >= 0) {
+                if (cooldown === 15){
+                    notifications.show({
+                        id: "db-cooldown",
+                        loading: true,
+                        title: "Retrying...",
+                        message: `Retrying to connect database in ${cooldown} seconds`,
+                        autoClose: false,
+                        bg: "yellow.1",
+                        withBorder: true,
+                    })
+                }
+                setLoading(true)
+                    notifications.update({
+                        id: "db-cooldown",
+                        loading: true,
+                        title: "Retrying...",
+                        message: `Retrying to connect database in ${cooldown} seconds`,
+                        withCloseButton: false,
+                    })
+                const timer = setInterval(() => {
+                    setCooldown(prev => prev - 1)
+                }, 1000)
+
+                return () => clearInterval(timer)
+            }
             
-            // Call Electron Main Process
-            const result = await window.electronAPI.loginOperator(username, pass);
+        }, [cooldown])
+        
+        React.useEffect(()=>{
+            if (success) {
+                // get operator number
+                setOperatorNumberParent(operatorNumber)
+                setRoleParent(role) // <--- SEND ROLE TO PARENT
+                startCamera();
+            } 
 
-            if (result.success) {
-                console.log("✅ [UI] Login Success! Operator:", result.op_number);
-                setOperatorNumber(result.op_number); // Store OP Number
-                setRole(result.role); // <--- STORE ROLE
-                setSuccess(true); // Triggers useEffect to finish loading
-                return 0;
-            } else {
-                console.warn("❌ [UI] Login Failed:", result.message);
-                // Trigger the error alert
-                setSuccess(false);
-                setAlertError(true);
-                return 1;
+        }, [operatorNumber, role, success, setOperatorNumberParent, setRoleParent]) // Added deps
+
+        // handle when click confirm button
+        const handleConfirm = async (values:{username:string, password:string}) => {
+
+            if (!isConnect) {
+                notifications.show({
+                        title:"Error",
+                        message: "Database is not connected",
+                        color:"red",
+                        autoClose:4000,
+                })
+                return
             }
 
-        } catch (err) {
-            console.error("❌ [UI] Error:", err);
-            setSuccess(false);
-            setAlertError(true);
-            setLoading(false)
-            return 1;
-        }
-    }
+            setLoading(true)
 
-    return (
-        <Flex 
-            w={"100vw"}
-            h={"100vh"}
-            justify={"center"}
-            align={"center"}
-        >
-            <LoadingOverlay  visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }}/>
+            const username = values.username
+            const password = values.password
+
+            const res = await fetchData(username, password) 
+
+            setLoading(false)
+        }
+
+        // TODO: get operator number
+        const fetchData = async (username: string, pass: string) => {
+            try {
+                console.log("🚀 [UI] Sending login request...");
+                
+                // Call Electron Main Process
+                const result = await window.electronAPI.loginOperator(username, pass);
+
+                if (result.success) {
+                    console.log("✅ [UI] Login Success! Operator:", result.op_number);
+                    setOperatorNumber(result.op_number); // Store OP Number
+                    setRole(result.role); // <--- STORE ROLE
+                    setSuccess(true); // Triggers useEffect to finish loading
+                    return 0;
+                } else {
+                    console.warn("❌ [UI] Login Failed:", result.message);
+                    // Trigger the error alert
+                    setSuccess(false);
+                    notifications.show({
+                        title:"Error",
+                        message: 'Login Failed: ' + result.message,
+                        color:"red",
+                        autoClose:4000,
+                    })
+                    return 1;
+                }
+
+            } catch (err) {
+                console.error("❌ [UI] Error:", err);
+                setSuccess(false)
+                setLoading(false)
+                notifications.show({
+                    title:"Error",
+                    message: err,
+                    color:"red",
+                    autoClose:4000,
+                })
+                return 1;
+            }
+        }
+
+        return (
             <Flex 
-                bd={"0.2rem black solid"}
-                bdrs={"xl"}
+                w={"100vw"}
+                h={"100vh"}
                 justify={"center"}
                 align={"center"}
-                direction={"column"}
-                p={"md"}
             >
-                <Title order={1} m={"md"}>Login</Title>
-
-                <form onSubmit={form.onSubmit((values) => handleConfirm(values))}>
-                    <Input.Wrapper>
-                        <TextInput
-                            label="Username"
-                            placeholder="Enter your username"
-                            // value={username}
-                            // onChange={(event)=>setUsername(event.currentTarget.value)}
-                            // error={usernameError}
-                            size={"xl"}
-                            m={"md"}
-                            key={form.key("username")}
-                            {...form.getInputProps('username')}
-                        />
-                        <PasswordInput
-                            label="Password"
-                            placeholder="Enter your password"
-                            // value={password}
-                            // onChange={(event)=>setPassword(event.currentTarget.value)}
-                            // error={passwordError}
-                            size={"xl"}
-                            m={"md"}
-                            key={form.key("password")}
-                            {...form.getInputProps('password')}
-                        />
-                    </Input.Wrapper>
-                    <Group>
-
-                        <Button 
-                            type='submit'
-                            variant='filled' 
-                            color='green'
-                            size='lg'
-                            w={"100%"} 
-                            m="xl"
-                            loading={loading}
-                            loaderProps={{type:"oval"}
-                        }
-                        >   
-                            <Group>
-                                <Title order={4}>Confirm</Title>
-                                <AiOutlineEnter />
-                            </Group>
-                        </Button>
-                    </Group>
-                </form>
-
-            </Flex>
-
-            {/* alert when error */}
-            <Transition
-                mounted={alertError}
-                transition="fade-left"
-                duration={400}
-                timingFunction="ease"
-                keepMounted
-                onEntered={handleTransition}
-            >
-                {(styles) => 
-                <Alert
-                    pos={"fixed"}
-                    w={"25%"}
-                    right={"1rem"}
-                    bottom={"1rem"}
-                    variant="filled" 
-                    color="red" 
-                    title="Error"
-                    icon={tbAlertCircle}
-                    onClose={()=>setAlertError(false)}
-                    withCloseButton
-                    style={styles}
+                <Flex 
+                    bd={"0.2rem black solid"}
+                    bdrs={"xl"}
+                    justify={"center"}
+                    align={"center"}
+                    direction={"column"}
+                    p={"md"}
+                    pos={"relative"}
                 >
-                    Your username or password were wrong. Please, try again.
-                </Alert>}
-            </Transition>
-        </Flex>
-    )
-}
+                    <LoadingOverlay  visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} bdrs={"xl"}/>
+                    <Title order={1} m={"md"}>Login</Title>
 
-export default Login
+                    <form onSubmit={form.onSubmit((values) => handleConfirm(values))}>
+                        <Input.Wrapper>
+                            <TextInput
+                                label="Username"
+                                placeholder="Enter your username"
+                                // value={username}
+                                // onChange={(event)=>setUsername(event.currentTarget.value)}
+                                // error={usernameError}
+                                size={"xl"}
+                                m={"md"}
+                                key={form.key("username")}
+                                {...form.getInputProps('username')}
+                            />
+                            <PasswordInput
+                                label="Password"
+                                placeholder="Enter your password"
+                                // value={password}
+                                // onChange={(event)=>setPassword(event.currentTarget.value)}
+                                // error={passwordError}
+                                size={"xl"}
+                                m={"md"}
+                                key={form.key("password")}
+                                {...form.getInputProps('password')}
+                            />
+                        </Input.Wrapper>
+                        <Group>
+
+                            <Button 
+                                type='submit'
+                                variant='filled' 
+                                color='green'
+                                size='lg'
+                                w={"100%"} 
+                                m="xl"
+                                loading={loading}
+                                loaderProps={{type:"oval"}
+                            }
+                            >   
+                                <Group>
+                                    <Title order={4}>Confirm</Title>
+                                    <AiOutlineEnter />
+                                </Group>
+                            </Button>
+                        </Group>
+                    </form>
+
+                </Flex>
+
+                {/* alert when error */}
+                <Notifications/>
+            </Flex>
+        )
+    }
+
+    export default Login

@@ -42,15 +42,17 @@ app.on('activate', () => {
 });
 
 app.whenReady().then(async () => {
-  await db.connectDB();
+    ipcMain.handle("db:connect", async () => {
+        return await db.connectDB();
+    })
 
     ipcMain.handle('beep', () => {
         shell.beep();
     });
-  // --- SELECTS ---
-  ipcMain.handle('db:get-active-children', async () => {
-    return await db.getAllActiveChildren();
-  });
+    // --- SELECTS ---
+    ipcMain.handle('db:get-active-children', async () => {
+        return await db.getAllActiveChildren();
+    });
 
   ipcMain.handle('db:search-firstname', async (_event, firstname: string) => {
     return await db.searchByFirstname(firstname);

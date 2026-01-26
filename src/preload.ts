@@ -1,7 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  beep: () => ipcRenderer.invoke("beep"),
+    connectDB: () => ipcRenderer.invoke("db:connect"),
+    beep: () => ipcRenderer.invoke("beep"),
   // Auth
   loginOperator: (username: string, password: string) => ipcRenderer.invoke('db:login-operator', { username, password }),
   
