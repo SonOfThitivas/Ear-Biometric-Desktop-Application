@@ -45,11 +45,6 @@ export default function Identify() {
     const [hasCaptured, setHasCaptured] = React.useState<boolean>(false);
     const [bgcolor, setBgcolor] = React.useState<string>("white")
 
-    const tbAlertCircle = <TbAlertCircle/>
-    const [alertBox, setAlertBox] = React.useState<boolean>(false)
-    const [alertTitle, setAlertTitile] = React.useState<string>("")
-    const [alertMsg, setAlertMsg] = React.useState<string>("")
-    const [colorAlert, setColorAlert] = React.useState<string>("red")
     const [loading, setLoading] = React.useState<boolean>(false)
 
     const handleReset = () => {
