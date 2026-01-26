@@ -67,12 +67,23 @@ export default function Camera({ onInsideZoneChange }) {
           by2 <= zoneY + zoneHeight;
       }
 
-      setInsideZone(inside);
-      onInsideZoneChange?.(inside);
+      let validDistance = true;
+      if (cameraData?.distance !== undefined) { 
+        const dist = Number(cameraData.distance);
+        validDistance = dist >= 0.20 && dist <= 0.30;
+        
+        ctx.fillStyle = validDistance ? "lime" : "red"; 
+        ctx.font = "16px Arial"; 
+        ctx.fillText( `Distance: ${cameraData.distance.toFixed(2)} m`, 10, 40 ); }
+      
 
-      ctx.fillStyle = inside ? "lime" : "red";
+      const finalInside = inside && validDistance;
+      setInsideZone(finalInside);
+      onInsideZoneChange?.(finalInside);
+
+      ctx.fillStyle = finalInside ? "lime" : "red";
       ctx.font = "16px Arial";
-      ctx.fillText(inside ? "INSIDE ZONE" : "OUTSIDE ZONE", 10, 20);
+      ctx.fillText(finalInside ? "INSIDE ZONE" : "OUTSIDE ZONE", 10, 20);
     };
 
     if (!img.complete) img.onload = draw;
