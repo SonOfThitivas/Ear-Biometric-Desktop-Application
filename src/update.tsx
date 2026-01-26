@@ -6,15 +6,15 @@ import {
   Button,
   Text,
   TextInput,
-  Alert,
-  Transition,
   Title,
 } from "@mantine/core";
-import { TbAlertCircle } from "react-icons/tb";
 
 import Camera from "./components/camera";
 import useCameraSocket from "./hooks/useCameraSocket";
 import PatientModeSelector from "./components/patientMode";
+import CaptureNoti from "./components/captureNoti";
+import { notifications } from '@mantine/notifications'
+
 
 interface UpdatePageProps {
   operatorNumber: string;
@@ -30,22 +30,11 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
   const [countdown, setCountdown] = React.useState(0);
   const [captures, setCaptures] = React.useState<any[]>([]);
   const [isCapturing, setIsCapturing] = React.useState(false);
+    const [bgcolor, setBgcolor] = React.useState<string>("white")
+  
 
   // Alert state
-  const [alertBox, setAlertBox] = React.useState(false);
-  const [alertTitle, setAlertTitle] = React.useState("");
-  const [alertMsg, setAlertMsg] = React.useState("");
-  const [colorAlert, setColorAlert] = React.useState("red");
-  const tbAlertCircle = <TbAlertCircle />;
   const [loading, setLoading] = React.useState<boolean>(false)
-
-  const handleTransition = () => {
-    const timeout = setTimeout(() => {
-      setAlertBox(false);
-      setAlertMsg("");
-      clearTimeout(timeout);
-    }, 4000);
-  };
 
     const handleReset = () => {
         setInsideZone(false)
@@ -118,10 +107,6 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     patientMode: "child" | "parent"
   ) => {
     if (!hn.trim()) {
-      setAlertBox(true);
-      setAlertTitle("Error");
-      setAlertMsg("Missing HN");
-      setColorAlert("red");
       return;
     }
 
@@ -153,28 +138,54 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
       }
 
       if (result.success) {
-        setAlertBox(true);
-        setAlertTitle("Success");
-        setAlertMsg(`Successfully saved 3 vectors for ${hn}!`);
-        setColorAlert("green");
+        notifications.show({
+            title: "Success",
+            message: `Successfully saved 3 vectors for ${hn}!`,
+            color:"green",
+            bg:"green.1",
+            withBorder: true,
+            autoClose: 4000,
+            withCloseButton: true,
+        })
+
         setHn("");
         setCaptures([]);
       } else {
-        setAlertBox(true);
-        setAlertTitle("Error");
-        setAlertMsg("Failed to save: " + result.error);
-        setColorAlert("red");
+        notifications.show({
+            title: "Error",
+            message: `Successfully saved 3 vectors for ${hn}!`,
+            color:"red",
+            bg:"red.1",
+            withBorder: true,
+            autoClose: 4000,
+            withCloseButton: true,
+        })
       }
     } catch (err: any) {
-      setAlertBox(true);
-      setAlertTitle("System Error");
-      setAlertMsg(err.message);
-      setColorAlert("red");
-    }
-  };
+      notifications.show({
+            title: "System Error",
+            message: err.message,
+            color:"red",
+            bg:"red.1",
+            withBorder: true,
+            autoClose: 4000,
+            withCloseButton: true,
+        })
+  }};
 
   return (
-    <Flex gap="sm" justify="center" direction="row" p="xs" w={"100%"}>
+    <Flex 
+        gap="sm" 
+        justify="center" 
+        direction="row" 
+        p="xs" 
+        w={"100%"}
+        h={"100svh"}
+        bg={bgcolor}
+        style={{
+            transition: "background-color 0.5s ease"
+        }}  
+    >
       {/* Left Section */}
       <Box w={"30%"} maw={"30%"}>
         <PatientModeSelector patient={patient} setPatient={setPatient} />
@@ -197,9 +208,9 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         </Group>
 
         <Box mt="md">
-          <Title order={4}>
+          {/* <Title order={4}>
             Inside Zone - {insideZone ? "✅ Yes" : "❌ No"}
-          </Title>
+          </Title> */}
           <Title order={4}>Countdown - {countdown}</Title>
           <Title order={4}>Captures - {captures.length} / 3</Title>
           <Title order={4}>
@@ -215,32 +226,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
       </Box>
 
       {/* Mantine Alert */}
-      <Transition
-        mounted={alertBox}
-        transition="fade-left"
-        duration={400}
-        timingFunction="ease"
-        keepMounted
-        onEntered={handleTransition}
-      >
-        {(styles) => (
-          <Alert
-            pos={"fixed"}
-            w={"25%"}
-            right={"1rem"}
-            bottom={"1rem"}
-            variant="filled"
-            color={colorAlert}
-            title={alertTitle}
-            icon={tbAlertCircle}
-            withCloseButton
-            onClose={() => setAlertBox(false)}
-            style={styles}
-          >
-            {alertMsg}
-          </Alert>
-        )}
-      </Transition>
+      <CaptureNoti isCapture={isCapturing} insideZone={insideZone} countdown={countdown} setBgcolor={setBgcolor}/>
     </Flex>
   );
 }
