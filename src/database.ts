@@ -37,13 +37,15 @@ export const connectAs = async (roleName: 'gatekeeper' | 'user' | 'admin') => {
   try {
     await client.connect();
     console.log(`✅ [DB] Connected as role: ${roleName.toUpperCase()}`);
+    return {success: true, message: "Database has connected"}
   } catch (err) {
     console.error(`❌ [DB] Failed to connect as ${roleName}`, err);
+    return {success: false, message: err}
   }
 };
 
 export const connectDB = async () => {
-  await connectAs('gatekeeper');
+    return await connectAs('gatekeeper');
 };
 
 const getClient = () => {
@@ -460,15 +462,21 @@ export const findClosestChild = async (vector: number[]) => {
     const vectorStr = JSON.stringify(vector);
     const query = `
         SELECT 
-            c.hn_number as hn, -- Join to get the HN string for the frontend
+            c.hn_number as hn, 
             LEAST(
                 iv.vector_1 <=> $1,
                 iv.vector_2 <=> $1,
                 iv.vector_3 <=> $1
             ) as distance
         FROM identity_vector_child iv
-        JOIN child c ON iv.child_id = c.id -- JOIN using ID
+        JOIN child c ON iv.child_id = c.id
         WHERE iv.active_status = '1'
+        -- Only return if distance is less than 0.3 (meaning similarity is > 0.7)
+        AND LEAST(
+                iv.vector_1 <=> $1,
+                iv.vector_2 <=> $1,
+                iv.vector_3 <=> $1
+            ) < 0.3
         ORDER BY distance ASC
         LIMIT 1;
     `;
@@ -494,6 +502,12 @@ export const findClosestParent = async (vector: number[]) => {
         FROM identity_vector_parent iv
         JOIN parent p ON iv.parent_id = p.id
         WHERE iv.active_status = '1'
+        -- Only return if distance is less than 0.3 (meaning similarity is > 0.7)
+        AND LEAST(
+                iv.vector_1 <=> $1,
+                iv.vector_2 <=> $1,
+                iv.vector_3 <=> $1
+            ) < 0.3
         ORDER BY distance ASC
         LIMIT 1;
     `;
