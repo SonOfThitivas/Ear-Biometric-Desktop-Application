@@ -7,6 +7,8 @@ import {
   Text,
   TextInput,
   Title,
+  Stepper,
+  MantineProvider,
 } from "@mantine/core";
 
 import Camera from "./components/camera";
@@ -21,17 +23,21 @@ interface UpdatePageProps {
 }
 
 export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
-  const [hn, setHn] = React.useState("");
-  const [patient, setPatient] = React.useState<"child" | "parent">("child");
+    const [hn, setHn] = React.useState("");
+    const [patient, setPatient] = React.useState<"child" | "parent">("child");
 
-  const { capture, captureResult } = useCameraSocket();
+    const { capture, captureResult } = useCameraSocket();
 
-  const [insideZone, setInsideZone] = React.useState(false);
-  const [countdown, setCountdown] = React.useState(0);
-  const [captures, setCaptures] = React.useState<any[]>([]);
-  const [isCapturing, setIsCapturing] = React.useState(false);
+    const [insideZone, setInsideZone] = React.useState(false);
+    const [countdown, setCountdown] = React.useState(0);
+    const [captures, setCaptures] = React.useState<any[]>([]);
+    const [isCapturing, setIsCapturing] = React.useState(false);
     const [bgcolor, setBgcolor] = React.useState<string>("white")
-  
+
+    const [step, setStep] = React.useState(0);
+
+    const [resetID, setResetID] = React.useState<string>("reset-id")
+
 
   // Alert state
   const [loading, setLoading] = React.useState<boolean>(false)
@@ -42,11 +48,24 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         setLoading(false)
         setCountdown(0)
         setHn("")
+        setStep(0)
+
+        notifications.show({
+            id: resetID,
+            title: "Reset!",
+            message: "The state has been reset!",
+            color:"yellow",
+            bg:"yellow.1",
+            autoClose: 4000,
+            withCloseButton: true,
+            withBorder:true,
+        })
     }
 
   // Start workflow
   const handleCapture = () => {
     if (isCapturing) return;
+    setStep(step+1)
     setCaptures([]);
     setCountdown(3);
     setIsCapturing(true);
@@ -77,7 +96,10 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     if (!isCapturing) return;
     if (countdown !== 0) return;
     if (!insideZone) return;
-    if (countdown === 0) window.electronAPI.beep()
+    if (countdown === 0) {
+        window.electronAPI.beep()
+        setStep(step+1)
+    }
     setLoading(false)
     capture(hn, patient);
     setCountdown(3);
@@ -152,7 +174,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         setCaptures([]);
       } else {
         notifications.show({
-            title: "Error",
+            title: "Success!",
             message: `Successfully saved 3 vectors for ${hn}!`,
             color:"red",
             bg:"red.1",
@@ -217,6 +239,14 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
             Status - {isCapturing ? "Capturing..." : "Idle"}
           </Title>
         </Box>
+
+        <Flex justify={"center"} mt={"md"}>
+            <Stepper active={step} orientation="vertical" color="blue" size="xl">
+                <Stepper.Step label="Capture 1" loading={step === 1}/>
+                <Stepper.Step label="Capture 2" loading={step === 2}/>
+                <Stepper.Step label="Capture 3" loading={step === 3}/>
+            </Stepper>
+        </Flex>
       </Box>
 
       {/* Camera Section */}
