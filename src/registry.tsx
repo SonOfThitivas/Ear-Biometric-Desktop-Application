@@ -5,45 +5,28 @@ import {
     Flex,
     Button,
     Group,
-    Alert,
-    Transition,
     MantineProvider
 } from "@mantine/core";
 
 import IRecord from "./interface/IRecord";
 import { IRecordChildParent, IRecordChildParentInit } from "./interface/IRecord";
 import RecordFill from "./components/recordFill";
-import { TbAlertCircle } from "react-icons/tb"
 import { MdChildCare } from "react-icons/md";
 import { IoIosPerson } from "react-icons/io";
 import PatientModeSelector from "./components/patientMode";
 import { useForm } from "@mantine/form"
 import "dayjs"
 import dayjs from "dayjs";
+import { notifications, Notifications } from '@mantine/notifications';
 
 interface RegistryProps {
     operatorNumber: string;
 }
 
-// Initial state
-const recordInit: IRecord = {
-    hn: "",
-    firstname: "",
-    lastname: "",
-    age: 0,
-    sex: "",
-    dob: null,
-}
-
 const Registry = ({ operatorNumber }: RegistryProps) => {
     const [patient, setPatient] = React.useState<string>("child")   // patient record fill
     const [record, setRecord] = React.useState<IRecordChildParent>(IRecordChildParentInit)  
-
-    const tbAlertCircle = <TbAlertCircle/>
-    const [alertBox, setAlertBox] = React.useState<boolean>(false)  // alert error
-    const [alertTitle, setAlertTitile] = React.useState<string>("") // alert tilte
-    const [alertMsg, setAlertMsg] = React.useState<string>("")  // alert message
-    const [colorAlert, setColorAlert] = React.useState<string>("red")
+    const [resetID, setResetID] = React.useState<string>("reset-id")
     const [loading, setLoading] = React.useState<boolean>(false) // loading icon when click
 
     const form = useForm({
@@ -186,17 +169,17 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
         form.reset()
     }, [patient])
 
-    // handle transition and alert
-    const handleTransition = () => {
-        const timeout = setTimeout((e)=>{
-            setAlertMsg("")
-            setAlertBox(false)
-            clearTimeout(timeout)
-        }, 5000)
-    }
-
     const handleReset = () => {
         setRecord(IRecordChildParentInit)
+        notifications.show({
+            id: resetID,
+            c:"yellow",
+            bg:"yellow.1",
+            title: "Reset!",
+            message: `The foam has been reset!`,
+            autoClose: 4000,
+            withCloseButton: true,
+        })
         form.reset()
     }
 
@@ -318,20 +301,36 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
             // ---------------------------------------------------------
             // SUCCESS
             // ---------------------------------------------------------
-            setAlertBox(true);
-            setAlertTitile("Success")
             if (isFullProfile) {
-                setAlertMsg(`Registration Successfully${linkMessage}`);
+                notifications.show({
+                    color:"green",
+                    bg: "green.1",
+                    title: "Success!",
+                    message: `Registration Successfully${linkMessage}`,
+                    autoClose: 4000,
+                    withCloseButton: true,
+                })
             } else {
-                setAlertMsg(`Linked Successfully${linkMessage}`);
+                notifications.show({
+                    color:"green",
+                    bg: "green.1",
+                    title: "Success!",
+                    message: `Linked Successfully${linkMessage}`,
+                    autoClose: 4000,
+                    withCloseButton: true,
+                })
             }
-            setColorAlert("green")
             form.reset()
+
         } catch (err: any){
-            setAlertBox(true);
-            setAlertTitile("Error")
-            setAlertMsg(err.message);
-            setColorAlert("red")
+            notifications.show({
+                color:"red",
+                bg: "red.1",
+                title: "Error",
+                message: err.message,
+                autoClose: 4000,
+                withCloseButton: true,
+            })
         }
        
         setLoading(false)
@@ -407,31 +406,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
 
             </form>
             {/* alert when error */}
-            <Transition
-                mounted={alertBox}
-                transition="fade-left"
-                duration={400}
-                timingFunction="ease"
-                keepMounted
-                onEntered={handleTransition}
-            >
-                {(styles) => 
-                <Alert
-                    pos={"fixed"}
-                    w={"25%"}
-                    right={"1rem"}
-                    bottom={"1rem"}
-                    variant="filled" 
-                    color={colorAlert} 
-                    title={alertTitle}
-                    icon={tbAlertCircle}
-                    onClose={()=>setAlertBox(false)}
-                    withCloseButton
-                    style={styles}
-                >
-                    {alertMsg}
-                </Alert>}
-            </Transition>
+            <Notifications />
         </Box>
     )
 }

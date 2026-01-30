@@ -72,7 +72,7 @@ const App = () => {
                                     key={item.label}
                                     w={"100%"} 
                                     maw={"100%"} 
-                                    // bd={"1px red solid"}
+                                    p={"sm"}
                                     value={item.label}
                                 >
                                     {item.child}
