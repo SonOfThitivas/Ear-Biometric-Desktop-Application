@@ -200,7 +200,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         gap="sm" 
         justify="center" 
         direction="row" 
-        p="xs" 
+        p="md" 
         w={"100%"}
         h={"100svh"}
         bg={bgcolor}

@@ -72,7 +72,6 @@ const App = () => {
                                     key={item.label}
                                     w={"100%"} 
                                     maw={"100%"} 
-                                    p={"sm"}
                                     value={item.label}
                                 >
                                     {item.child}

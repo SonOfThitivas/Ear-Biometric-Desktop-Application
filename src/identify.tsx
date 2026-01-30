@@ -10,7 +10,6 @@ import {
 
 import TableResult from './components/tableResult'
 import {IRecordChildParent} from "./interface/IRecord"
-import { TbAlertCircle } from "react-icons/tb"
 import Camera from "./components/camera"
 import useCameraSocket from "./hooks/useCameraSocket"
 import PatientModeSelector from './components/patientMode'
@@ -167,7 +166,7 @@ const runIdentification = async (vector: number[]) => {
         console.error("❌ [Identify] Identification error:", err);
         notifications.show({
             title: "Error",
-            message: err,
+            message: err.message,
             color:"red",
             bg:"red.1",
             withBorder: true,
@@ -186,7 +185,7 @@ const runIdentification = async (vector: number[]) => {
             gap="sm" 
             justify="center" 
             direction="row" 
-            p="xs" 
+            p="md" 
             w={"100%"}
             bg={bgcolor}
             style={{
