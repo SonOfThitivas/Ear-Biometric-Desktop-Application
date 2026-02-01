@@ -70,7 +70,7 @@ export default function Camera({ onInsideZoneChange }) {
       let validDistance = true;
       if (cameraData?.distance !== undefined) { 
         const dist = Number(cameraData.distance);
-        validDistance = dist >= 0.20 && dist <= 0.30;
+        validDistance = dist >= 0.00 && dist <= 0.00;
         
         ctx.fillStyle = validDistance ? "lime" : "red"; 
         ctx.font = "16px Arial"; 

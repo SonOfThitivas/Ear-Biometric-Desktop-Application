@@ -10,6 +10,7 @@ import {
 
 import TableResult from './components/tableResult'
 import {IRecordChildParent} from "./interface/IRecord"
+import { TbAlertCircle } from "react-icons/tb"
 import Camera from "./components/camera"
 import useCameraSocket from "./hooks/useCameraSocket"
 import PatientModeSelector from './components/patientMode'
@@ -178,14 +179,14 @@ const runIdentification = async (vector: number[]) => {
     console.log("✅ [Identify] Identification process finished.");
     setLoading(false);
 };
-
+//
 
     return (
         <Flex 
             gap="sm" 
             justify="center" 
             direction="row" 
-            p="md" 
+            p="xs" 
             w={"100%"}
             bg={bgcolor}
             style={{
