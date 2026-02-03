@@ -70,22 +70,18 @@ def rotate_image_square(image, angle):
     return cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=(0,0,0))
 
 def scale_crop_pad(image, target_h=256, target_w=128):
-    """
-    Finds the ear content, crops it tightly, and resizes it to fill the 
-    target dimensions (128x256) while maintaining aspect ratio.
-    This fixes the "Small Ear vs Big Ear" problem.
-    """
-    # 1. Find bounding box of non-black pixels
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    if len(image.shape) == 2:
+        gray = image
+    else:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
     _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
     x, y, w, h = cv2.boundingRect(thresh)
     
     if w == 0 or h == 0: return cv2.resize(image, (target_w, target_h))
     
-    # 2. Crop tightly
     crop = image[y:y+h, x:x+w]
     
-    # 3. Resize to fit target box (with 5% padding safety)
     padding_pct = 0.05
     avail_w = int(target_w * (1 - 2*padding_pct))
     avail_h = int(target_h * (1 - 2*padding_pct))
@@ -96,8 +92,11 @@ def scale_crop_pad(image, target_h=256, target_w=128):
     
     resized = cv2.resize(crop, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
     
-    # 4. Paste into center of black canvas
-    canvas = np.zeros((target_h, target_w, 3), dtype=np.uint8)
+    if len(image.shape) == 3:
+        canvas = np.zeros((target_h, target_w, 3), dtype=np.uint8)
+    else:
+        canvas = np.zeros((target_h, target_w), dtype=np.uint8)
+        
     start_x = (target_w - new_w) // 2
     start_y = (target_h - new_h) // 2
     canvas[start_y:start_y+new_h, start_x:start_x+new_w] = resized
@@ -105,22 +104,19 @@ def scale_crop_pad(image, target_h=256, target_w=128):
     return canvas
 
 def align_ear_robust(image, mask):
-    # 1. Pad to Square & Rotate
     image_sq = pad_to_square(image)
     mask_sq = pad_to_square(mask)
     contours, _ = cv2.findContours(mask_sq, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
     if not contours: return image
+    
     c = max(contours, key=cv2.contourArea)
     if len(c) < 5: return image
-    (center_x, center_y), (MA, ma), angle = cv2.fitEllipse(c)
     
+    (center_x, center_y), (MA, ma), angle = cv2.fitEllipse(c)
     rotation_angle = angle if angle < 90 else angle - 180
     rotated_ear = rotate_image_square(image_sq, rotation_angle)
-    
-    # 2. SCALE NORMALIZATION (New Step)
-    # Instead of random crop, we now force it to fit 128x256 perfectly
     final_ear = scale_crop_pad(rotated_ear, target_h=256, target_w=128)
-    
     return final_ear
 
 # ---------------------------------------------------------
@@ -135,52 +131,29 @@ def apply_clahe_hsv(bgr_image):
     v_clahe = clahe.apply(v_channel)
     return cv2.cvtColor(v_clahe, cv2.COLOR_GRAY2BGR)
 
-def get_high_fidelity_embedding(image):
-    """
-    Generates a 1152-dimension vector.
-    This is the "Goldilocks" configuration:
-    - High Res Input (128x256) for sharp edges
-    - Large Stride (16x16) to reduce redundancy/noise
-    """
-    # 1. Use Higher Resolution (Captures curves well)
+def get_hog_embedding_1152(image):
+    # This function repeats the preprocessing internally to ensure consistency
     resize_dim = (128, 256) 
     img_resized = cv2.resize(image, resize_dim)
-    
-    # 2. Convert to Grayscale
     gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
     
-    # 3. HOG Configuration (TUNED FOR 1152)
-    # WinSize=128x256
-    # BlockSize=32x32 (Larger blocks = more robust to noise)
-    # BlockStride=32x32 (No overlap = clean signals)
-    # CellSize=16x16 (Captures main shape, ignores skin texture)
-    # Bins=9
     hog = cv2.HOGDescriptor(
         _winSize=(128, 256),
-        _blockSize=(32, 32),  # Increased to filter noise
-        _blockStride=(32, 32), # Increased to lower dimension count
-        _cellSize=(16, 16),   # Increased to ignore micro-details
+        _blockSize=(32, 32), 
+        _blockStride=(32, 32),
+        _cellSize=(16, 16), 
         _nbins=9
     )
     
-    # Math:
-    # Width Blocks = (128-32)/32 + 1 = 4
-    # Height Blocks = (256-32)/32 + 1 = 8
-    # Total Blocks = 4 * 8 = 32
-    # Features = 32 blocks * (4 cells * 9 bins) = 1152 features
     features = hog.compute(gray).flatten()
-    
-    # 4. Normalize
     norm = np.linalg.norm(features)
-    if norm > 0:
-        features /= norm
-        
+    if norm > 0: features /= norm
     return features
 
 def extract_embedding(ear_crop, model_type="child"):
     if ear_crop is None: return None
     clahe_img = apply_clahe_hsv(ear_crop)
-    embedding = get_high_fidelity_embedding(clahe_img)
+    embedding = get_hog_embedding_1152(clahe_img)
     return embedding
 
 def detect_ear(color_image):
@@ -283,10 +256,16 @@ def main():
             jpg_as_text = base64.b64encode(buffer).decode('utf-8')
             
             print(json.dumps({
-                "distance": 0.0,
+                "distance": 0.25,
                 "image": jpg_as_text,
                 "bbox": last_bbox,
-                "embeddings": embedding.tolist() if embedding is not None else None
+                "embeddings": None,
+                "horiz_status": True,
+                "vert_status": True,
+                "horiz_diff": 0.00,
+                "vert_diff": 0.00,
+                "horiz_msg": "OK",
+                "vert_msg": "OK"
             }), flush=True)
 
     except Exception as e: print(json.dumps({"error": str(e)}), flush=True)

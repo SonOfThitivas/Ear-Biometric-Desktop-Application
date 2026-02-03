@@ -43,13 +43,9 @@ export default function Camera({ onInsideZoneChange }) {
       ctx.lineWidth = 3;
       ctx.strokeRect(zoneX, zoneY, zoneWidth, zoneHeight);
 
-      // --- DATA EXTRACTION ---
+      // YOLO bbox
       const bbox = cameraData.bbox;
-      const isFlatHoriz = cameraData.horiz_status === true;
-      const isFlatVert = cameraData.vert_status === true;
-      const isFlat = isFlatHoriz && isFlatVert;
-      
-      let insideBox = false;
+      let inside = false;
 
       if (bbox) {
         const scaleX = imgWidth / 640;
@@ -60,66 +56,34 @@ export default function Camera({ onInsideZoneChange }) {
         const bx2 = bbox.x2 * scaleX;
         const by2 = bbox.y2 * scaleY;
 
-        // Draw Bounding Box (Red if not flat, Lime if flat)
-        ctx.strokeStyle = isFlat ? "lime" : "red";
+        ctx.strokeStyle = "lime";
         ctx.lineWidth = 3;
         ctx.strokeRect(bx1, by1, bx2 - bx1, by2 - by1);
 
-        // Check if bbox is inside zone
-        insideBox =
+        inside =
           bx1 >= zoneX &&
           by1 >= zoneY &&
           bx2 <= zoneX + zoneWidth &&
           by2 <= zoneY + zoneHeight;
       }
 
-      // Check Distance
-      let validDistance = false;
-      if (cameraData?.distance !== undefined) {
+      let validDistance = true;
+      if (cameraData?.distance !== undefined) { 
         const dist = Number(cameraData.distance);
-        // Example range: 0.3m to 0.6m
-        validDistance = dist >= 0.20 && dist <= 0.30; 
+        validDistance = dist >= 0.00 && dist <= 0.00;
         
-        ctx.fillStyle = validDistance ? "lime" : "red";
-        ctx.font = "16px Arial";
-        ctx.fillText(`Dist: ${cameraData.distance.toFixed(2)} m`, 10, 40);
-      }
-
-      // --- FINAL VALIDATION ---
-      // Must be: In Box AND Good Distance AND Flat Ear
-      const finalInside = insideBox && validDistance && isFlat;
+        ctx.fillStyle = validDistance ? "lime" : "red"; 
+        ctx.font = "16px Arial"; 
+        ctx.fillText( `Distance: ${cameraData.distance.toFixed(2)} m`, 10, 40 ); }
       
+
+      const finalInside = inside && validDistance;
       setInsideZone(finalInside);
       onInsideZoneChange?.(finalInside);
 
-      // --- UI FEEDBACK ---
-      ctx.font = "bold 18px Arial";
-      
-      // 1. Overall Status
       ctx.fillStyle = finalInside ? "lime" : "red";
-      ctx.fillText(finalInside ? "READY TO SCAN" : "ADJUST POSITION", 10, 20);
-
-      // 2. Angle Feedback (Help user correct rotation)
-      if (bbox) {
-        let yPos = 70;
-        if (!isFlatHoriz) {
-            ctx.fillStyle = "orange";
-            ctx.fillText(`Rotate Left/Right (${cameraData.horiz_diff})`, 10, yPos);
-            yPos += 25;
-        } else {
-            ctx.fillStyle = "lime";
-            ctx.fillText("Horizontal: OK", 10, yPos);
-            yPos += 25;
-        }
-
-        if (!isFlatVert) {
-            ctx.fillStyle = "orange";
-            ctx.fillText(`Tilt Up/Down (${cameraData.vert_diff})`, 10, yPos);
-        } else {
-            ctx.fillStyle = "lime";
-            ctx.fillText("Vertical: OK", 10, yPos);
-        }
-      }
+      ctx.font = "16px Arial";
+      ctx.fillText(finalInside ? "INSIDE ZONE" : "OUTSIDE ZONE", 10, 20);
     };
 
     if (!img.complete) img.onload = draw;
@@ -128,6 +92,7 @@ export default function Camera({ onInsideZoneChange }) {
 
   return (
     <div>
+      {/* ✅ Start/Stop Camera Buttons */}
       <div style={{ marginBottom: "10px" }}>
         <button onClick={startCamera} style={{ marginRight: "10px" }}>
           Start Camera
@@ -137,6 +102,9 @@ export default function Camera({ onInsideZoneChange }) {
         </button>
       </div>
 
+
+
+      {/* Camera View */}
       <div style={{ position: "relative", width: "640px", maxWidth: "100%" }}>
         {cameraData?.image && (
           <img
