@@ -14,14 +14,12 @@ from PIL import Image
 from dotenv import load_dotenv
 
 # --- SETUP LOGGING ---
-# Logs will appear in 'camera_debug.log' and print to console if needed
 logging.basicConfig(
     filename='camera_debug.log', 
     level=logging.DEBUG, 
     format='%(asctime)s - [%(levelname)s] - %(message)s'
 )
 
-# Also print errors to stderr for immediate visibility
 def log_console(msg):
     sys.stderr.write(f"[DEBUG] {msg}\n")
     sys.stderr.flush()
@@ -122,27 +120,19 @@ def get_robust_center_distance(depth_image):
         return 0.0
 
 def depth_gradient_check_fast(depth_image, bbox):
-    """
-    Detailed tracing for depth check to find why it might return None.
-    """
     try:
         x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
         h, w = depth_image.shape
         x1, x2 = max(0, x1), min(w, x2)
         y1, y2 = max(0, y1), min(h, y2)
 
-        if x2 <= x1 or y2 <= y1:
-            logging.debug(f"Depth Check: Invalid BBox dimensions {x1},{y1} -> {x2},{y2}")
-            return None
+        if x2 <= x1 or y2 <= y1: return None
 
         crop = depth_image[y1:y2, x1:x2].astype(float)
-        # Filter 0 (invalid) and >1000 (too far, 1m)
         valid_mask = (crop > 0) & (crop < 1000)
         
         valid_count = np.sum(valid_mask)
-        if valid_count < 50:
-            logging.debug(f"Depth Check: Not enough valid pixels inside bbox ({valid_count} < 50)")
-            return None
+        if valid_count < 50: return None
 
         cx = (x2 - x1) // 2
         cy = (y2 - y1) // 2
@@ -152,27 +142,22 @@ def depth_gradient_check_fast(depth_image, bbox):
         t_mean = np.mean(crop[:cy, :][valid_mask[:cy, :]]) if np.any(valid_mask[:cy, :]) else 0
         b_mean = np.mean(crop[cy:, :][valid_mask[cy:, :]]) if np.any(valid_mask[cy:, :]) else 0
 
-        if l_mean == 0 or r_mean == 0 or t_mean == 0 or b_mean == 0:
-            logging.debug(f"Depth Check: One quadrant has 0 data. L:{l_mean:.1f}, R:{r_mean:.1f}, T:{t_mean:.1f}, B:{b_mean:.1f}")
-            return None
+        if l_mean == 0 or r_mean == 0 or t_mean == 0 or b_mean == 0: return None
 
-        # Positive diff = Left/Top is further away
         h_diff = (l_mean - r_mean) / 1000.0
         v_diff = (t_mean - b_mean) / 1000.0
 
-        # Log the calculated raw values occasionally
         if frame_count % 30 == 0:
-            logging.debug(f"Depth Grads -> H_Diff: {h_diff:.4f} (L:{l_mean:.0f}, R:{r_mean:.0f}), V_Diff: {v_diff:.4f}")
+            logging.debug(f"Depth Grads -> H: {h_diff:.4f}, V: {v_diff:.4f}")
 
-        TH = 0.005 # Tolerance threshold
-
+        TH = 0.005
         h_msg = "OK"
         if abs(h_diff) > TH:
-            h_msg = "ROTATE LEFT" if h_diff > 0 else "ROTATE RIGHT"
+            h_msg = "ขยับ ซ้าย" if h_diff > 0 else "ขยับ ขวา"
 
         v_msg = "OK"
         if abs(v_diff) > TH:
-            v_msg = "TILT DOWN" if v_diff > 0 else "TILT UP"
+            v_msg = "ขยับ ขึ้น ถ่ายกดลง" if v_diff > 0 else "ขยับ ลง ถ่ายเสย"
 
         return h_diff, v_diff, h_msg, v_msg
 
@@ -275,19 +260,17 @@ def detect_ear(color_image):
         rgb = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
         pil_img = Image.fromarray(rgb)
         
-        # Verbose=False prevents YOLO from printing to stdout (which confuses Node)
+        # Verbose=False prevents YOLO from printing to stdout
         results = yolo_detect.predict(source=pil_img, verbose=False)[0]
         
-        if len(results.boxes) == 0: 
-            return None
+        if len(results.boxes) == 0: return None
             
         box = results.boxes[0]
         x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(float)
         score = float(box.conf[0])
         
-        # Log successful detection occasionally
         if frame_count % 30 == 0:
-            logging.debug(f"Ear Detected: Score {score:.2f} at [{int(x1)}, {int(y1)}]")
+            logging.debug(f"Ear Detected: Score {score:.2f}")
             
         return {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "score": score}
     except Exception as e:
@@ -313,6 +296,10 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_img, alpha=0.03), cv2.COLORMAP_JET)
         cv2.imwrite(f"{DEPTH_FOLDER}/depth_{timestamp}.png", depth_colormap)
 
+        # --- DEBUG: Save Raw Frame ---
+        if DEBUG_FOLDER:
+            cv2.imwrite(f"{DEBUG_FOLDER}/raw_{timestamp}.jpg", color_img)
+
         if bbox:
             h, w, _ = color_img.shape
             x1, y1, x2, y2 = expand_bbox(bbox, 1.5, w, h)
@@ -325,7 +312,6 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
                 
                 if results[0].masks:
                     try:
-                        logging.debug("Mask found. Aligning ear...")
                         mask_data = results[0].masks.data[0].cpu().numpy()
                         mask = cv2.resize(mask_data, (ear_crop.shape[1], ear_crop.shape[0]))
                         mask_binary = (mask > 0.5).astype(np.uint8) * 255
@@ -336,6 +322,15 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
 
                 cv2.imwrite(f"{RGB_FOLDER}/ear_{timestamp}.png", embedding_input)
                 cv2.imwrite(f"{folder_path}/ear_{timestamp}.png", embedding_input)
+
+                # --- DEBUG: Save HOG Input (Pre-processed) ---
+                if DEBUG_FOLDER:
+                    try:
+                        # Apply the same CLAHE logic that extract_embedding uses
+                        debug_input = apply_clahe_hsv(embedding_input)
+                        cv2.imwrite(f"{DEBUG_FOLDER}/input_{timestamp}.png", debug_input)
+                    except Exception as e:
+                        log_error(e, "Saving Debug Input")
 
                 logging.debug("Extracting embedding...")
                 embedding = extract_embedding(embedding_input)
@@ -422,7 +417,6 @@ def main():
                 }), flush=True)
 
             except Exception as loop_e:
-                # Log loop errors but don't crash
                 if frame_count % 100 == 0:
                     log_error(loop_e, "Main Loop Inner")
                 continue
