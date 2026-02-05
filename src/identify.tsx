@@ -50,7 +50,7 @@ export default function Identify() {
         setInsideZone(false)
         setIsCapturing(false)
         setLoading(false)
-        setCountdown(3)
+        setCountdown(0)
         setChildParentRecord(recordInit)
         setVector(null)
         setBgcolor("white")

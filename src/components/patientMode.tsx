@@ -1,6 +1,6 @@
 import React from 'react'
 import { 
-    Group,
+    Grid,
     Title,
     Center,
     SegmentedControl,
@@ -16,41 +16,46 @@ export interface IPatientMode {
 
 function PatientModeSelector({title="Patient Mode", patient, setPatient}:IPatientMode) {
   return (
-    <Group justify="center" wrap='nowrap'>
+    <Grid justify="center">
         {title && 
-            <Title order={4} textWrap='nowrap'>
-                {title}
-            </Title>
+            <Grid.Col span={"content"}>
+                <Title order={4} textWrap='nowrap' >
+                    {title}
+                </Title>
+            </Grid.Col>
         }
-        <SegmentedControl
-            w={"100%"}
-            value={patient}
-            // defaultValue={patient}
-            color={patient === "child" ? "orange" : "green"}
-            onChange={setPatient}
-            data={[
-                {
-                    value:"child",
-                    label:(
-                    <Center style={{ gap: 10 }}>
-                        <MdChildCare size={16} />
-                        <span>Child</span>
-                    </Center>
-                    ),
-                },
-                {
-                    value:"parent",
-                    label:(
-                    <Center style={{ gap: 10 }}>
-                        <IoIosPerson size={16} />
-                        <span>Parent</span>
-                    </Center>
-                    ),
-                }
+        <Grid.Col span={"auto"}>
+            <SegmentedControl
+                fullWidth
+                value={patient}
+                withItemsBorders
+                // defaultValue={patient}
+                color={patient === "child" ? "orange" : "green"}
+                onChange={setPatient}
+                data={[
+                    {
+                        value:"child",
+                        label:(
+                        <Center style={{ gap: 10 }}>
+                            <MdChildCare size={16} />
+                            <span>Child</span>
+                        </Center>
+                        ),
+                    },
+                    {
+                        value:"parent",
+                        label:(
+                        <Center style={{ gap: 10 }}>
+                            <IoIosPerson size={16} />
+                            <span>Parent</span>
+                        </Center>
+                        ),
+                    }
 
-            ]}
-        />
-    </Group>
+                ]}
+            />
+        </Grid.Col>
+    </Grid>
   )
 }
 
