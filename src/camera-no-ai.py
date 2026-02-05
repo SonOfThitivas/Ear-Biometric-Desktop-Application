@@ -14,15 +14,23 @@ from PIL import Image
 from dotenv import load_dotenv
 
 # --- SETUP LOGGING ---
+# Logs will appear in 'camera_debug.log' and print to console if needed
 logging.basicConfig(
     filename='camera_debug.log', 
     level=logging.DEBUG, 
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - [%(levelname)s] - %(message)s'
 )
 
-def log_error(e):
-    logging.error(f"ERROR: {str(e)}")
+# Also print errors to stderr for immediate visibility
+def log_console(msg):
+    sys.stderr.write(f"[DEBUG] {msg}\n")
+    sys.stderr.flush()
+
+def log_error(e, context=""):
+    err_msg = f"ERROR in {context}: {str(e)}"
+    logging.error(err_msg)
     logging.error(traceback.format_exc())
+    log_console(err_msg)
 
 load_dotenv()
 
@@ -37,14 +45,25 @@ DEBUG_FOLDER = os.getenv("VITE_DEBUG_FOLDER", "debug")
 try:
     for folder in [RGB_FOLDER, DEPTH_FOLDER, PLY_FOLDER, EMBED_FOLDER, PATIENTS_FOLDER, DEBUG_FOLDER]:
         if folder: os.makedirs(folder, exist_ok=True)
-except: pass
+except Exception as e:
+    log_error(e, "Folder Creation")
 
 # --- Model ---
 try:
-    YOLO_MODEL_PATH = os.getenv("VITE_YOLO_MODEL")
-    yolo_model = YOLO(YOLO_MODEL_PATH)
+    logging.info("Loading models...")
+    # 1. Detection Model
+    DETECT_MODEL_PATH = os.getenv("VITE_YOLO_MODEL_DETECT") 
+    logging.debug(f"Loading Detection Model from: {DETECT_MODEL_PATH}")
+    yolo_detect = YOLO(DETECT_MODEL_PATH)
+
+    # 2. Segmentation Model
+    SEG_MODEL_PATH = os.getenv("VITE_YOLO_MODEL") 
+    logging.debug(f"Loading Segmentation Model from: {SEG_MODEL_PATH}")
+    yolo_seg = YOLO(SEG_MODEL_PATH)
+    
+    logging.info("Models loaded successfully.")
 except Exception as e:
-    log_error(e)
+    log_error(e, "Model Loading")
     sys.exit(1)
 
 # Flags
@@ -57,30 +76,39 @@ last_bbox = None
 
 def listen_to_nodejs():
     global save_flag, hn_value, mode_value
+    logging.info("Started Node.js listener thread.")
     while True:
         try:
             line = sys.stdin.readline()
             if line:
                 data = json.loads(line)
                 if data.get("cmd") == "save":
+                    logging.info(f"Received SAVE command for HN: {data.get('hn')}")
                     save_flag = True
                     hn_value = data.get("hn")
                     mode_value = data.get("mode")
-        except: pass
+        except Exception as e:
+            log_error(e, "NodeJS Listener")
 
 input_thread = threading.Thread(target=listen_to_nodejs, daemon=True)
 input_thread.start()
 
 # --- RealSense ---
-pipeline = rs.pipeline()
-config = rs.config()
-config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-align = rs.align(rs.stream.color)
-pc = rs.pointcloud()
+try:
+    logging.info("Starting RealSense Pipeline...")
+    pipeline = rs.pipeline()
+    config = rs.config()
+    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    align = rs.align(rs.stream.color)
+    pc = rs.pointcloud()
+    logging.info("RealSense configured.")
+except Exception as e:
+    log_error(e, "RealSense Setup")
+    sys.exit(1)
 
 # ---------------------------------------------------------
-# 1. ROBUST CENTER DISTANCE
+# HELPER FUNCTIONS
 # ---------------------------------------------------------
 def get_robust_center_distance(depth_image):
     try:
@@ -90,24 +118,31 @@ def get_robust_center_distance(depth_image):
         valid_pixels = crop[(crop > 0) & (crop < 3000)]
         if valid_pixels.size == 0: return 0.0
         return np.median(valid_pixels) / 1000.0
-    except: return 0.0
+    except Exception as e: 
+        return 0.0
 
-# ---------------------------------------------------------
-# 2. FAST DEPTH GRADIENT CHECK
-# ---------------------------------------------------------
 def depth_gradient_check_fast(depth_image, bbox):
+    """
+    Detailed tracing for depth check to find why it might return None.
+    """
     try:
         x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
         h, w = depth_image.shape
         x1, x2 = max(0, x1), min(w, x2)
         y1, y2 = max(0, y1), min(h, y2)
 
-        if x2 <= x1 or y2 <= y1: return None
+        if x2 <= x1 or y2 <= y1:
+            logging.debug(f"Depth Check: Invalid BBox dimensions {x1},{y1} -> {x2},{y2}")
+            return None
 
         crop = depth_image[y1:y2, x1:x2].astype(float)
+        # Filter 0 (invalid) and >1000 (too far, 1m)
         valid_mask = (crop > 0) & (crop < 1000)
         
-        if np.sum(valid_mask) < 50: return None
+        valid_count = np.sum(valid_mask)
+        if valid_count < 50:
+            logging.debug(f"Depth Check: Not enough valid pixels inside bbox ({valid_count} < 50)")
+            return None
 
         cx = (x2 - x1) // 2
         cy = (y2 - y1) // 2
@@ -117,27 +152,35 @@ def depth_gradient_check_fast(depth_image, bbox):
         t_mean = np.mean(crop[:cy, :][valid_mask[:cy, :]]) if np.any(valid_mask[:cy, :]) else 0
         b_mean = np.mean(crop[cy:, :][valid_mask[cy:, :]]) if np.any(valid_mask[cy:, :]) else 0
 
-        if l_mean == 0 or r_mean == 0 or t_mean == 0 or b_mean == 0: return None
+        if l_mean == 0 or r_mean == 0 or t_mean == 0 or b_mean == 0:
+            logging.debug(f"Depth Check: One quadrant has 0 data. L:{l_mean:.1f}, R:{r_mean:.1f}, T:{t_mean:.1f}, B:{b_mean:.1f}")
+            return None
 
+        # Positive diff = Left/Top is further away
         h_diff = (l_mean - r_mean) / 1000.0
         v_diff = (t_mean - b_mean) / 1000.0
 
-        TH = 0.005
+        # Log the calculated raw values occasionally
+        if frame_count % 30 == 0:
+            logging.debug(f"Depth Grads -> H_Diff: {h_diff:.4f} (L:{l_mean:.0f}, R:{r_mean:.0f}), V_Diff: {v_diff:.4f}")
+
+        TH = 0.005 # Tolerance threshold
+
         h_msg = "OK"
         if abs(h_diff) > TH:
-            h_msg = "Pull LEFT Side Closer" if h_diff > 0 else "Pull RIGHT Side Closer"
+            h_msg = "ROTATE LEFT" if h_diff > 0 else "ROTATE RIGHT"
 
         v_msg = "OK"
         if abs(v_diff) > TH:
-            v_msg = "Tilt TOP Side Closer" if v_diff > 0 else "Tilt BOTTOM Side Closer"
+            v_msg = "TILT DOWN" if v_diff > 0 else "TILT UP"
 
         return h_diff, v_diff, h_msg, v_msg
 
-    except: return None
+    except Exception as e: 
+        log_error(e, "depth_gradient_check_fast")
+        return None
 
-# ---------------------------------------------------------
-# 3. ALIGNMENT & EMBEDDING LOGIC (1152 Dimensions)
-# ---------------------------------------------------------
+# --- ALIGNMENT FUNCTIONS ---
 def pad_to_square(image):
     h, w = image.shape[:2]
     if h == w: return image
@@ -187,7 +230,9 @@ def align_ear_robust(image, mask):
         rotated_ear = rotate_image_square(image_sq, rotation_angle)
         final_ear = scale_crop_pad(rotated_ear, target_h=256, target_w=128)
         return final_ear
-    except: return image
+    except Exception as e:
+        log_error(e, "align_ear_robust")
+        return image
 
 def apply_clahe_hsv(bgr_image):
     if bgr_image.shape[2] == 4: bgr_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGRA2BGR)
@@ -198,50 +243,56 @@ def apply_clahe_hsv(bgr_image):
     return cv2.cvtColor(v_clahe, cv2.COLOR_GRAY2BGR)
 
 def get_1152_embedding(image):
-    """
-    Generates a native 1152-dimensional vector.
-    Math: (4 blocks X * 8 blocks Y) * (4 cells * 9 bins) = 1152
-    """
     if image is None: return None
     resize_dim = (128, 256) 
     img_resized = cv2.resize(image, resize_dim)
     gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
     
-    # --- Tuned HOG Params for 1152 Dims ---
     hog = cv2.HOGDescriptor(
         _winSize=(128, 256),
-        _blockSize=(32, 32),   # Increased block size
-        _blockStride=(32, 32), # No overlap
-        _cellSize=(16, 16),    # Larger cells
+        _blockSize=(32, 32),
+        _blockStride=(32, 32),
+        _cellSize=(16, 16),
         _nbins=9
     )
-    
-    # Compute features (Returns exactly 1152 floats)
     features = hog.compute(gray).flatten()
-    
-    # Normalize
     norm = np.linalg.norm(features)
     if norm > 0: features /= norm
-    
     return features
 
 def extract_embedding(ear_crop):
-    if ear_crop is None: return None
-    clahe_img = apply_clahe_hsv(ear_crop)
-    # Use the new 1152 function
-    embedding = get_1152_embedding(clahe_img)
-    return embedding
+    try:
+        if ear_crop is None: return None
+        clahe_img = apply_clahe_hsv(ear_crop)
+        embedding = get_1152_embedding(clahe_img)
+        return embedding
+    except Exception as e:
+        log_error(e, "extract_embedding")
+        return None
 
 def detect_ear(color_image):
     try:
         rgb = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
         pil_img = Image.fromarray(rgb)
-        results = yolo_model.predict(source=pil_img, verbose=False)[0]
-        if len(results.boxes) == 0: return None
+        
+        # Verbose=False prevents YOLO from printing to stdout (which confuses Node)
+        results = yolo_detect.predict(source=pil_img, verbose=False)[0]
+        
+        if len(results.boxes) == 0: 
+            return None
+            
         box = results.boxes[0]
         x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(float)
-        return {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "score": float(box.conf[0])}
-    except: return None
+        score = float(box.conf[0])
+        
+        # Log successful detection occasionally
+        if frame_count % 30 == 0:
+            logging.debug(f"Ear Detected: Score {score:.2f} at [{int(x1)}, {int(y1)}]")
+            
+        return {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "score": score}
+    except Exception as e:
+        log_error(e, "detect_ear")
+        return None
 
 def expand_bbox(bbox, scale, img_width, img_height):
     x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
@@ -251,20 +302,16 @@ def expand_bbox(bbox, scale, img_width, img_height):
     return (max(0, int(cx - new_w / 2)), max(0, int(cy - new_h / 2)), 
             min(img_width - 1, int(cx + new_w / 2)), min(img_height - 1, int(cy + new_h / 2)))
 
-# ---------------------------------------------------------
-# 4. BACKGROUND SAVE WORKER (Async)
-# ---------------------------------------------------------
 def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bbox):
     try:
+        logging.info(f"Save Worker Started for TS: {timestamp}")
         folder_path = f"{PATIENTS_FOLDER}/{hn}_{mode}"
         os.makedirs(folder_path, exist_ok=True)
 
+        # 1. Save Raw Images
         cv2.imwrite(f"{RGB_FOLDER}/rgb_{timestamp}.jpg", color_img)
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_img, alpha=0.03), cv2.COLORMAP_JET)
         cv2.imwrite(f"{DEPTH_FOLDER}/depth_{timestamp}.png", depth_colormap)
-
-        if DEBUG_FOLDER:
-            cv2.imwrite(f"{DEBUG_FOLDER}/raw_{timestamp}.jpg", color_img)
 
         if bbox:
             h, w, _ = color_img.shape
@@ -272,43 +319,40 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
             ear_crop = color_img[y1:y2, x1:x2]
             
             if ear_crop.size > 0:
-                results = yolo_model(ear_crop, verbose=False, retina_masks=True)
+                logging.debug("Running Segmentation on crop...")
+                results = yolo_seg(ear_crop, verbose=False, retina_masks=True)
                 embedding_input = ear_crop
                 
                 if results[0].masks:
                     try:
+                        logging.debug("Mask found. Aligning ear...")
                         mask_data = results[0].masks.data[0].cpu().numpy()
                         mask = cv2.resize(mask_data, (ear_crop.shape[1], ear_crop.shape[0]))
                         mask_binary = (mask > 0.5).astype(np.uint8) * 255
                         masked_crop = cv2.bitwise_and(ear_crop, ear_crop, mask=mask_binary)
                         embedding_input = align_ear_robust(masked_crop, mask_binary)
-                    except: pass
+                    except Exception as align_e:
+                        log_error(align_e, "Alignment inside worker")
 
                 cv2.imwrite(f"{RGB_FOLDER}/ear_{timestamp}.png", embedding_input)
                 cv2.imwrite(f"{folder_path}/ear_{timestamp}.png", embedding_input)
 
-                if DEBUG_FOLDER:
-                    debug_hog_input = apply_clahe_hsv(embedding_input)
-                    cv2.imwrite(f"{DEBUG_FOLDER}/input_{timestamp}.png", debug_hog_input)
-
+                logging.debug("Extracting embedding...")
                 embedding = extract_embedding(embedding_input)
-                
                 if embedding is not None:
                     embed_list = embedding.tolist()
                     with open(f"{EMBED_FOLDER}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
                     with open(f"{folder_path}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
                     
-                    print(json.dumps({
-                        "event": "saved", 
-                        "folder": folder_path,
-                        "embedding": embed_list
-                    }), flush=True)
+                    logging.info("Save Worker Completed Successfully.")
+                    print(json.dumps({"event": "saved", "folder": folder_path, "embedding": embed_list}), flush=True)
                     return
 
+        logging.warning("Save Worker: No embedding generated.")
         print(json.dumps({"event": "saved", "status": "no_embedding"}), flush=True)
 
     except Exception as e:
-        log_error(f"Save Worker Error: {e}")
+        log_error(e, "Save Worker Thread")
 
 # ---------------------------------------------------------
 # 5. MAIN LOOP
@@ -317,6 +361,7 @@ def main():
     global save_flag, frame_count, last_bbox
     try:
         pipeline.start(config)
+        logging.info("Pipeline started. Loop begin.")
         print(json.dumps({"status": "ready"}), flush=True)
 
         while True:
@@ -333,13 +378,6 @@ def main():
                 if save_flag:
                     timestamp = int(time.time())
                     print(json.dumps({"info": "Saving in background..."}), flush=True)
-                    
-                    try:
-                        pc.map_to(color_frame)
-                        points = pc.calculate(depth_frame)
-                        points.export_to_ply(f"{PLY_FOLDER}/model_{timestamp}.ply", color_frame)
-                    except: pass
-
                     t = threading.Thread(
                         target=save_worker_thread,
                         args=(color_image.copy(), depth_image.copy(), None, timestamp, hn_value, mode_value, last_bbox)
@@ -348,27 +386,23 @@ def main():
                     save_flag = False
 
                 frame_count += 1
+                
+                # Run Detection every N frames
                 if frame_count % YOLO_INTERVAL == 0:
                     last_bbox = detect_ear(color_image)
                 
-                horiz_ok = False
-                vert_ok = False
-                h_diff = 0.0
-                v_diff = 0.0
-                h_msg = ""
-                v_msg = ""
+                horiz_ok, vert_ok = False, False
+                h_diff, v_diff = 0.0, 0.0
+                h_msg, v_msg = "", ""
 
                 if last_bbox:
                     res = depth_gradient_check_fast(depth_image, last_bbox)
                     if res:
-                        hd, vd, hm, vm = res
-                        h_diff = float(hd)
-                        v_diff = float(vd)
-                        h_msg = str(hm)
-                        v_msg = str(vm)
-                        horiz_ok = bool(h_msg == "OK")
-                        vert_ok = bool(v_msg == "OK")
+                        h_diff, v_diff, h_msg, v_msg = res
+                        horiz_ok = (h_msg == "OK")
+                        vert_ok = (v_msg == "OK")
 
+                # Small JPG for frontend preview
                 small_frame = cv2.resize(color_image, (0,0), fx=0.5, fy=0.5) 
                 _, buffer = cv2.imencode('.jpg', small_frame)
                 jpg_as_text = base64.b64encode(buffer).decode('utf-8')
@@ -379,23 +413,26 @@ def main():
                     "distance": round(dist, 3),
                     "image": jpg_as_text,
                     "bbox": last_bbox,
-                    "embeddings": None,
                     "horiz_status": horiz_ok,
                     "vert_status": vert_ok,
                     "horiz_diff": round(h_diff, 4),
                     "vert_diff": round(v_diff, 4),
-                    "horiz_msg": h_msg,
+                    "horiz_msg": h_msg, 
                     "vert_msg": v_msg
                 }), flush=True)
 
             except Exception as loop_e:
+                # Log loop errors but don't crash
+                if frame_count % 100 == 0:
+                    log_error(loop_e, "Main Loop Inner")
                 continue
 
     except Exception as e: 
-        log_error(f"Critical: {e}")
+        log_error(e, "Main Loop Critical")
     finally: 
         try: pipeline.stop()
         except: pass
+        logging.info("Pipeline stopped.")
 
 if __name__ == "__main__":
     main()

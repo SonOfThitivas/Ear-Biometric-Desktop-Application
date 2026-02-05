@@ -77,7 +77,7 @@ export default function Camera({ onInsideZoneChange }) {
       let validDistance = false;
       if (cameraData?.distance !== undefined) {
         const dist = Number(cameraData.distance);
-        // Example range: 0.3m to 0.6m
+        // Example range: 0.2m to 0.3m
         validDistance = dist >= 0.20 && dist <= 0.30; 
         
         ctx.fillStyle = validDistance ? "lime" : "red";
@@ -86,38 +86,52 @@ export default function Camera({ onInsideZoneChange }) {
       }
 
       // --- FINAL VALIDATION ---
-      // Must be: In Box AND Good Distance AND Flat Ear
       const finalInside = insideBox && validDistance && isFlat;
       
       setInsideZone(finalInside);
       onInsideZoneChange?.(finalInside);
 
       // --- UI FEEDBACK ---
-      ctx.font = "bold 18px Arial";
+      ctx.font = "bold 20px Arial";
       
       // 1. Overall Status
       ctx.fillStyle = finalInside ? "lime" : "red";
       ctx.fillText(finalInside ? "READY TO SCAN" : "ADJUST POSITION", 10, 20);
 
-      // 2. Angle Feedback (Help user correct rotation)
+      // 2. Angle Feedback (DYNAMIC TEXT)
       if (bbox) {
-        let yPos = 70;
+        let yPos = 80;
+
+        // HORIZONTAL
         if (!isFlatHoriz) {
             ctx.fillStyle = "orange";
-            ctx.fillText(`Rotate Left/Right (${cameraData.horiz_diff})`, 10, yPos);
-            yPos += 25;
+            const hMsg = cameraData.horiz_msg || "Adjust Horizontal";
+            // Add arrows to text for clarity
+            let arrow = "";
+            if (hMsg.includes("LEFT")) arrow = "⟵ ";
+            if (hMsg.includes("RIGHT")) arrow = "⟶ ";
+            
+            ctx.fillText(`${arrow}${hMsg} (${cameraData.horiz_diff})`, 10, yPos);
+            yPos += 30;
         } else {
             ctx.fillStyle = "lime";
-            ctx.fillText("Horizontal: OK", 10, yPos);
-            yPos += 25;
+            ctx.fillText("✓ Horizontal: OK", 10, yPos);
+            yPos += 30;
         }
 
+        // VERTICAL
         if (!isFlatVert) {
             ctx.fillStyle = "orange";
-            ctx.fillText(`Tilt Up/Down (${cameraData.vert_diff})`, 10, yPos);
+            const vMsg = cameraData.vert_msg || "Adjust Vertical";
+            
+            let arrow = "";
+            if (vMsg.includes("UP")) arrow = "↑ ";
+            if (vMsg.includes("DOWN")) arrow = "↓ ";
+
+            ctx.fillText(`${arrow}${vMsg} (${cameraData.vert_diff})`, 10, yPos);
         } else {
             ctx.fillStyle = "lime";
-            ctx.fillText("Vertical: OK", 10, yPos);
+            ctx.fillText("✓ Vertical: OK", 10, yPos);
         }
       }
     };
