@@ -1,17 +1,17 @@
 import React from 'react'
 import { 
-    Box, 
+    Stack, 
     TextInput, 
     Title, 
     Grid,
     Button,
     Group,
-    Alert,
-    Transition,
+    LoadingOverlay,
 } from '@mantine/core'
 import { IRecordChildParent } from './interface/IRecord'
 import TableRecord from './components/tableRecord'
-import { TbAlertCircle } from "react-icons/tb"
+import { notifications, Notifications } from '@mantine/notifications'
+import { useDebouncedCallback } from '@mantine/hooks';
 
 function Record({
     tab="Record"
@@ -24,24 +24,12 @@ function Record({
     const [firstname, setFirstname] = React.useState<string>("")  // firstname fill
     const [lastname, setLastname] = React.useState<string>("")   // lastname fill
 
-    const tbAlertCircle = <TbAlertCircle/>
-    const [alertError, setAlertError] = React.useState<boolean>(false)  // alert error
-    const [errorMessage, setErrorMessage] = React.useState<string>("")  // error message
     const [loading, setLoading] = React.useState<boolean>(false) // loading icon when click
-    
+
     // Fetch all data automatically when page opens
     React.useEffect(() => {
-        if (tab === "Record") fetchData();
+        if (tab === "Record") fetchData("","","");
     }, [tab]);
-
-    // handle transition and alert
-    const handleTransition = () => {
-        const timeout = setTimeout((e)=>{
-            setErrorMessage("")
-            setAlertError(false)
-            clearTimeout(timeout)
-        }, 5000)
-    }
 
     // handle when click reset
     const handleReset = () => {
@@ -53,20 +41,34 @@ function Record({
         // 2. Fetch ALL data immediately (passing empty strings explicitly)
         // We pass "" to override the state which might not have updated yet
         fetchData("", "", ""); 
+
+        notifications.show({
+            id: "reset-record-id",
+            title: "Reset!",
+            message: "The record has been reset!",
+            color:"yellow",
+            bg:"yellow.1",
+            autoClose: 4000,
+            withCloseButton: true,
+            withBorder:true,
+        })
     }
 
     // handle when click show
-    const handleShow = async () => {
-        setLoading(true)
-        await fetchData()
-    }
+    const handleShow = useDebouncedCallback(async (hn_para: string, firstname_para: string, lastname_para: string) => {
+        const searchHn = hn_para !== undefined ? hn_para : hn;
+        const searchFirst = firstname_para !== undefined ? firstname_para : firstname;
+        const searchLast = lastname_para !== undefined ? lastname_para : lastname;
+        await fetchData(searchHn, searchFirst, searchLast)
+        setLoading(false)
+    }, 500)
 
     // UPDATED: fetchData now accepts optional overrides
     const fetchData = async (overrideHn?: string, overrideFirst?: string, overrideLast?: string) => {
         // Determine values: use override if provided, otherwise use current state
-        const searchHn = overrideHn !== undefined ? overrideHn : hn;
-        const searchFirst = overrideFirst !== undefined ? overrideFirst : firstname;
-        const searchLast = overrideLast !== undefined ? overrideLast : lastname;
+        const searchHn = overrideHn
+        const searchFirst = overrideFirst
+        const searchLast = overrideLast
 
         try {
             console.log(`🚀 [UI] Searching Multi: HN="${searchHn}", First="${searchFirst}", Last="${searchLast}"`);
@@ -77,112 +79,115 @@ function Record({
             console.log(`✅ [UI] Found ${res.length} records`);
 
             if (res.length === 0){
-                setAlertError(true);
-                setErrorMessage("No matched data.");
                 setRecord([]);
+                throw Error("No matched data. Please, try again!")
             } else {
                 setRecord(res);
             }
-            setLoading(false);
+            notifications.hide("error-record-id")
 
-        } catch (err){
-            console.error("❌ [UI] Search Failed:", err);
-            setAlertError(true);
-            setErrorMessage("Cannot get the data. Please, try again.");
+        } catch (err: any){
+            console.error("❌ [UI] Search Failed:", err.message);
             setLoading(false);
+            notifications.show({
+                id: "error-record-id",
+                title: "Error!",
+                message: err.message,
+                color:"red",
+                bg:"red.1",
+                withBorder: true,
+                autoClose: 4000,
+                withCloseButton: true,
+            })
         }
     }
 
 
     return (
-        <Box component='div' p={"md"} maw={"100%"}>
-
+        <Grid component='div' p={"md"} maw={"100%"}>
             {/* Section Filter */}
-            <Box component='div' p={"sm"} m={"xs"} bd={"2px black solid"} bdrs={"sm"}>
-                <Title order={4}>Filter</Title>
-                <Grid
-                    h="100%"
-                    p="md"
-                    justify='center'
-                    align='end'
+            <Grid.Col span={3}>
+                <Stack
+                    bg="yellow.1"
+                    align="stretch"
+                    justify="center"
+                    bd={"3 black solid"}
+                    bdrs={"sm"}
+                    p={"lg"}
                 >
-                    <Grid.Col span={4}>
-                        <TextInput
-                            label="Hospital Number"
-                            placeholder="Enter your hospital number"
-                            value={hn}
-                            onChange={(event)=>setHn(event.currentTarget.value)}
-                        />
-                    </Grid.Col>
-                    <Grid.Col span={4}>
-                        <TextInput
-                            label="First Name"
-                            placeholder="Enter your first name"
-                            value={firstname}
-                            onChange={(event)=>setFirstname(event.currentTarget.value)}
-                        />
-                    </Grid.Col>
-                    <Grid.Col span={4}>
-                        <TextInput 
-                            label="Last name"
-                            placeholder="Enter your last name"
-                            value={lastname}
-                            onChange={(event)=>setLastname(event.currentTarget.value)}
-                        />
-                    </Grid.Col>
-                    <Grid.Col span={4}>
-                        <Group grow w={"100%"}>
-                            <Button
-                                variant='filled'
-                                color='yellow'
-                                onClick={handleReset}
-                            >
-                                Reset
-                            </Button>
-                            <Button 
-                                variant='filled' 
-                                color='green'
-                                onClick={handleShow}
-                                loading={loading}
-                            >Show</Button>
-                        </Group>
-                    </Grid.Col>
-                </Grid>
-            </Box>
+                    <Title order={4}>
+                        Search
+                    </Title>
 
-            {/* child parent */}
-            <TableRecord title="child" record={record}/>
+                    <TextInput
+                        label="Hospital Number"
+                        placeholder="Enter your hospital number"
+                        value={hn}
+                        // onAbort={handleShow}
+                        // onEnded={handleShow} 
+                        onChange={(event)=>{
+                            setLoading(true)
+                            setHn(event.currentTarget.value)
+                            handleShow(event.currentTarget.value, firstname, lastname)
+                        }}
+                    />
 
-            {/* parent table */}
-            <TableRecord title="parent" record={record}/>
+                    <TextInput
+                        label="First Name"
+                        placeholder="Enter your first name"
+                        value={firstname}
+                        onChange={(event)=>{
+                            setLoading(true)
+                            setFirstname(event.currentTarget.value)
+                            handleShow(hn, event.currentTarget.value, lastname)
+                        }}
+                    />
+
+                    <TextInput 
+                        label="Last name"
+                        placeholder="Enter your last name"
+                        value={lastname}
+                        onChange={(event)=>{
+                            setLoading(true)
+                            setLastname(event.currentTarget.value)
+                            handleShow(hn, firstname, event.currentTarget.value)
+                        }}
+                    />
+
+                    <Group grow w={"100%"}>
+                        <Button
+                            variant='filled'
+                            color='yellow'
+                            onClick={handleReset}
+                        >
+                            Reset
+                        </Button>
+                        {/* <Button 
+                            variant='filled' 
+                            color='green'
+                            onClick={handleShow}
+                            loading={loading}
+                        >
+                            Show
+                        </Button> */}
+                    </Group>
+                </Stack>
+            </Grid.Col>
+
+            <Grid.Col span={9} pos={"relative"}>
+                <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
+                {/* child parent */}
+                <TableRecord title="child" record={record}/>
+
+                {/* parent table */}
+                <TableRecord title="parent" record={record}/>
+
+            </Grid.Col>
+
 
             {/* alert when error */}
-            <Transition
-                mounted={alertError}
-                transition="fade-left"
-                duration={400}
-                timingFunction="ease"
-                keepMounted
-                onEntered={handleTransition}
-            >
-                {(styles) => 
-                <Alert
-                    pos={"fixed"}
-                    w={"25%"}
-                    right={"1rem"}
-                    bottom={"1rem"}
-                    variant="filled" 
-                    color="red" 
-                    title="Error"
-                    icon={tbAlertCircle}
-                    onClose={()=>setAlertError(false)}
-                    withCloseButton
-                    style={styles}
-                >
-                    {errorMessage}
-                </Alert>}
-            </Transition>
-        </Box>
+            <Notifications/>
+        </Grid>
     )
 }
 

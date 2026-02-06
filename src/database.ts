@@ -120,7 +120,7 @@ export const searchMultiCriteria = async (hn: string, fname: string, lname: stri
         LEFT JOIN parent_child pc ON c.id = pc.child_id 
         LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
         WHERE c.active_status = '1' 
-        AND ($1 = '' OR c.hn_number = $1) 
+        AND ($1 = '' OR c.hn_number =  $1) 
         AND ($2 = '' OR c.firstname ILIKE $2) 
         AND ($3 = '' OR c.lastname ILIKE $3)
     `;
@@ -131,7 +131,7 @@ export const searchMultiCriteria = async (hn: string, fname: string, lname: stri
         LEFT JOIN parent_child pc ON p.id = pc.parent_id 
         LEFT JOIN child c ON pc.child_id = c.id AND c.active_status = '1'
         WHERE p.active_status = '1' 
-        AND ($1 = '' OR p.hn_number = $1) 
+        AND ($1 = '' OR p.hn_number =  $1) 
         AND ($2 = '' OR p.firstname ILIKE $2) 
         AND ($3 = '' OR p.lastname ILIKE $3) 
     `;
