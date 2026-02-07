@@ -9,7 +9,6 @@
         Group,
         LoadingOverlay,
     } from '@mantine/core'
-    import { TbAlertCircle } from "react-icons/tb";
     import { useForm } from '@mantine/form';
     import { AiOutlineEnter } from "react-icons/ai";
     import useCameraSocket from "../hooks/useCameraSocket";
@@ -199,7 +198,7 @@
             >
                 <Flex 
                     bd={"0.2rem black solid"}
-                    bdrs={"xl"}
+                    bdrs={"lg"}
                     justify={"center"}
                     align={"center"}
                     direction={"column"}

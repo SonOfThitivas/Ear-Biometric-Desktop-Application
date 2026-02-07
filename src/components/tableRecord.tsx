@@ -15,12 +15,17 @@ function TableRecord({title, record=[]}:
         record: IRecordChildParent[],
     }
 ) {
+    const recordCount = React.useRef<number>(0)
+
+    React.useEffect(()=>{
+        recordCount.current = 0
+    },[record])
 
     const rows = record.map((data: IRecordChildParent, index: number) => {
         // --- CHILD TABLE LOGIC ---
         if (title === "child") {
             if (!data.child_hn) return null;
-
+            recordCount.current = recordCount.current + 1
             // FIX: Use `${data.child_hn}-${index}` to guarantee unique keys
             return (
                 <Table.Tr key={`${data.child_hn}-${index}`}>
@@ -46,7 +51,7 @@ function TableRecord({title, record=[]}:
         // --- PARENT TABLE LOGIC ---
         else if (title === "parent") {
             if (!data.parent_hn) return null;
-
+            recordCount.current = recordCount.current + 1
             // FIX: Use `${data.parent_hn}-${index}` to guarantee unique keys
             return (
                 <Table.Tr key={`${data.parent_hn}-${index}`}>
@@ -106,6 +111,7 @@ function TableRecord({title, record=[]}:
                     </Table.Tbody>
                 </Table>
             </Table.ScrollContainer>
+            <Title order={5}>found: {recordCount.current} record{recordCount.current > 1 && "s"}</Title>
         </Box>  
     )
 }
