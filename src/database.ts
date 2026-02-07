@@ -472,11 +472,7 @@ export const findClosestChild = async (vector: number[]) => {
         JOIN child c ON iv.child_id = c.id
         WHERE iv.active_status = '1'
         -- Only return if distance is less than 0.3 (meaning similarity is > 0.7)
-        AND LEAST(
-                iv.vector_1 <=> $1,
-                iv.vector_2 <=> $1,
-                iv.vector_3 <=> $1
-            ) < 0.3
+        -- AND LEAST(iv.vector_1 <=> $1,iv.vector_2 <=> $1,iv.vector_3 <=> $1 ) < 0.9
         ORDER BY distance ASC
         LIMIT 1;
     `;
