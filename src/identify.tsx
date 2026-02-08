@@ -49,6 +49,11 @@ export default function Identify() {
 
     const [loading, setLoading] = React.useState<boolean>(false)
 
+    // ✅ Changed from useState to useRef to avoid re-render loops during calculation
+    const bgDist = React.useRef<string>("white")
+    const bgHori = React.useRef<string>("white")
+    const bgVert = React.useRef<string>("white")
+
     const handleReset = () => {
         setInsideZone(false)
         setIsCapturing(false)
@@ -57,7 +62,15 @@ export default function Identify() {
         setChildParentRecord(recordInit)
         setVector(null)
         setBgcolor("white")
+<<<<<<< HEAD
         // Refs for table bg are no longer needed here, handled inside StatusTable
+=======
+        
+        // Reset refs
+        bgDist.current = "white"
+        bgHori.current = "white"
+        bgVert.current = "white"
+>>>>>>> origin/go-live
     }
 
     // ✅ Start auto-capture workflow
