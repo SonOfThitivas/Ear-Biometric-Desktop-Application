@@ -8,10 +8,11 @@ import {
   TextInput,
   Title,
   Stepper,
-  MantineProvider,
+  Stack,
 } from "@mantine/core";
 
 import Camera from "./components/camera";
+import CameraStatusTable from "./components/CameraStatusTable";
 import useCameraSocket from "./hooks/useCameraSocket";
 import PatientModeSelector from "./components/patientMode";
 import CaptureNoti from "./components/captureNoti";
@@ -26,7 +27,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     const [hn, setHn] = React.useState("");
     const [patient, setPatient] = React.useState<"child" | "parent">("child");
 
-    const { capture, captureResult } = useCameraSocket();
+    const { capture, captureResult, cameraData } = useCameraSocket();
 
     const [insideZone, setInsideZone] = React.useState(false);
     const [countdown, setCountdown] = React.useState(0);
@@ -65,6 +66,17 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
   // Start workflow
   const handleCapture = () => {
     if (isCapturing) return;
+    if (hn === ""){ notifications.show({
+        id: "update-captue-id",
+        title: "Error!",
+        color:"red",
+        message: "You have to enter the hospital number.",
+        bg:"red.1",
+        withBorder: true,
+        autoClose: 4000,
+        withCloseButton: true,}
+    ) 
+    return}
     setStep(step+1)
     setCaptures([]);
     setCountdown(3);
@@ -198,7 +210,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
   return (
     <Flex 
         gap="sm" 
-        justify="center" 
+        justify="start" 
         direction="row" 
         p="md" 
         w={"100%"}
@@ -250,10 +262,27 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
       </Box>
 
       {/* Camera Section */}
-      <Box component='div' w={"70%"} maw={"70%"} p={"sm"}>
-          <Text size='md' fw={500}>Camera</Text>
-          <Camera onInsideZoneChange={setInsideZone} />
-      </Box>
+      <Flex
+        justify="start" 
+        direction="row"
+        wrap={"wrap"}
+        >
+        <Box component='div' pl={"xs"}>
+            <Text size='md' fw={500}>Camera</Text>
+            <Camera onInsideZoneChange={setInsideZone} />
+        </Box>
+
+        <Stack pl={"xs"} gap={"sm"} align="stretch" justify="flex-start">
+            <Title order={4} ta={"center"}>Guideline</Title>
+            
+            {/* ✅ New Table Component */}
+            <CameraStatusTable 
+                isCapturing={isCapturing} 
+                cameraData={cameraData} 
+            />
+
+        </Stack>
+    </Flex>
 
       {/* Mantine Alert */}
       <CaptureNoti isCapture={isCapturing} insideZone={insideZone} countdown={countdown} setBgcolor={setBgcolor}/>
