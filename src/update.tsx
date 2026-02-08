@@ -213,15 +213,13 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         justify="start" 
         direction="row" 
         p="md" 
-        w={"100%"}
-        h={"100svh"}
         bg={bgcolor}
         style={{
             transition: "background-color 0.5s ease"
         }}  
     >
       {/* Left Section */}
-      <Box w={"30%"} maw={"30%"}>
+      <Box>
         <PatientModeSelector patient={patient} setPatient={setPatient} />
 
         <TextInput
