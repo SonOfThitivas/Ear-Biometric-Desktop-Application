@@ -57,7 +57,7 @@ export default function CameraStatusTable({ isCapturing, cameraData }: StatusTab
                 {/* ROW 1: DISTANCE */}
                 <Table.Tr>
                     <Table.Th>Distance</Table.Th>
-                    <Table.Td bg={distRes.bg} w={165}>
+                    <Table.Td bg={distRes.bg} w={155}>
                         {distRes.content}
                     </Table.Td>
                 </Table.Tr>
