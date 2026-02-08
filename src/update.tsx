@@ -67,7 +67,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     if (isCapturing) return;
     setStep(step+1)
     setCaptures([]);
-    setCountdown(3);
+    setCountdown(1);
     setIsCapturing(true);
     setLoading(true)
   };
@@ -75,7 +75,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
   // Reset countdown when ear leaves zone
   React.useEffect(() => {
     if (!isCapturing) return;
-    if (!insideZone) setCountdown(3);
+    if (!insideZone) setCountdown(1);
   }, [insideZone, isCapturing]);
 
   // Drive countdown every second
