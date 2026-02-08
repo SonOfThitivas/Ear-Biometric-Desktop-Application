@@ -62,15 +62,11 @@ export default function Identify() {
         setChildParentRecord(recordInit)
         setVector(null)
         setBgcolor("white")
-<<<<<<< HEAD
-        // Refs for table bg are no longer needed here, handled inside StatusTable
-=======
         
         // Reset refs
         bgDist.current = "white"
         bgHori.current = "white"
         bgVert.current = "white"
->>>>>>> origin/go-live
     }
 
     // ✅ Start auto-capture workflow
