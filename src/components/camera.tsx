@@ -10,6 +10,7 @@ export default function Camera({ onInsideZoneChange }) {
 
   const imgRef = useRef(null);
   const canvasRef = useRef(null);
+  // eslint-disable-next-line no-unused-vars
   const [insideZone, setInsideZone] = useState(false);
 
   useEffect(() => {
@@ -41,12 +42,12 @@ export default function Camera({ onInsideZoneChange }) {
       ctx.lineWidth = 2;
       ctx.strokeRect(zoneX, zoneY, zoneWidth, zoneHeight);
 
-      // --- DATA EXTRACTION ---
+      // --- DATA EXTRACTION (Still needed for box coloring) ---
       const bbox = cameraData.bbox;
       const isFlatHoriz = cameraData.horiz_status === true;
       const isFlatVert = cameraData.vert_status === true;
       const isFlat = isFlatHoriz && isFlatVert;
-      
+
       const distVal = Number(cameraData.distance);
       const validDistance = (distVal >= 0.20 && distVal <= 0.30) || distVal === 0.0;
 
@@ -80,53 +81,13 @@ export default function Camera({ onInsideZoneChange }) {
       setInsideZone(finalInside);
       onInsideZoneChange?.(finalInside);
 
-      // --- 4. DRAW STATS PANEL (Fixed Top-Left) ---
-      // Background Removed
-
-      let textY = 30;
-      const xPos = 10;
-
-      // A. MAIN STATUS (Reduced to 16px)
-      ctx.font = "bold 16px Arial";
-      ctx.fillStyle = finalInside ? "#00FF00" : "#FF0000";
-      ctx.fillText(finalInside ? "READY TO SCAN" : "ADJUST POSITION", xPos, textY);
-      textY += 25;
-
-      // B. DISTANCE (Reduced to 14px)
-      ctx.font = "14px Arial";
-      ctx.fillStyle = validDistance ? "#00FF00" : "#FF0000";
-      ctx.fillText(`Distance: ${distVal.toFixed(3)} m`, xPos, textY);
-      ctx.fillText(validDistance ? " [ OK ]" : " [ TOO FAR/CLOSE ]", xPos + 110, textY);
-      textY += 25;
-
-      // C. HORIZONTAL (Reduced to 14px)
-      ctx.fillStyle = isFlatHoriz ? "#00FF00" : "#FF0000";
-      const hVal = cameraData.horiz_diff ? cameraData.horiz_diff.toFixed(3) : "0.000";
-      ctx.fillText(`Horizontal: ${hVal}`, xPos, textY);
-      ctx.fillText(isFlatHoriz ? " [ OK ]" : " [ NOT OK ]", xPos + 120, textY);
-      
-      if (!isFlatHoriz && cameraData.horiz_msg) {
-        textY += 20;
-        ctx.fillStyle = "#FFA500"; 
-        ctx.fillText(`Action: ${cameraData.horiz_msg}`, xPos + 20, textY);
-      }
-      textY += 25;
-
-      // D. VERTICAL (Reduced to 14px)
-      ctx.fillStyle = isFlatVert ? "#00FF00" : "#FF0000";
-      const vVal = cameraData.vert_diff ? cameraData.vert_diff.toFixed(3) : "0.000";
-      ctx.fillText(`Vertical:    ${vVal}`, xPos, textY);
-      ctx.fillText(isFlatVert ? " [ OK ]" : " [ NOT OK ]", xPos + 120, textY);
-
-      if (!isFlatVert && cameraData.vert_msg) {
-        textY += 20;
-        ctx.fillStyle = "#FFA500"; 
-        ctx.fillText(`Action: ${cameraData.vert_msg}`, xPos + 20, textY);
-      }
+      // --- 4. DRAW STATS PANEL ---
+      // (Section Removed)
     };
 
     if (!img.complete) img.onload = draw;
     else draw();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraData]);
 
   return (

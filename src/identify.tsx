@@ -6,11 +6,12 @@ import {
     Button,
     Text,
     Title,
+    Table,
+    Stack,
 } from '@mantine/core'
 
 import TableResult from './components/tableResult'
 import {IRecordChildParent} from "./interface/IRecord"
-import { TbAlertCircle } from "react-icons/tb"
 import Camera from "./components/camera"
 import useCameraSocket from "./hooks/useCameraSocket"
 import PatientModeSelector from './components/patientMode'
@@ -36,7 +37,8 @@ export default function Identify() {
     const [patient, setPatient] = React.useState<string>("child")
     const [childParentRecord, setChildParentRecord] = React.useState<IRecordChildParent>(recordInit)
 
-    const { capture, captureResult } = useCameraSocket()
+    // ✅ Get cameraData for live feedback loops
+    const { capture, captureResult, cameraData } = useCameraSocket()
 
     const [insideZone, setInsideZone] = React.useState(false)
     const [countdown, setCountdown] = React.useState(0)
@@ -47,6 +49,11 @@ export default function Identify() {
 
     const [loading, setLoading] = React.useState<boolean>(false)
 
+    // ✅ Changed from useState to useRef to avoid re-render loops during calculation
+    const bgDist = React.useRef<string>("white")
+    const bgHori = React.useRef<string>("white")
+    const bgVert = React.useRef<string>("white")
+
     const handleReset = () => {
         setInsideZone(false)
         setIsCapturing(false)
@@ -55,6 +62,11 @@ export default function Identify() {
         setChildParentRecord(recordInit)
         setVector(null)
         setBgcolor("white")
+        
+        // Reset refs
+        bgDist.current = "white"
+        bgHori.current = "white"
+        bgVert.current = "white"
     }
 
     // ✅ Start auto-capture workflow
@@ -105,86 +117,85 @@ export default function Identify() {
 
     React.useEffect(()=>console.log("Patient:", patient),[patient])
 
-    // ✅ Your existing DB lookup logic, unchanged
-const runIdentification = async (vector: number[]) => {
-    console.log("🔍 [Identify] Starting identification...");
-    console.log("🧬 [Identify] Received vector:", vector);
+    // ✅ Your existing DB lookup logic
+    const runIdentification = async (vector: number[]) => {
+        console.log("🔍 [Identify] Starting identification...");
+        console.log("🧬 [Identify] Received vector:", vector);
 
-    let res: { hn?: string; distance?: number } | null = null;
+        let res: { hn?: string; distance?: number } | null = null;
 
-    try {
-        if (!vector) {
-            console.error("❌ [Identify] No vector received from Python");
-            throw new Error("Detection failed. Please, try again.");
-        }
+        try {
+            if (!vector) {
+                console.error("❌ [Identify] No vector received from Python");
+                throw new Error("Detection failed. Please, try again.");
+            }
 
-        console.log(`👶🧑 [Identify] Patient mode: ${patient}`);
-        console.log("📤 [Identify] Sending vector to Electron...");
+            console.log(`👶🧑 [Identify] Patient mode: ${patient}`);
+            console.log("📤 [Identify] Sending vector to Electron...");
 
-        // ✅ Call Electron backend
-        if (patient === "child") {
-            console.log("➡️ [Identify] Calling findClosestChild()");
-            res = await window.electronAPI.findClosestChild(vector);
-        } else {
-            console.log("➡️ [Identify] Calling findClosestParent()");
-            res = await window.electronAPI.findClosestParent(vector);
-        }
+            // ✅ Call Electron backend
+            if (patient === "child") {
+                console.log("➡️ [Identify] Calling findClosestChild()");
+                res = await window.electronAPI.findClosestChild(vector);
+            } else {
+                console.log("➡️ [Identify] Calling findClosestParent()");
+                res = await window.electronAPI.findClosestParent(vector);
+            }
 
-        console.log("✅ [Identify] Electron returned:", res);
+            console.log("✅ [Identify] Electron returned:", res);
 
-        if (!res || !res.hn) {
-            console.error("❌ [Identify] Electron returned invalid result:", res);
-            throw new Error("Matching failed. Please try again.");
-        }
+            if (!res || !res.hn) {
+                console.error("❌ [Identify] Electron returned invalid result:", res);
+                throw new Error("Matching failed. Please try again.");
+            }
 
-        const hn = res.hn;
-        console.log("📥 [Identify] Searching DB for HN:", hn);
+            const hn = res.hn;
+            console.log("📥 [Identify] Searching DB for HN:", hn);
 
-        // ✅ Query DB
-        const data = await window.electronAPI.searchByHN(hn);
+            // ✅ Query DB
+            const data = await window.electronAPI.searchByHN(hn);
 
-        console.log("📄 [Identify] DB returned:", data);
+            console.log("📄 [Identify] DB returned:", data);
 
-        if (data.length > 0) {
-            console.log("✅ [Identify] Match found:", data[0]);
+            if (data.length > 0) {
+                console.log("✅ [Identify] Match found:", data[0]);
 
-            setChildParentRecord(data[0]);
+                setChildParentRecord(data[0]);
+                notifications.show({
+                    title: "Success",
+                    color:"green",
+                    message: "Detection Successfully",
+                    bg:"green.1",
+                    withBorder: true,
+                    autoClose: 4000,
+                    withCloseButton: true,
+                })
+            } else {
+                console.error("❌ [Identify] No record found for HN:", hn);
+                throw new Error("Detection unsuccessfully, something went wrong. Please, try again.");
+            }
+
+        } catch (err) {
+            console.error("❌ [Identify] Identification error:", err);
             notifications.show({
-                title: "Success",
-                color:"green",
-                message: "Detection Successfully",
-                bg:"green.1",
+                title: "Error",
+                message: err.message,
+                color:"red",
+                bg:"red.1",
                 withBorder: true,
                 autoClose: 4000,
                 withCloseButton: true,
             })
-        } else {
-            console.error("❌ [Identify] No record found for HN:", hn);
-            throw new Error("Detection unsuccessfully, something went wrong. Please, try again.");
         }
 
-    } catch (err) {
-        console.error("❌ [Identify] Identification error:", err);
-        notifications.show({
-            title: "Error",
-            message: err.message,
-            color:"red",
-            bg:"red.1",
-            withBorder: true,
-            autoClose: 4000,
-            withCloseButton: true,
-        })
-    }
-
-    console.log("✅ [Identify] Identification process finished.");
-    setLoading(false);
-};
-//
+        console.log("✅ [Identify] Identification process finished.");
+        setLoading(false);
+    };
 
     return (
         <Flex 
             gap="sm" 
-            justify="center" 
+            justify="start" 
             direction="row" 
             p="xs" 
             w={"100%"}
@@ -194,7 +205,7 @@ const runIdentification = async (vector: number[]) => {
             }}      
         >
             {/* Left Section */}
-            <Box w={"30%"} maw={"30%"}>
+            <Box>
                 <Box component='div'>
                     <PatientModeSelector patient={patient} setPatient={setPatient}/>
 
@@ -209,7 +220,6 @@ const runIdentification = async (vector: number[]) => {
                 </Box>
 
                 <Box component='div' mt="md">
-                    {/* <Title order={4}>Inside Zone - {insideZone ? "✅ Yes" : "❌ No"}</Title> */}
                     <Title order={4}>Countdown - {countdown}</Title>
                     <Title order={4}>Status - {isCapturing ? "Capturing..." : "Idle"}</Title>
                 </Box>
@@ -221,44 +231,131 @@ const runIdentification = async (vector: number[]) => {
                     <Box component='div' w={"100%"}>
                         <Text size='sm' fw={500}>Child</Text>
                         <TableResult
-                    hn={childParentRecord.child_hn}
-                    firstname={childParentRecord.child_fname}
-                    lastname={childParentRecord.child_lname}
-                    age={childParentRecord.child_age}
-                    sex={childParentRecord.child_sex}
-                    dob={
-                        childParentRecord.child_dob
-                        ? new Date(childParentRecord.child_dob).toLocaleDateString()
-                        : "-"
-                    }
-                    />
+                            hn={childParentRecord.child_hn}
+                            firstname={childParentRecord.child_fname}
+                            lastname={childParentRecord.child_lname}
+                            age={childParentRecord.child_age}
+                            sex={childParentRecord.child_sex}
+                            dob={
+                                childParentRecord.child_dob
+                                ? new Date(childParentRecord.child_dob).toLocaleDateString()
+                                : "-"
+                            }
+                        />
                     </Box>
 
                     {/* Parent */}
                     <Box component='div' w={"100%"}>
                         <Text size='sm' fw={500}>Parent</Text>
                         <TableResult
-                    hn={childParentRecord.parent_hn}
-                    firstname={childParentRecord.parent_fname}
-                    lastname={childParentRecord.parent_lname}
-                    age={childParentRecord.parent_age}
-                    sex={childParentRecord.parent_sex}
-                    dob={
-                        childParentRecord.parent_dob
-                        ? new Date(childParentRecord.parent_dob).toLocaleDateString()
-                        : "-"
-                    }
-                    />
+                            hn={childParentRecord.parent_hn}
+                            firstname={childParentRecord.parent_fname}
+                            lastname={childParentRecord.parent_lname}
+                            age={childParentRecord.parent_age}
+                            sex={childParentRecord.parent_sex}
+                            dob={
+                                childParentRecord.parent_dob
+                                ? new Date(childParentRecord.parent_dob).toLocaleDateString()
+                                : "-"
+                            }
+                        />
                     </Box>
                 </Flex>
 
             </Box>
 
             {/* Camera Section */}
-            <Box component='div' w={"70%"} maw={"70%"} p={"sm"}>
-                <Text size='md' fw={500}>Camera</Text>
-                <Camera onInsideZoneChange={setInsideZone} />
-            </Box>
+            <Flex
+                justify="start" 
+                direction="row"
+                wrap={"wrap"}
+                >
+                <Box component='div' pl={"xs"}>
+                    <Text size='md' fw={500}>Camera</Text>
+                    <Camera onInsideZoneChange={setInsideZone} />
+                </Box>
+
+                <Stack pl={"xs"} gap={"sm"} align="stretch" justify="flex-start">
+                    <Title order={4} ta={"center"}>Guideline</Title>
+                    <Table variant="vertical" layout="auto" withTableBorder>
+                        <Table.Tbody>
+                            {/* ROW 1: DISTANCE */}
+                            <Table.Tr>
+                                <Table.Th>Distance</Table.Th>
+                                <Table.Td bg={bgDist.current} w={165}>
+                                    {(() => {
+                                        if (!isCapturing) {
+                                            bgDist.current = "white"; // Optional: reset if not capturing
+                                            return <Text c="dimmed">-</Text>;
+                                        }
+                                        
+                                        // Use cameraData for live feedback
+                                        const dist = cameraData?.distance;
+                                        if (dist === undefined || dist === null) return <Text c="dimmed">...</Text>;
+
+                                        // 0.25 - 0.3 is the valid range
+                                        if (dist >= 0.25 && dist <= 0.3) {
+                                            bgDist.current = "green.5";
+                                            return <Text fw={700}>Okay</Text>;
+                                        } else if (dist > 0.3) {
+                                            const diff = ((dist - 0.3) * 100).toFixed(2); // Convert to cm
+                                            bgDist.current = "red.5";
+                                            return <Text fw={700}>-{diff} cm.</Text>;
+                                        } else {
+                                            const diff = ((0.25 - dist) * 100).toFixed(2); // Convert to cm
+                                            bgDist.current = "red.5";
+                                            return <Text fw={700}>+{diff} cm.</Text>;
+                                        }
+                                    })()}
+                                </Table.Td>
+                            </Table.Tr>
+
+                            {/* ROW 2: HORIZONTAL */}
+                            <Table.Tr>
+                                <Table.Th>Horizontal</Table.Th>
+                                <Table.Td bg={bgHori.current}>
+                                    {(() => {
+                                        if (!isCapturing) {
+                                            bgHori.current = "white";
+                                            return <Text c="dimmed">-</Text>;
+                                        }
+                                        
+                                        if (cameraData?.horiz_status === true) {
+                                            bgHori.current = "green.5";
+                                            return <Text fw={700}>Okay</Text>;
+                                        }
+
+                                        bgHori.current = "orange.5";
+                                        return <Text fw={700}>{cameraData?.horiz_msg || "Adjust"}</Text>;
+                                    })()}
+                                </Table.Td>
+                            </Table.Tr>
+
+                            {/* ROW 3: VERTICAL */}
+                            <Table.Tr>
+                                <Table.Th>Vertical</Table.Th>
+                                <Table.Td bg={bgVert.current}>
+                                    {(() => {
+                                        if (!isCapturing) {
+                                            bgVert.current = "white";
+                                            return <Text c="dimmed">-</Text>;
+                                        }
+
+                                        if (cameraData?.vert_status === true) {
+                                            bgVert.current = "green.5";
+                                            return <Text fw={700}>Okay</Text>;
+                                        }
+                                        
+                                        bgVert.current = "orange.5";
+                                        return <Text fw={700}>{cameraData?.vert_msg || "Adjust"}</Text>;
+                                    })()}
+                                </Table.Td>
+                            </Table.Tr>
+
+                        </Table.Tbody>
+                    </Table>
+                </Stack>
+            </Flex>
 
             <CaptureNoti isCapture={isCapturing} insideZone={insideZone} countdown={countdown} setBgcolor={setBgcolor}/>
 
