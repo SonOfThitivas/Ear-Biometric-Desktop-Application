@@ -234,8 +234,10 @@ export default function Identify() {
                             hn={childParentRecord.child_hn}
                             firstname={childParentRecord.child_fname}
                             lastname={childParentRecord.child_lname}
-                            age={childParentRecord.child_age}
+                            // age={childParentRecord.child_age}
+                            age={childParentRecord.child_age_text}
                             sex={childParentRecord.child_sex}
+                            nationality={childParentRecord.child_sex}
                             dob={
                                 childParentRecord.child_dob
                                 ? new Date(childParentRecord.child_dob).toLocaleDateString()
@@ -251,8 +253,10 @@ export default function Identify() {
                             hn={childParentRecord.parent_hn}
                             firstname={childParentRecord.parent_fname}
                             lastname={childParentRecord.parent_lname}
-                            age={childParentRecord.parent_age}
+                            // age={childParentRecord.parent_age}
+                            age={childParentRecord.parent_age_text}
                             sex={childParentRecord.parent_sex}
+                            nationality={childParentRecord.parent_nationality}
                             dob={
                                 childParentRecord.parent_dob
                                 ? new Date(childParentRecord.parent_dob).toLocaleDateString()

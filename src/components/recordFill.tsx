@@ -66,7 +66,7 @@ function RecordFill(
                         placeholder="Enter last name"
                         key={form.key(patient === "child" ? "child_lname" : "parent_lname")}
                         {...form.getInputProps(patient === "child" ? "child_lname" : "parent_lname")}
-                        withAsterisk
+                        // withAsterisk
                     />
                 </Grid.Col>
                 {/* <Grid.Col span={6}>
@@ -81,6 +81,15 @@ function RecordFill(
                     />
                 </Grid.Col> */}
                 <Grid.Col span={6}>
+                    <TextInput
+                        label="Age"
+                        placeholder="Enter age"
+                        key={form.key(patient === "child" ? "child_age" : "parent_age")}
+                        {...form.getInputProps(patient === "child" ? "child_age" : "parent_age")}
+                        // withAsterisk
+                    />
+                </Grid.Col>
+                <Grid.Col span={6}>
                     <DatesProvider settings={{locale:"en"}}>
                         <DateInput
                             valueFormat='DD MMM YYYY'
@@ -91,9 +100,18 @@ function RecordFill(
                             {...form.getInputProps(patient === "child" ? "child_dob" : "parent_dob")}
                             maxDate={new Date()}
                             clearable
-                            withAsterisk
+                            // withAsterisk
                         />
                     </DatesProvider>
+                </Grid.Col>
+                <Grid.Col span={6}>
+                    <TextInput
+                        label="Nationality"
+                        placeholder="Enter nationality"
+                        key={form.key(patient === "child" ? "child_nationality" : "parent_nationality")}
+                        {...form.getInputProps(patient === "child" ? "child_nationality" : "parent_nationality")}
+                        // withAsterisk
+                    />
                 </Grid.Col>
                 <Grid.Col span={6}>
                     <Radio.Group

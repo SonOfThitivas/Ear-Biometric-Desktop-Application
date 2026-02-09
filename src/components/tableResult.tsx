@@ -12,6 +12,7 @@ const TableResult = ({
     lastname=null,
     age=null,
     sex=null,
+    nationality=null,
     dob=null
 }: IResult) => {
 
@@ -43,6 +44,11 @@ const TableResult = ({
                     <Table.Tr>
                         <Table.Th w={"25%"}>sex</Table.Th>
                         <Table.Td w={"75%"}>{sex}</Table.Td>
+                    </Table.Tr>
+
+                    <Table.Tr>
+                        <Table.Th w={"25%"}>nationality</Table.Th>
+                        <Table.Td w={"75%"}>{nationality}</Table.Td>
                     </Table.Tr>
 
                     <Table.Tr>

@@ -20,7 +20,6 @@ import IRecord, {IRecordInit, IRecordChildParent} from './interface/IRecord';
 import PatientModeSelector from './components/patientMode';
 import { MdChildCare, MdDateRange  } from "react-icons/md";
 import { IoIosPerson, IoMdMale, IoMdFemale  } from "react-icons/io";
-import dayjs from 'dayjs';
 
 function EditRecord({operatorNumber}:{operatorNumber:string}) {
     const [step, setStep] = React.useState<'identify' | 'edit'>('identify');
@@ -48,9 +47,9 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
         validate: {
             hn: (value: string) => (value.trim().length === 0 ? 'Hospital number is required' : null),
             firstname: (value: string) => (value.trim().length === 0 ? 'First name is required' : null),
-            lastname: (value: string) => (value.trim().length === 0 ? 'Last name is required' : null),
+            // lastname: (value: string) => (value.trim().length === 0 ? 'Last name is required' : null),
             sex: (value:string) => (value.trim().length === 0 ? 'Sex is required' : null),
-            dob: (value:Date) => (value === null ? 'Date of birth is required' : null),
+            // dob: (value:Date) => (value === null ? 'Date of birth is required' : null),
         },
     });
 
@@ -76,9 +75,11 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                     lastname: record.lastname,
                     sex: record.sex,
                     age: record.age,
-                    dob: new Date(record.dob) // Ensure it is a valid Date object for Mantine
+                    dob: record.dob !== null ? new Date(record.dob) : null, // Ensure it is a valid Date object for Mantine
+                    nationality: record.nationality,
                 };
-
+                console.log(data)
+                
                 formEditStep.setValues(data);
                 setStep('edit');
 
@@ -87,6 +88,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                     title:"Error",
                     message: 'Hospital Number not found in database. Please enter a valid HN.',
                     color:"red",
+                    bg: "red.1",
                     autoClose:4000,
                 })
             }
@@ -95,6 +97,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                 title:"Error",
                 message: 'An error occurred while fetching patient record. Please try again.',
                 color:"red",
+                bg:"red.1",
                 autoClose:4000,
             })
         } finally {
@@ -110,9 +113,12 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
             const data = {
                 firstname: values.firstname,
                 lastname: values.lastname,
-                age: dayjs().diff(values.dob, "year"),
+                // age: values.age,
+                age: values.age_text,
+                // age: dayjs().diff(values.dob, "year"),
                 sex: values.sex,
-                dob: values.dob.toISOString().split('T')[0],
+                dob: values.dob !== null ? values.dob.toISOString().split('T')[0] : null,
+                nationality: values.nationality
             }
             
             let res:{success:boolean, message?:string, error?:string}
@@ -132,24 +138,27 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
 
             if (res.success) {
                 notifications.show({
-                    title: "Success",
+                    title: "Success!",
                     message: "Record is updated succesfully.",
                     color: "green",
+                    bg: "green.1",
                     autoClose:4000,
                 })
             } else {
                 notifications.show({
-                    title: "Error",
+                    title: "Error!",
                     message: res.message ? res.message : res.error,
                     color: "red",
+                    bg: "red.1",
                     autoClose:4000,
                 })
             }
         } catch (err) {
             notifications.show({
-                title: "Error",
-                message: err,
+                title: "Error!",
+                message: err.message,
                 color: "red",
+                bg: "red.1",
                 autoClose:4000,
             })
         } finally {
@@ -236,16 +245,25 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                                         <TextInput
                                             label="Last Name"
                                             placeholder="Enter last name"
-                                            withAsterisk
+                                            // withAsterisk
                                             key={formEditStep.key("lastname")}
                                             {...formEditStep.getInputProps('lastname')}
+                                        />
+                                    </Grid.Col>
+                                    <Grid.Col span={6}>
+                                        <TextInput
+                                            label="Age"
+                                            placeholder="Enter age"
+                                            // withAsterisk
+                                            key={formEditStep.key("age_text")}
+                                            {...formEditStep.getInputProps('age_text')}
                                         />
                                     </Grid.Col>
                                     {/* <Grid.Col span={6}>
                                         <NumberInput
                                             label="Age"
                                             placeholder="Enter age"
-                                            withAsterisk
+                                            // withAsterisk
                                             min={0}
                                             max={150}
                                             key={formEditStep.key("age")}
@@ -259,11 +277,20 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                                                 label="Date of Birth"
                                                 placeholder="Select date"
                                                 leftSection={<MdDateRange size={20} color='black'/>}
-                                                withAsterisk
+                                                // withAsterisk
                                                 key={formEditStep.key("dob")}
                                                 {...formEditStep.getInputProps('dob')}
                                             />
                                         </DatesProvider>
+                                    </Grid.Col>
+                                    <Grid.Col span={6}>
+                                        <TextInput
+                                            label="Nationality"
+                                            placeholder="Enter nationality"
+                                            key={formEditStep.key("nationality")}
+                                            {...formEditStep.getInputProps("nationality")}
+                                            // withAsterisk
+                                        />
                                     </Grid.Col>
                                     <Grid.Col span={6}>
                                         <Radio.Group

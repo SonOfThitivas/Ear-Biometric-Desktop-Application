@@ -4,6 +4,7 @@ export default interface IRecord {
     lastname?: string| null
     age_text?: string | null
     nationality?: string | null
+    age?: string | null
     sex?: string | null
     dob?: Date | null
     r1?: number[] | null
@@ -17,6 +18,7 @@ export const IRecordInit: IRecord = {
     lastname:"",
     age_text: "",
     nationality: "",
+    age: "",
     sex: "",
     dob: null,
 }
@@ -27,6 +29,7 @@ export interface IRecordChildParent {
     child_lname?: string | null
     child_age_text?: string | null
     child_nationality?: string | null
+    child_age?: string | null
     child_sex?: string | null
     child_dob?: Date | null
     parent_hn?: string | null
@@ -34,6 +37,7 @@ export interface IRecordChildParent {
     parent_lname?: string | null
     parent_age_text?: string | null
     parent_nationality?: string | null
+    parent_age?: string | null
     parent_sex?: string | null
     parent_dob?: Date | null
 }
@@ -44,6 +48,7 @@ export const IRecordChildParentInit: IRecordChildParent = {
     child_lname:"",
     child_age_text: "",
     child_nationality: "",
+    child_age: "",
     child_sex: "",
     child_dob: null,
     parent_hn: "",
@@ -51,6 +56,7 @@ export const IRecordChildParentInit: IRecordChildParent = {
     parent_lname: "",
     parent_age_text: "",
     parent_nationality: "",
+    parent_age: "",
     parent_sex: "",
     parent_dob: null,
 }
