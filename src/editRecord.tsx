@@ -74,7 +74,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                     firstname: record.firstname,
                     lastname: record.lastname,
                     sex: record.sex,
-                    age: record.age,
+                    age: record.age_text,
                     dob: record.dob !== null ? new Date(record.dob) : null, // Ensure it is a valid Date object for Mantine
                     nationality: record.nationality,
                 };
