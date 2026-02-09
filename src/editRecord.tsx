@@ -47,9 +47,9 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
         validate: {
             hn: (value: string) => (value.trim().length === 0 ? 'Hospital number is required' : null),
             firstname: (value: string) => (value.trim().length === 0 ? 'First name is required' : null),
-            lastname: (value: string) => (value.trim().length === 0 ? 'Last name is required' : null),
+            // lastname: (value: string) => (value.trim().length === 0 ? 'Last name is required' : null),
             sex: (value:string) => (value.trim().length === 0 ? 'Sex is required' : null),
-            dob: (value:Date) => (value === null ? 'Date of birth is required' : null),
+            // dob: (value:Date) => (value === null ? 'Date of birth is required' : null),
         },
     });
 
@@ -75,7 +75,8 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                     lastname: record.lastname,
                     sex: record.sex,
                     age: record.age,
-                    dob: new Date(record.dob) // Ensure it is a valid Date object for Mantine
+                    dob: record.dob !== null ? new Date(record.dob) : null, // Ensure it is a valid Date object for Mantine
+                    nationality: record.nationality,
                 };
 
                 formEditStep.setValues(data);
@@ -95,7 +96,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                 title:"Error",
                 message: 'An error occurred while fetching patient record. Please try again.',
                 color:"red",
-                color:"red.1",
+                bg:"red.1",
                 autoClose:4000,
             })
         } finally {
@@ -114,7 +115,8 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                 age: values.age,
                 // age: dayjs().diff(values.dob, "year"),
                 sex: values.sex,
-                dob: values.dob.toISOString().split('T')[0],
+                dob: values.dob !== null ? values.dob.toISOString().split('T')[0] : null,
+                nationality: values.nationality
             }
             
             let res:{success:boolean, message?:string, error?:string}
@@ -241,22 +243,31 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                                         <TextInput
                                             label="Last Name"
                                             placeholder="Enter last name"
-                                            withAsterisk
+                                            // withAsterisk
                                             key={formEditStep.key("lastname")}
                                             {...formEditStep.getInputProps('lastname')}
                                         />
                                     </Grid.Col>
                                     <Grid.Col span={6}>
+                                        <TextInput
+                                            label="Age"
+                                            placeholder="Enter age"
+                                            // withAsterisk
+                                            key={formEditStep.key("age")}
+                                            {...formEditStep.getInputProps('age')}
+                                        />
+                                    </Grid.Col>
+                                    {/* <Grid.Col span={6}>
                                         <NumberInput
                                             label="Age"
                                             placeholder="Enter age"
-                                            withAsterisk
+                                            // withAsterisk
                                             min={0}
                                             max={150}
                                             key={formEditStep.key("age")}
                                             {...formEditStep.getInputProps('age')}
                                         />
-                                    </Grid.Col>
+                                    </Grid.Col> */}
                                     <Grid.Col span={6}>
                                         <DatesProvider settings={{locale:"en"}}>
                                             <DateInput
@@ -264,11 +275,20 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                                                 label="Date of Birth"
                                                 placeholder="Select date"
                                                 leftSection={<MdDateRange size={20} color='black'/>}
-                                                withAsterisk
+                                                // withAsterisk
                                                 key={formEditStep.key("dob")}
                                                 {...formEditStep.getInputProps('dob')}
                                             />
                                         </DatesProvider>
+                                    </Grid.Col>
+                                    <Grid.Col span={6}>
+                                        <TextInput
+                                            label="Nationality"
+                                            placeholder="Enter nationality"
+                                            key={form.key("nationality")}
+                                            {...form.getInputProps("nationality")}
+                                            // withAsterisk
+                                        />
                                     </Grid.Col>
                                     <Grid.Col span={6}>
                                         <Radio.Group

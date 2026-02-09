@@ -108,8 +108,8 @@ function RecordFill(
                     <TextInput
                         label="Nationality"
                         placeholder="Enter nationality"
-                        key={form.key(patient === "child" ? "child_fnationality" : "parent_fnationality")}
-                        {...form.getInputProps(patient === "child" ? "child_fnationality" : "parent_fnationality")}
+                        key={form.key(patient === "child" ? "child_nationality" : "parent_nationality")}
+                        {...form.getInputProps(patient === "child" ? "child_nationality" : "parent_nationality")}
                         // withAsterisk
                     />
                 </Grid.Col>
