@@ -20,7 +20,6 @@ import IRecord, {IRecordInit, IRecordChildParent} from './interface/IRecord';
 import PatientModeSelector from './components/patientMode';
 import { MdChildCare, MdDateRange  } from "react-icons/md";
 import { IoIosPerson, IoMdMale, IoMdFemale  } from "react-icons/io";
-import dayjs from 'dayjs';
 
 function EditRecord({operatorNumber}:{operatorNumber:string}) {
     const [step, setStep] = React.useState<'identify' | 'edit'>('identify');
@@ -87,6 +86,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                     title:"Error",
                     message: 'Hospital Number not found in database. Please enter a valid HN.',
                     color:"red",
+                    bg: "red.1",
                     autoClose:4000,
                 })
             }
@@ -95,6 +95,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                 title:"Error",
                 message: 'An error occurred while fetching patient record. Please try again.',
                 color:"red",
+                color:"red.1",
                 autoClose:4000,
             })
         } finally {
@@ -110,7 +111,8 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
             const data = {
                 firstname: values.firstname,
                 lastname: values.lastname,
-                age: dayjs().diff(values.dob, "year"),
+                age: values.age,
+                // age: dayjs().diff(values.dob, "year"),
                 sex: values.sex,
                 dob: values.dob.toISOString().split('T')[0],
             }
@@ -132,24 +134,27 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
 
             if (res.success) {
                 notifications.show({
-                    title: "Success",
+                    title: "Success!",
                     message: "Record is updated succesfully.",
                     color: "green",
+                    bg: "green.1",
                     autoClose:4000,
                 })
             } else {
                 notifications.show({
-                    title: "Error",
+                    title: "Error!",
                     message: res.message ? res.message : res.error,
                     color: "red",
+                    bg: "red.1",
                     autoClose:4000,
                 })
             }
         } catch (err) {
             notifications.show({
-                title: "Error",
-                message: err,
+                title: "Error!",
+                message: err.message,
                 color: "red",
+                bg: "red.1",
                 autoClose:4000,
             })
         } finally {
@@ -241,7 +246,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                                             {...formEditStep.getInputProps('lastname')}
                                         />
                                     </Grid.Col>
-                                    {/* <Grid.Col span={6}>
+                                    <Grid.Col span={6}>
                                         <NumberInput
                                             label="Age"
                                             placeholder="Enter age"
@@ -251,7 +256,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                                             key={formEditStep.key("age")}
                                             {...formEditStep.getInputProps('age')}
                                         />
-                                    </Grid.Col> */}
+                                    </Grid.Col>
                                     <Grid.Col span={6}>
                                         <DatesProvider settings={{locale:"en"}}>
                                             <DateInput
