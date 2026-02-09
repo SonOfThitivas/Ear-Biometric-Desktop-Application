@@ -49,10 +49,12 @@ except Exception as e:
 # --- Model ---
 try:
     logging.info("Loading models...")
+    # 1. Detection Model
     DETECT_MODEL_PATH = os.getenv("VITE_YOLO_MODEL_DETECT") 
     logging.debug(f"Loading Detection Model from: {DETECT_MODEL_PATH}")
     yolo_detect = YOLO(DETECT_MODEL_PATH)
 
+    # 2. Segmentation Model
     SEG_MODEL_PATH = os.getenv("VITE_YOLO_MODEL") 
     logging.debug(f"Loading Segmentation Model from: {SEG_MODEL_PATH}")
     yolo_seg = YOLO(SEG_MODEL_PATH)
@@ -151,11 +153,11 @@ def depth_gradient_check_fast(depth_image, bbox):
         TH = 0.005
         h_msg = "OK"
         if abs(h_diff) > TH:
-            h_msg = "ROTATE LEFT" if h_diff > 0 else "ROTATE RIGHT"
+            h_msg = "ขยับ ซ้าย" if h_diff > 0 else "ขยับ ขวา"
 
         v_msg = "OK"
         if abs(v_diff) > TH:
-            v_msg = "TILT DOWN" if v_diff > 0 else "TILT UP"
+            v_msg = "ขยับ ขึ้น ถ่ายกดลง" if v_diff > 0 else "ขยับ ลง ถ่ายเสย"
 
         return h_diff, v_diff, h_msg, v_msg
 
@@ -258,6 +260,7 @@ def detect_ear(color_image):
         rgb = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
         pil_img = Image.fromarray(rgb)
         
+        # Verbose=False prevents YOLO from printing to stdout
         results = yolo_detect.predict(source=pil_img, verbose=False)[0]
         
         if len(results.boxes) == 0: return None
@@ -285,26 +288,17 @@ def expand_bbox(bbox, scale, img_width, img_height):
 def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bbox):
     try:
         logging.info(f"Save Worker Started for TS: {timestamp}")
-        
-        # --- PATHS ---
-        # 1. Main Patient Folder (for App usage)
-        patient_folder = f"{PATIENTS_FOLDER}/{hn}_{mode}"
-        os.makedirs(patient_folder, exist_ok=True)
+        folder_path = f"{PATIENTS_FOLDER}/{hn}_{mode}"
+        os.makedirs(folder_path, exist_ok=True)
 
-        # 2. Debug Specific Folder (for analysis)
-        # Format: debug/hn1234_child/
-        debug_subfolder = f"{DEBUG_FOLDER}/{hn}_{mode}"
-        if DEBUG_FOLDER:
-            os.makedirs(debug_subfolder, exist_ok=True)
-
-        # --- SAVE MAIN ASSETS ---
+        # 1. Save Raw Images
         cv2.imwrite(f"{RGB_FOLDER}/rgb_{timestamp}.jpg", color_img)
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_img, alpha=0.03), cv2.COLORMAP_JET)
         cv2.imwrite(f"{DEPTH_FOLDER}/depth_{timestamp}.png", depth_colormap)
 
-        # --- DEBUG: Save Raw Frame (Targeted Folder) ---
+        # --- DEBUG: Save Raw Frame ---
         if DEBUG_FOLDER:
-            cv2.imwrite(f"{debug_subfolder}/raw_{timestamp}.jpg", color_img)
+            cv2.imwrite(f"{DEBUG_FOLDER}/raw_{timestamp}.jpg", color_img)
 
         if bbox:
             h, w, _ = color_img.shape
@@ -326,15 +320,15 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
                     except Exception as align_e:
                         log_error(align_e, "Alignment inside worker")
 
-                # Save Final Ear
                 cv2.imwrite(f"{RGB_FOLDER}/ear_{timestamp}.png", embedding_input)
-                cv2.imwrite(f"{patient_folder}/ear_{timestamp}.png", embedding_input)
+                cv2.imwrite(f"{folder_path}/ear_{timestamp}.png", embedding_input)
 
-                # --- DEBUG: Save HOG Input (Targeted Folder) ---
+                # --- DEBUG: Save HOG Input (Pre-processed) ---
                 if DEBUG_FOLDER:
                     try:
+                        # Apply the same CLAHE logic that extract_embedding uses
                         debug_input = apply_clahe_hsv(embedding_input)
-                        cv2.imwrite(f"{debug_subfolder}/input_{timestamp}.png", debug_input)
+                        cv2.imwrite(f"{DEBUG_FOLDER}/input_{timestamp}.png", debug_input)
                     except Exception as e:
                         log_error(e, "Saving Debug Input")
 
@@ -342,12 +336,11 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
                 embedding = extract_embedding(embedding_input)
                 if embedding is not None:
                     embed_list = embedding.tolist()
-                    # Save to both centralized embed folder AND patient folder
                     with open(f"{EMBED_FOLDER}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
-                    with open(f"{patient_folder}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
+                    with open(f"{folder_path}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
                     
                     logging.info("Save Worker Completed Successfully.")
-                    print(json.dumps({"event": "saved", "folder": patient_folder, "embedding": embed_list}), flush=True)
+                    print(json.dumps({"event": "saved", "folder": folder_path, "embedding": embed_list}), flush=True)
                     return
 
         logging.warning("Save Worker: No embedding generated.")
