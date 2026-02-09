@@ -39,7 +39,8 @@ function TableRecord({title, record=[]}:
                     </Table.Td>
                     <Table.Td>{data.child_fname}</Table.Td>
                     <Table.Td>{data.child_lname}</Table.Td>
-                    <Table.Td>{data.child_age}</Table.Td>
+                    <Table.Td>{data.child_age_text}</Table.Td>
+                    <Table.Td>{data.child_nationality}</Table.Td>
                     <Table.Td>{data.child_sex}</Table.Td>
                     <Table.Td>
                         {data.child_dob ? dayjs(data.child_dob).format("DD MMM YYYY") : "-"}
@@ -65,7 +66,8 @@ function TableRecord({title, record=[]}:
                     </Table.Td>
                     <Table.Td>{data.parent_fname}</Table.Td>
                     <Table.Td>{data.parent_lname}</Table.Td>
-                    <Table.Td>{data.parent_age}</Table.Td>
+                    <Table.Td>{data.parent_age_text}</Table.Td>
+                    <Table.Td>{data.parent_nationality}</Table.Td>
                     <Table.Td>{data.parent_sex}</Table.Td>
                     <Table.Td>
                         {data.parent_dob ? dayjs(data.parent_dob).format("DD MMM YYYY") : "-"}
@@ -95,6 +97,7 @@ function TableRecord({title, record=[]}:
                             <Table.Th bg={"gray.4"}>firstname</Table.Th>
                             <Table.Th bg={"gray.4"}>lastname</Table.Th>
                             <Table.Th bg={"gray.4"}>age</Table.Th>
+                            <Table.Th bg={"gray.4"}>nationality</Table.Th>
                             <Table.Th bg={"gray.4"}>sex</Table.Th>
                             <Table.Th bg={"gray.4"}>dob</Table.Th>
                         </Table.Tr>
@@ -103,7 +106,7 @@ function TableRecord({title, record=[]}:
                         {rows}
                         {(!record || record.length === 0) && (
                             <Table.Tr>
-                                <Table.Td colSpan={7} style={{textAlign: 'center', color: 'gray'}}>
+                                <Table.Td colSpan={8} style={{textAlign: 'center', color: 'gray'}}>
                                     No data
                                 </Table.Td>
                             </Table.Tr>
