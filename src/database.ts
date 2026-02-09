@@ -613,3 +613,45 @@ export const getParentByHN = async (hn: string) => {
         return null;
     }
 };
+
+// ==========================================
+// CHECK VECTOR EXISTENCE (Returns SQL Boolean)
+// ==========================================
+
+export const checkChildVectorExists = async (hn: string) => {
+    // "SELECT EXISTS" returns a true/false boolean directly from the DB
+    const query = `
+        SELECT EXISTS (
+            SELECT 1 
+            FROM identity_vector_child 
+            WHERE child_id = (SELECT id FROM child WHERE hn_number = $1)
+            AND active_status = '1'
+        ) as "exists";
+    `;
+    try {
+        const res = await getClient().query(query, [hn]);
+        // result will be like: [ { exists: true } ]
+        return res.rows[0]?.exists ?? false; 
+    } catch (error: any) {
+        console.error("❌ [DB] Check Child Vector Failed:", error.message);
+        return false;
+    }
+};
+
+export const checkParentVectorExists = async (hn: string) => {
+    const query = `
+        SELECT EXISTS (
+            SELECT 1 
+            FROM identity_vector_parent 
+            WHERE parent_id = (SELECT id FROM parent WHERE hn_number = $1)
+            AND active_status = '1'
+        ) as "exists";
+    `;
+    try {
+        const res = await getClient().query(query, [hn]);
+        return res.rows[0]?.exists ?? false; 
+    } catch (error: any) {
+        console.error("❌ [DB] Check Parent Vector Failed:", error.message);
+        return false;
+    }
+};
