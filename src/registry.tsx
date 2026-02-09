@@ -16,7 +16,6 @@ import { IoIosPerson } from "react-icons/io";
 import PatientModeSelector from "./components/patientMode";
 import { useForm } from "@mantine/form"
 import "dayjs"
-import dayjs from "dayjs";
 import { notifications, Notifications } from '@mantine/notifications';
 
 interface RegistryProps {
@@ -48,28 +47,28 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
             const areAllChildInputsFilled = 
                 values.child_hn && values.child_hn.length > 0 &&
                 values.child_fname && values.child_fname.length > 0 &&
-                values.child_lname && values.child_lname.length > 0 &&
-                values.child_sex && values.child_sex.length > 0 &&
-                values.child_dob !== null;
+                // values.child_lname && values.child_lname.length > 0 &&
+                values.child_sex && values.child_sex.length > 0 
+                // values.child_dob !== null;
                 
             const areAllParentInputsFilled = 
                 values.parent_hn && values.parent_hn.length > 0 &&
                 values.parent_fname && values.parent_fname.length > 0 &&
-                values.parent_lname && values.parent_lname.length > 0 &&
-                values.parent_sex && values.parent_sex.length > 0 &&
-                values.parent_dob !== null;
+                // values.parent_lname && values.parent_lname.length > 0 &&
+                values.parent_sex && values.parent_sex.length > 0 
+                // values.parent_dob !== null;
             
             const isSomeChildInputFilled = 
                 (values.child_fname && values.child_fname.length > 0) ||
-                (values.child_lname && values.child_lname.length > 0) ||
-                (values.child_sex && values.child_sex.length > 0) ||
-                values.child_dob !== null;
+                // (values.child_lname && values.child_lname.length > 0) ||
+                (values.child_sex && values.child_sex.length > 0)
+                // values.child_dob !== null;
                 
             const isSomeParentInputFilled = 
                 (values.parent_fname && values.parent_fname.length > 0) ||
-                (values.parent_lname && values.parent_lname.length > 0) ||
-                (values.parent_sex && values.parent_sex.length > 0) ||
-                values.parent_dob !== null;
+                // (values.parent_lname && values.parent_lname.length > 0) ||
+                (values.parent_sex && values.parent_sex.length > 0)
+                // values.parent_dob !== null;
             
             // Condition 1: Both HNs filled, no other inputs needed
             if (isChildHnFilled && isParentHnFilled && !isSomeChildInputFilled && !isSomeParentInputFilled) {
@@ -94,15 +93,15 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                         if (!values.child_fname || values.child_fname.length === 0) {
                             errors.child_fname = "Child's first name is required when other child data is provided";
                         }
-                        if (!values.child_lname || values.child_lname.length === 0) {
-                            errors.child_lname = "Child's last name is required when other child data is provided";
-                        }
+                        // if (!values.child_lname || values.child_lname.length === 0) {
+                        //     errors.child_lname = "Child's last name is required when other child data is provided";
+                        // }
                         if (!values.child_sex || values.child_sex.length === 0) {
                             errors.child_sex = "Child's sex is required when other child data is provided";
                         }
-                        if (values.child_dob === null) {
-                            errors.child_dob = "Child's date of birth is required when other child data is provided";
-                        }
+                        // if (values.child_dob === null) {
+                        //     errors.child_dob = "Child's date of birth is required when other child data is provided";
+                        // }
                     }
                 } else if (patient === "parent") {
                     if (isSomeParentInputFilled && !areAllParentInputsFilled) {
@@ -110,15 +109,15 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                         if (!values.parent_fname || values.parent_fname.length === 0) {
                             errors.parent_fname = "Parent's first name is required when other parent data is provided";
                         }
-                        if (!values.parent_lname || values.parent_lname.length === 0) {
-                            errors.parent_lname = "Parent's last name is required when other parent data is provided";
-                        }
+                        // if (!values.parent_lname || values.parent_lname.length === 0) {
+                        //     errors.parent_lname = "Parent's last name is required when other parent data is provided";
+                        // }
                         if (!values.parent_sex || values.parent_sex.length === 0) {
                             errors.parent_sex = "Parent's sex is required when other parent data is provided";
                         }
-                        if (values.parent_dob === null) {
-                            errors.parent_dob = "Parent's date of birth is required when other parent data is provided";
-                        }
+                        // if (values.parent_dob === null) {
+                        //     errors.parent_dob = "Parent's date of birth is required when other parent data is provided";
+                        // }
                     }
                 }
                 
@@ -133,15 +132,15 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 if (!values.child_fname || values.child_fname.length === 0) {
                     errors.child_fname = "Child's first name is required";
                 }
-                if (!values.child_lname || values.child_lname.length === 0) {
-                    errors.child_lname = "Child's last name is required";
-                }
+                // if (!values.child_lname || values.child_lname.length === 0) {
+                //     errors.child_lname = "Child's last name is required";
+                // }
                 if (!values.child_sex || values.child_sex.length === 0) {
                     errors.child_sex = "Child's sex is required";
                 }
-                if (values.child_dob === null) {
-                    errors.child_dob = "Child's date of birth is required";
-                }
+                // if (values.child_dob === null) {
+                //     errors.child_dob = "Child's date of birth is required";
+                // }
             } else if (patient === "parent") {
                 if (!values.parent_hn || values.parent_hn.length === 0) {
                     errors.parent_hn = "Parent's hospital number is required";
@@ -149,15 +148,15 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 if (!values.parent_fname || values.parent_fname.length === 0) {
                     errors.parent_fname = "Parent's first name is required";
                 }
-                if (!values.parent_lname || values.parent_lname.length === 0) {
-                    errors.parent_lname = "Parent's last name is required";
-                }
+                // if (!values.parent_lname || values.parent_lname.length === 0) {
+                //     errors.parent_lname = "Parent's last name is required";
+                // }
                 if (!values.parent_sex || values.parent_sex.length === 0) {
                     errors.parent_sex = "Parent's sex is required";
                 }
-                if (values.parent_dob === null) {
-                    errors.parent_dob = "Parent's date of birth is required";
-                }
+                // if (values.parent_dob === null) {
+                //     errors.parent_dob = "Parent's date of birth is required";
+                // }
             }
             
             return errors;
@@ -196,6 +195,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 // age: dayjs().diff(record.child_dob, "year"),
                 sex: record.child_sex,
                 dob: record.child_dob,
+                nationality: record.child_nationality,
             } : {
                 hn: record.parent_hn,
                 firstname: record.parent_fname,
@@ -204,16 +204,17 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 // age: dayjs().diff(record.parent_dob, "year"),
                 sex: record.parent_sex,
                 dob: record.parent_dob,
+                nationality: record.parent_nationality,
             })
             console.log(currentRecord)
             const hn = currentRecord.hn
 
             // Check if user filled out the Full Profile
             const isFullProfile = 
-                currentRecord.firstname && 
-                currentRecord.lastname && 
-                currentRecord.sex && 
-                currentRecord.dob;
+                currentRecord.firstname
+                // currentRecord.lastname && 
+                // currentRecord.sex && 
+                // currentRecord.dob;
 
             const hasRelation:boolean = (patient === "child" ?
                 record.parent_hn.trim() !== "" :
@@ -236,12 +237,14 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
 
             if (isFullProfile) {
                 const payload = {
-                    hn: currentRecord.hn as string,
-                    firstname: currentRecord.firstname as string,
-                    lastname: currentRecord.lastname as string,
-                    age: Number(currentRecord.age),
-                    sex: currentRecord.sex as string,
-                    dob: (currentRecord.dob).toISOString().split('T')[0] 
+                    hn: currentRecord.hn,
+                    firstname: currentRecord.firstname,
+                    lastname: currentRecord.lastname,
+                    age: currentRecord.age,
+                    // age: Number(currentRecord.age),
+                    sex: currentRecord.sex,
+                    dob: currentRecord.dob !== null ? (currentRecord.dob).toISOString().split('T')[0] : null,
+                    nationality: currentRecord.nationality,
                 };
 
                 // Add op_number to the call
