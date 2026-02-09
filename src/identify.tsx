@@ -237,7 +237,7 @@ export default function Identify() {
                             // age={childParentRecord.child_age}
                             age={childParentRecord.child_age_text}
                             sex={childParentRecord.child_sex}
-                            nationality={childParentRecord.child_sex}
+                            nationality={childParentRecord.child_nationality}
                             dob={
                                 childParentRecord.child_dob
                                 ? new Date(childParentRecord.child_dob).toLocaleDateString()
