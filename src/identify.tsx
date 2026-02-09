@@ -73,7 +73,7 @@ export default function Identify() {
     const handleDetect = () => {
         if (isCapturing) return
         setChildParentRecord(recordInit)
-        setCountdown(3)
+        setCountdown(2)
         setIsCapturing(true)
         setVector(null)
         setHasCaptured(false);
