@@ -7,6 +7,14 @@ yarn-error.log*
 lerna-debug.log*
 model
 src/model
+
+# Ear debuging
+batch_debug_images
+aligned_ears_vertical
+processed_embeddings
+src/batch_proc.py
+src/test_embedding.py
+
 .venv
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
