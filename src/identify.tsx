@@ -281,7 +281,8 @@ export default function Identify() {
                     {/* ✅ New Table Component */}
                     <CameraStatusTable 
                         isCapturing={isCapturing} 
-                        cameraData={cameraData} 
+                        cameraData={cameraData}
+                        patientMode={patient} 
                     />
 
                 </Stack>

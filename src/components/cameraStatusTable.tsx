@@ -4,9 +4,13 @@ import { Table, Text } from '@mantine/core';
 interface StatusTableProps {
     isCapturing: boolean;
     cameraData: any; // You can replace 'any' with your specific interface if available
+    patientMode: string;
 }
 
-export default function CameraStatusTable({ isCapturing, cameraData }: StatusTableProps) {
+export default function CameraStatusTable({ isCapturing, cameraData, patientMode="child" }: StatusTableProps) {
+
+    const maxDist = React.useRef<number>(patientMode === "child" ? 0.25 : 0.3)
+    const minDist = React.useRef<number>(patientMode === "child" ? 0.2 : 0.25)
 
     // Helper: Calculate Distance Status
     const getDistanceStatus = () => {
@@ -16,13 +20,13 @@ export default function CameraStatusTable({ isCapturing, cameraData }: StatusTab
         if (dist === undefined || dist === null) return { bg: 'white', content: <Text c="dimmed">...</Text> };
 
         // Valid range: 0.25 - 0.30
-        if (dist >= 0.25 && dist <= 0.3) {
+        if (dist >= minDist.current && dist <= maxDist.current) {
             return { bg: 'green.5', content: <Text fw={700}>Okay</Text> };
-        } else if (dist > 0.3) {
+        } else if (dist > maxDist.current) {
             const diff = ((dist - 0.3) * 100).toFixed(2); // Convert to cm
             return { bg: 'red.5', content: <Text fw={700}>-{diff} cm.</Text> };
         } else {
-            const diff = ((0.25 - dist) * 100).toFixed(2); // Convert to cm
+            const diff = ((minDist.current - dist) * 100).toFixed(2); // Convert to cm
             return { bg: 'red.5', content: <Text fw={700}>+{diff} cm.</Text> };
         }
     };

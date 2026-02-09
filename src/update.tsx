@@ -25,7 +25,7 @@ interface UpdatePageProps {
 
 export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     const [hn, setHn] = React.useState("");
-    const [patient, setPatient] = React.useState<"child" | "parent">("child");
+    const [patient, setPatient] = React.useState<string>("child");
 
     const { capture, captureResult, cameraData } = useCameraSocket();
 
@@ -138,7 +138,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
   const sendToDatabase = async (
     captures: any[],
     hn: string,
-    patientMode: "child" | "parent"
+    patientMode: string,
   ) => {
     if (!hn.trim()) {
       return;
@@ -277,6 +277,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
             <CameraStatusTable 
                 isCapturing={isCapturing} 
                 cameraData={cameraData} 
+                patientMode={patient}
             />
 
         </Stack>
