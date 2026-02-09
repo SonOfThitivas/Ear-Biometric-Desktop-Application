@@ -192,14 +192,16 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 hn: record.child_hn,
                 firstname: record.child_fname,
                 lastname: record.child_lname,
-                age: dayjs().diff(record.child_dob, "year"),
+                age: record.child_age,
+                // age: dayjs().diff(record.child_dob, "year"),
                 sex: record.child_sex,
                 dob: record.child_dob,
             } : {
                 hn: record.parent_hn,
                 firstname: record.parent_fname,
                 lastname: record.parent_lname,
-                age: dayjs().diff(record.parent_dob, "year"),
+                age: record.parent_age,
+                // age: dayjs().diff(record.parent_dob, "year"),
                 sex: record.parent_sex,
                 dob: record.parent_dob,
             })
@@ -380,6 +382,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                             {/* button step controller */}
                             <Group
                                 justify={"center"} 
+                                p={"sm"}
                             >
                                 <Button
                                     variant="filled" 
