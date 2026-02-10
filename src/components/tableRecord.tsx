@@ -4,10 +4,14 @@ import {
     Title,
     Table,
     Text,
+    Center,
+    Space,
 } from '@mantine/core'
 import dayjs from 'dayjs'
 import "dayjs/locale/th"
 import { IRecordChildParent } from '../interface/IRecord' // Fixed path (removed src/)
+import { FaCheck } from "react-icons/fa6";
+import { FaTimes } from "react-icons/fa";
 
 function TableRecord({title, record=[]}:
     {
@@ -16,9 +20,11 @@ function TableRecord({title, record=[]}:
     }
 ) {
     const recordCount = React.useRef<number>(0)
+    const vectorCount = React.useRef<number>(0)
 
     React.useEffect(()=>{
         recordCount.current = 0
+        vectorCount.current = 0
     },[record])
 
     const rows = record.map((data: IRecordChildParent, index: number) => {
@@ -26,6 +32,7 @@ function TableRecord({title, record=[]}:
         if (title === "child") {
             if (!data.child_hn) return null;
             recordCount.current = recordCount.current + 1
+            vectorCount.current = data.child_vector ? vectorCount.current+1 : vectorCount.current
             // FIX: Use `${data.child_hn}-${index}` to guarantee unique keys
             return (
                 <Table.Tr key={`${data.child_hn}-${index}`}>
@@ -45,6 +52,11 @@ function TableRecord({title, record=[]}:
                     <Table.Td>
                         {data.child_dob ? dayjs(data.child_dob).format("DD MMM YYYY") : "-"}
                     </Table.Td>
+                    <Table.Td bg={data.child_vector ? "green.1" : "red.1"}>
+                        <Center>
+                            {data.child_vector ? <FaCheck /> : <FaTimes />}
+                        </Center>
+                    </Table.Td>
                 </Table.Tr>
             )
         } 
@@ -53,6 +65,7 @@ function TableRecord({title, record=[]}:
         else if (title === "parent") {
             if (!data.parent_hn) return null;
             recordCount.current = recordCount.current + 1
+            vectorCount.current = data.parent_vector ? vectorCount.current+1 : vectorCount.current
             // FIX: Use `${data.parent_hn}-${index}` to guarantee unique keys
             return (
                 <Table.Tr key={`${data.parent_hn}-${index}`}>
@@ -72,6 +85,11 @@ function TableRecord({title, record=[]}:
                     <Table.Td>
                         {data.parent_dob ? dayjs(data.parent_dob).format("DD MMM YYYY") : "-"}
                     </Table.Td>
+                    <Table.Td bg={data.parent_vector ? "green.1" : "red.1"}>
+                        <Center>
+                            {data.parent_vector ? <FaCheck /> : <FaTimes />}
+                        </Center>
+                    </Table.Td>
                 </Table.Tr>
             )
         } 
@@ -88,7 +106,7 @@ function TableRecord({title, record=[]}:
             bdrs={"sm"}
         >
             <Title order={4}>{title === "child" ? "Child" : "Parent"}</Title>
-            <Table.ScrollContainer minWidth={"100%"} maxHeight={250}>
+            <Table.ScrollContainer minWidth={"100%"} maxHeight={225}>
                 <Table stickyHeader withTableBorder layout='fixed' striped highlightOnHover withColumnBorders>
                     <Table.Thead>
                         <Table.Tr>
@@ -100,6 +118,7 @@ function TableRecord({title, record=[]}:
                             <Table.Th bg={"gray.4"}>nationality</Table.Th>
                             <Table.Th bg={"gray.4"}>sex</Table.Th>
                             <Table.Th bg={"gray.4"}>dob</Table.Th>
+                            <Table.Th bg={"gray.4"}>vector</Table.Th>
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -114,7 +133,11 @@ function TableRecord({title, record=[]}:
                     </Table.Tbody>
                 </Table>
             </Table.ScrollContainer>
-            <Title order={5}>found: {recordCount.current} record{recordCount.current > 1 && "s"}</Title>
+            <Title order={5} display={"flex"} pt={"sm"}>
+                found: {recordCount.current} record{recordCount.current > 1 && "s"}
+                <Space w={"xl"} />
+                checked vector: {vectorCount.current} record{vectorCount.current > 1 && "s"}
+            </Title>
         </Box>  
     )
 }

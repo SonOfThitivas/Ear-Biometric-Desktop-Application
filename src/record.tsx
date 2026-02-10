@@ -77,6 +77,7 @@ function Record({
             const res = await window.electronAPI.searchMultiCriteria(searchHn, searchFirst, searchLast);
 
             console.log(`✅ [UI] Found ${res.length} records`);
+            console.log(res)
 
             if (res.length === 0){
                 setRecord([]);

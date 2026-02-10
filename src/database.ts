@@ -108,7 +108,15 @@ const baseSelect = `
         c.hn_number as child_hn, c.firstname as child_fname, c.lastname as child_lname, 
         c.age_text as child_age_text, c.nationality as child_nationality, c.sex as child_sex, c.dob as child_dob,
         p.hn_number as parent_hn, p.firstname as parent_fname, p.lastname as parent_lname, 
-        p.age_text as parent_age_text, p.nationality as parent_nationality, p.sex as parent_sex, p.dob as parent_dob
+        p.age_text as parent_age_text, p.nationality as parent_nationality, p.sex as parent_sex, p.dob as parent_dob,
+        (EXISTS (
+            SELECT 1 FROM identity_vector_child 
+            WHERE child_id = c.id AND active_status = '1'
+        )) as child_vector,
+        (EXISTS (
+            SELECT 1 FROM identity_vector_parent 
+            WHERE parent_id = p.id AND active_status = '1'
+        )) as parent_vector
 `;
 
 // 2. Search Multi-Criteria (Updated Joins)

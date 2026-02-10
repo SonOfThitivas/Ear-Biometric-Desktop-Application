@@ -130,10 +130,14 @@
 
             if (!isConnect) {
                 notifications.show({
-                        title:"Error",
-                        message: "Database is not connected",
-                        color:"red",
-                        autoClose:4000,
+                    id: "login-error-id",
+                    title:"Error!",
+                    message: "Database is not connected",
+                    color:"red",
+                    bg: "red.1",
+                    autoClose:4000,
+                    withBorder: true,
+                    withCloseButton: true,
                 })
                 return
             }
@@ -166,24 +170,22 @@
                     console.warn("❌ [UI] Login Failed:", result.message);
                     // Trigger the error alert
                     setSuccess(false);
-                    notifications.show({
-                        title:"Error",
-                        message: 'Login Failed: ' + result.message,
-                        color:"red",
-                        autoClose:4000,
-                    })
-                    return 1;
+                    throw Error('Login Failed: ' + result.message)
                 }
 
             } catch (err) {
-                console.error("❌ [UI] Error:", err);
+                console.error("❌ [UI] Error:", err.message);
                 setSuccess(false)
                 setLoading(false)
                 notifications.show({
-                    title:"Error",
-                    message: err,
+                    id: "login-error-id",
+                    title:"Error!",
+                    message: err.message,
                     color:"red",
+                    bg: "red.1",
                     autoClose:4000,
+                    withBorder: true,
+                    withCloseButton: true,
                 })
                 return 1;
             }
@@ -204,6 +206,7 @@
                     direction={"column"}
                     p={"md"}
                     pos={"relative"}
+                    bg={"cyan.1"}
                 >
                     <LoadingOverlay  visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} bdrs={"xl"}/>
                     <Title order={1} m={"md"}>Login</Title>

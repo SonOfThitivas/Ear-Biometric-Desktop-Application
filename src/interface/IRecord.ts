@@ -7,6 +7,7 @@ export default interface IRecord {
     age?: string | null
     sex?: string | null
     dob?: Date | null
+    vector?: boolean | null
     r1?: number[] | null
     r2?: number[] | null
     r3?: number[] | null
@@ -21,6 +22,7 @@ export const IRecordInit: IRecord = {
     age: "",
     sex: "",
     dob: null,
+    vector: false,
 }
 
 export interface IRecordChildParent {
@@ -32,6 +34,8 @@ export interface IRecordChildParent {
     child_age?: string | null
     child_sex?: string | null
     child_dob?: Date | null
+    child_vector?: boolean | null
+
     parent_hn?: string | null
     parent_fname?: string | null
     parent_lname?: string | null
@@ -40,6 +44,7 @@ export interface IRecordChildParent {
     parent_age?: string | null
     parent_sex?: string | null
     parent_dob?: Date | null
+    parent_vector?: boolean | null
 }
 
 export const IRecordChildParentInit: IRecordChildParent = {
@@ -51,6 +56,8 @@ export const IRecordChildParentInit: IRecordChildParent = {
     child_age: "",
     child_sex: "",
     child_dob: null,
+    child_vector: false,
+
     parent_hn: "",
     parent_fname: "",
     parent_lname: "",
@@ -59,4 +66,5 @@ export const IRecordChildParentInit: IRecordChildParent = {
     parent_age: "",
     parent_sex: "",
     parent_dob: null,
+    parent_vector: false,
 }
