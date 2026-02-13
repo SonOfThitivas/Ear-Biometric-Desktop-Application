@@ -18,6 +18,8 @@ import PatientModeSelector from "./components/patientMode";
 import CaptureNoti from "./components/captureNoti";
 import { notifications } from '@mantine/notifications'
 
+// 1. IMPORT THE NEW API
+import { webAPI } from './web-api';
 
 interface UpdatePageProps {
   operatorNumber: string;
@@ -103,13 +105,14 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     return () => clearTimeout(timer);
   }, [countdown, insideZone, isCapturing]);
 
-  // When countdown hits 0 → capture
+  // When countdown hits 0 -> capture
   React.useEffect(() => {
     if (!isCapturing) return;
     if (countdown !== 0) return;
     if (!insideZone) return;
     if (countdown === 0) {
-        window.electronAPI.beep()
+        // 2. USE WEB API BEEP
+        webAPI.beep()
         setStep(step+1)
     }
     setLoading(false)
@@ -151,8 +154,9 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
 
     try {
       let result;
+      // 3. USE WEB API INSERTS
       if (patientMode === "child") {
-        result = await window.electronAPI.insertChildVectors(
+        result = await webAPI.insertChildVectors(
           hn,
           v1,
           v2,
@@ -161,7 +165,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
           operatorNumber
         );
       } else {
-        result = await window.electronAPI.insertParentVectors(
+        result = await webAPI.insertParentVectors(
           hn,
           v1,
           v2,
@@ -186,8 +190,8 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         setCaptures([]);
       } else {
         notifications.show({
-            title: "Success!",
-            message: `Successfully saved 3 vectors for ${hn}!`,
+            title: "Error!", // Fixed typo (was Success! with red color)
+            message: result.message || "Failed to save vectors.",
             color:"red",
             bg:"red.1",
             withBorder: true,
@@ -273,7 +277,6 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         <Stack pl={"xs"} gap={"sm"} align="stretch" justify="flex-start">
             <Title order={4} ta={"center"}>Guideline</Title>
             
-            {/* ✅ New Table Component */}
             <CameraStatusTable 
                 isCapturing={isCapturing} 
                 cameraData={cameraData} 

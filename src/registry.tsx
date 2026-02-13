@@ -18,6 +18,9 @@ import { useForm } from "@mantine/form"
 import "dayjs"
 import { notifications, Notifications } from '@mantine/notifications';
 
+// 1. IMPORT THE NEW API
+import { webAPI } from './web-api';
+
 interface RegistryProps {
     operatorNumber: string;
 }
@@ -93,15 +96,9 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                         if (!values.child_fname || values.child_fname.length === 0) {
                             errors.child_fname = "Child's first name is required when other child data is provided";
                         }
-                        // if (!values.child_lname || values.child_lname.length === 0) {
-                        //     errors.child_lname = "Child's last name is required when other child data is provided";
-                        // }
                         if (!values.child_sex || values.child_sex.length === 0) {
                             errors.child_sex = "Child's sex is required when other child data is provided";
                         }
-                        // if (values.child_dob === null) {
-                        //     errors.child_dob = "Child's date of birth is required when other child data is provided";
-                        // }
                     }
                 } else if (patient === "parent") {
                     if (isSomeParentInputFilled && !areAllParentInputsFilled) {
@@ -109,15 +106,9 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                         if (!values.parent_fname || values.parent_fname.length === 0) {
                             errors.parent_fname = "Parent's first name is required when other parent data is provided";
                         }
-                        // if (!values.parent_lname || values.parent_lname.length === 0) {
-                        //     errors.parent_lname = "Parent's last name is required when other parent data is provided";
-                        // }
                         if (!values.parent_sex || values.parent_sex.length === 0) {
                             errors.parent_sex = "Parent's sex is required when other parent data is provided";
                         }
-                        // if (values.parent_dob === null) {
-                        //     errors.parent_dob = "Parent's date of birth is required when other parent data is provided";
-                        // }
                     }
                 }
                 
@@ -132,15 +123,9 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 if (!values.child_fname || values.child_fname.length === 0) {
                     errors.child_fname = "Child's first name is required";
                 }
-                // if (!values.child_lname || values.child_lname.length === 0) {
-                //     errors.child_lname = "Child's last name is required";
-                // }
                 if (!values.child_sex || values.child_sex.length === 0) {
                     errors.child_sex = "Child's sex is required";
                 }
-                // if (values.child_dob === null) {
-                //     errors.child_dob = "Child's date of birth is required";
-                // }
             } else if (patient === "parent") {
                 if (!values.parent_hn || values.parent_hn.length === 0) {
                     errors.parent_hn = "Parent's hospital number is required";
@@ -148,15 +133,9 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 if (!values.parent_fname || values.parent_fname.length === 0) {
                     errors.parent_fname = "Parent's first name is required";
                 }
-                // if (!values.parent_lname || values.parent_lname.length === 0) {
-                //     errors.parent_lname = "Parent's last name is required";
-                // }
                 if (!values.parent_sex || values.parent_sex.length === 0) {
                     errors.parent_sex = "Parent's sex is required";
                 }
-                // if (values.parent_dob === null) {
-                //     errors.parent_dob = "Parent's date of birth is required";
-                // }
             }
             
             return errors;
@@ -192,7 +171,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 firstname: record.child_fname,
                 lastname: record.child_lname,
                 age: record.child_age,
-                // age: dayjs().diff(record.child_dob, "year"),
+                age_text: record.child_age_text,
                 sex: record.child_sex,
                 dob: record.child_dob,
                 nationality: record.child_nationality,
@@ -201,7 +180,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 firstname: record.parent_fname,
                 lastname: record.parent_lname,
                 age: record.parent_age,
-                // age: dayjs().diff(record.parent_dob, "year"),
+                age_text: record.parent_age_text,
                 sex: record.parent_sex,
                 dob: record.parent_dob,
                 nationality: record.parent_nationality,
@@ -240,9 +219,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                     hn: currentRecord.hn,
                     firstname: currentRecord.firstname,
                     lastname: currentRecord.lastname,
-                    // age: currentRecord.age,
-                    // age: Number(currentRecord.age),
-                    age_text: currentRecord.age,
+                    age_text: currentRecord.age_text,
                     sex: currentRecord.sex,
                     dob: currentRecord.dob !== null ? (currentRecord.dob).toISOString().split('T')[0] : null,
                     nationality: currentRecord.nationality,
@@ -251,9 +228,9 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 // Add op_number to the call
                 let insertRes;
                 if (patient === "child") {
-                    insertRes = await window.electronAPI.insertChild(payload, operatorNumber);
+                    insertRes = await webAPI.insertChild(payload, operatorNumber);
                 } else {
-                    insertRes = await window.electronAPI.insertParent(payload, operatorNumber);
+                    insertRes = await webAPI.insertParent(payload, operatorNumber);
                 }
 
                 if (insertRes.success) {
@@ -261,7 +238,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 } else {
                     const errString = insertRes.error?.toLowerCase() || "";
                     
-                    // 👇 FIX IS HERE: Only ignore duplicate if we have a relation to link!
+                    // Only ignore duplicate if we have a relation to link!
                     if ((errString.includes("duplicate") || errString.includes("unique") || errString.includes("exists")) && hasRelation) {
                         console.log("⚠️ HN already exists. Proceeding to Link Check...");
                         insertSuccess = true; 
@@ -288,7 +265,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 const p_hn = patient === "child" ? record.parent_hn : hn as string;
                 const c_hn = patient === "child" ? hn as string : record.child_hn;
 
-                const linkRes = await window.electronAPI.linkParentChild(p_hn, c_hn);
+                const linkRes = await webAPI.linkParentChild(p_hn, c_hn);
 
                 if (linkRes.success) {
                     linkMessage = " & Relation Linked!";

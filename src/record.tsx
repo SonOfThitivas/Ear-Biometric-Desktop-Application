@@ -13,6 +13,9 @@ import TableRecord from './components/tableRecord'
 import { notifications, Notifications } from '@mantine/notifications'
 import { useDebouncedCallback } from '@mantine/hooks';
 
+// 1. IMPORT THE NEW API
+import { webAPI } from './web-api';
+
 function Record({
     tab="Record"
 }:{
@@ -73,15 +76,16 @@ function Record({
         try {
             console.log(`🚀 [UI] Searching Multi: HN="${searchHn}", First="${searchFirst}", Last="${searchLast}"`);
             
-            // Call API with the determined values
-            const res = await window.electronAPI.searchMultiCriteria(searchHn, searchFirst, searchLast);
+            // 2. USE WEB API
+            const res = await webAPI.searchMultiCriteria(searchHn || '', searchFirst || '', searchLast || '');
 
             console.log(`✅ [UI] Found ${res.length} records`);
             console.log(res)
 
             if (res.length === 0){
                 setRecord([]);
-                throw Error("No matched data. Please, try again!")
+                // Optional: throw error or just show empty table
+                // throw Error("No matched data. Please, try again!")
             } else {
                 setRecord(res);
             }
@@ -124,8 +128,6 @@ function Record({
                         label="Hospital Number"
                         placeholder="Enter your hospital number"
                         value={hn}
-                        // onAbort={handleShow}
-                        // onEnded={handleShow} 
                         onChange={(event)=>{
                             setLoading(true)
                             setHn(event.currentTarget.value)
@@ -163,14 +165,6 @@ function Record({
                         >
                             Reset
                         </Button>
-                        {/* <Button 
-                            variant='filled' 
-                            color='green'
-                            onClick={handleShow}
-                            loading={loading}
-                        >
-                            Show
-                        </Button> */}
                     </Group>
                 </Stack>
             </Grid.Col>

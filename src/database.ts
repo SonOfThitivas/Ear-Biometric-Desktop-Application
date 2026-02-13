@@ -1,5 +1,8 @@
 import pg from 'pg';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const { Client } = pg;
 
@@ -7,7 +10,7 @@ const { Client } = pg;
 const DB_CONFIG = {
   host: 'localhost',
   database: 'ear_db',
-  port: import.meta.env.VITE_DATABASE_PORT,
+  port: parseInt(process.env.DB_PORT || '5438', 10),
 };
 
 // Credentials

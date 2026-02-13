@@ -14,6 +14,9 @@ import {
 import { TbAlertCircle, TbCheck, TbTrash, TbLinkOff } from "react-icons/tb";
 import PatientModeSelector from './components/patientMode';
 
+// 1. IMPORT THE NEW API
+import { webAPI } from './web-api';
+
 interface DeleteProps {
     role: string;
     operatorNumber: string;
@@ -46,7 +49,7 @@ function Delete({ role, operatorNumber }: DeleteProps) {
         }
     }, [alert.show]);
 
-    // 1. HANDLE DELETE RECORD (Existing)
+    // 1. HANDLE DELETE RECORD (Updated to use webAPI)
     const handleDelete = async () => {
         if (!hn.trim()) {
             setAlert({ show: true, type: 'error', msg: "Please enter a Hospital Number." });
@@ -58,11 +61,13 @@ function Delete({ role, operatorNumber }: DeleteProps) {
         try {
             let result;
             if (role === 'admin') {
-                if (targetType === 'child') result = await window.electronAPI.hardDeleteChild(hn, operatorNumber);
-                else result = await window.electronAPI.hardDeleteParent(hn, operatorNumber);
+                // Hard Delete
+                if (targetType === 'child') result = await webAPI.hardDeleteChild(hn, operatorNumber);
+                else result = await webAPI.hardDeleteParent(hn, operatorNumber);
             } else {
-                if (targetType === 'child') result = await window.electronAPI.deactivateChild(hn, operatorNumber);
-                else result = await window.electronAPI.deactivateParent(hn, operatorNumber);
+                // Soft Delete (Deactivate)
+                if (targetType === 'child') result = await webAPI.deactivateChild(hn, operatorNumber);
+                else result = await webAPI.deactivateParent(hn, operatorNumber);
             }
 
             if (result.success) {
@@ -79,7 +84,7 @@ function Delete({ role, operatorNumber }: DeleteProps) {
         }
     };
 
-    // 2. HANDLE UNLINK RELATION (New)
+    // 2. HANDLE UNLINK RELATION (Updated to use webAPI)
     const handleUnlink = async () => {
         if (!parentHn.trim() || !childHn.trim()) {
             setAlert({ show: true, type: 'error', msg: "Please enter BOTH Parent HN and Child HN." });
@@ -89,7 +94,8 @@ function Delete({ role, operatorNumber }: DeleteProps) {
         setLoading(true);
 
         try {
-            const result = await window.electronAPI.unlinkParentChild(parentHn, childHn, operatorNumber);
+            // Updated call
+            const result = await webAPI.unlinkParentChild(parentHn, childHn, operatorNumber);
 
             if (result.success) {
                 setAlert({ show: true, type: 'success', msg: `Successfully unlinked ${parentHn} and ${childHn}.` });

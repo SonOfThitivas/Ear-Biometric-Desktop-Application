@@ -21,6 +21,9 @@ import PatientModeSelector from './components/patientMode';
 import { MdChildCare, MdDateRange  } from "react-icons/md";
 import { IoIosPerson, IoMdMale, IoMdFemale  } from "react-icons/io";
 
+// 1. IMPORT THE NEW API
+import { webAPI } from './web-api';
+
 function EditRecord({operatorNumber}:{operatorNumber:string}) {
     const [step, setStep] = React.useState<'identify' | 'edit'>('identify');
     const [patient, setPatient] = React.useState<"child" | "parent">("child");
@@ -57,25 +60,24 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
         setLoading(true);
 
         try {
-            // 1. Select the correct API based on the patient mode (child vs parent)
+            // 2. USE WEB API
             let record: any = null;
             if (patient === "child") {
-                record = await window.electronAPI.getChildByHN(values.hn);
+                record = await webAPI.getChildByHN(values.hn);
             } else {
-                record = await window.electronAPI.getParentByHN(values.hn);
+                record = await webAPI.getParentByHN(values.hn);
             }
             
             // 2. Check if a record was returned (it will be null if not found)
             if (record) {
                 // 3. Map the database columns to your form fields
-                // The new queries return: hn_number, firstname, lastname, sex, age, dob
                 const data: IRecord = {
                     hn: record.hn_number,
                     firstname: record.firstname,
                     lastname: record.lastname,
                     sex: record.sex,
                     age_text: record.age_text,
-                    dob: record.dob !== null ? new Date(record.dob) : null, // Ensure it is a valid Date object for Mantine
+                    dob: record.dob !== null ? new Date(record.dob) : null, 
                     nationality: record.nationality,
                 };
                 console.log(data)
@@ -113,23 +115,22 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
             const data = {
                 firstname: values.firstname,
                 lastname: values.lastname,
-                // age: values.age,
                 age_text: values.age_text,
-                // age: dayjs().diff(values.dob, "year"),
                 sex: values.sex,
                 dob: values.dob !== null ? values.dob.toISOString().split('T')[0] : null,
                 nationality: values.nationality
             }
             
+            // 3. USE WEB API UPDATE
             let res:{success:boolean, message?:string, error?:string}
             if (patient === "child"){
-                res = await window.electronAPI.updateChild(
+                res = await webAPI.updateChild(
                     hn,
                     data,
                     operatorNumber,
                 )
             } else {
-                res = await window.electronAPI.updateParent(
+                res = await webAPI.updateParent(
                     hn,
                     data,
                     operatorNumber,
@@ -153,7 +154,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                     autoClose:4000,
                 })
             }
-        } catch (err) {
+        } catch (err: any) {
             notifications.show({
                 title: "Error!",
                 message: err.message,
@@ -259,17 +260,6 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                                             {...formEditStep.getInputProps('age_text')}
                                         />
                                     </Grid.Col>
-                                    {/* <Grid.Col span={6}>
-                                        <NumberInput
-                                            label="Age"
-                                            placeholder="Enter age"
-                                            // withAsterisk
-                                            min={0}
-                                            max={150}
-                                            key={formEditStep.key("age")}
-                                            {...formEditStep.getInputProps('age')}
-                                        />
-                                    </Grid.Col> */}
                                     <Grid.Col span={6}>
                                         <DatesProvider settings={{locale:"en"}}>
                                             <DateInput

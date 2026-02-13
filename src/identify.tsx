@@ -10,13 +10,16 @@ import {
 } from '@mantine/core'
 
 import TableResult from './components/tableResult'
-import CameraStatusTable from './components/CameraStatusTable' // ✅ Import the new component
+import CameraStatusTable from './components/CameraStatusTable' 
 import {IRecordChildParent} from "./interface/IRecord"
 import Camera from "./components/camera"
 import useCameraSocket from "./hooks/useCameraSocket"
 import PatientModeSelector from './components/patientMode'
 import CaptureNoti from './components/captureNoti'
 import { notifications } from '@mantine/notifications'
+
+// 1. IMPORT THE NEW API
+import { webAPI } from './web-api';
 
 const recordInit: IRecordChildParent = {
     child_hn: "",
@@ -37,7 +40,7 @@ export default function Identify() {
     const [patient, setPatient] = React.useState<string>("child")
     const [childParentRecord, setChildParentRecord] = React.useState<IRecordChildParent>(recordInit)
 
-    // ✅ Get cameraData for live feedback loops
+    // Get cameraData for live feedback loops
     const { capture, captureResult, cameraData } = useCameraSocket()
 
     const [insideZone, setInsideZone] = React.useState(false)
@@ -49,7 +52,7 @@ export default function Identify() {
 
     const [loading, setLoading] = React.useState<boolean>(false)
 
-    // ✅ Changed from useState to useRef to avoid re-render loops during calculation
+    // Changed from useState to useRef to avoid re-render loops during calculation
     const bgDist = React.useRef<string>("white")
     const bgHori = React.useRef<string>("white")
     const bgVert = React.useRef<string>("white")
@@ -69,7 +72,7 @@ export default function Identify() {
         bgVert.current = "white"
     }
 
-    // ✅ Start auto-capture workflow
+    // Start auto-capture workflow
     const handleDetect = () => {
         if (isCapturing) return
         setChildParentRecord(recordInit)
@@ -80,7 +83,7 @@ export default function Identify() {
         setLoading(true)
     }
 
-    // ✅ Drive countdown
+    // Drive countdown
     React.useEffect(() => {
         if (!isCapturing) return
         if (!insideZone) return
@@ -93,19 +96,21 @@ export default function Identify() {
         return () => clearTimeout(timer)
     }, [countdown, insideZone, isCapturing])
 
-    // ✅ When countdown hits 0 → capture once
+    // When countdown hits 0 -> capture once
     React.useEffect(() => {
         if (!isCapturing) return
         if (countdown !== 0) return
         if (!insideZone) return
         if (hasCaptured) return
-        if (countdown === 0) window.electronAPI.beep()
+        
+        // 2. USE WEB API BEEP
+        if (countdown === 0) webAPI.beep()
         
         setHasCaptured(true);
         capture("IDENTIFY", patient)
     }, [countdown, isCapturing, insideZone, capture, patient])
 
-    // ✅ When Python returns embedding → run your DB logic
+    // When Python returns embedding -> run your DB logic
     React.useEffect(() => {
         if (!captureResult) return
 
@@ -117,7 +122,7 @@ export default function Identify() {
 
     React.useEffect(()=>console.log("Patient:", patient),[patient])
 
-    // ✅ Your existing DB lookup logic
+    // Your existing DB lookup logic
     const runIdentification = async (vector: number[]) => {
         console.log("🔍 [Identify] Starting identification...");
         console.log("🧬 [Identify] Received vector:", vector);
@@ -131,33 +136,33 @@ export default function Identify() {
             }
 
             console.log(`👶🧑 [Identify] Patient mode: ${patient}`);
-            console.log("📤 [Identify] Sending vector to Electron...");
+            console.log("📤 [Identify] Sending vector to Backend...");
 
-            // ✅ Call Electron backend
+            // 3. CALL WEB API FOR VECTORS
             if (patient === "child") {
                 console.log("➡️ [Identify] Calling findClosestChild()");
-                res = await window.electronAPI.findClosestChild(vector);
+                res = await webAPI.findClosestChild(vector);
             } else {
                 console.log("➡️ [Identify] Calling findClosestParent()");
-                res = await window.electronAPI.findClosestParent(vector);
+                res = await webAPI.findClosestParent(vector);
             }
 
-            console.log("✅ [Identify] Electron returned:", res);
+            console.log("✅ [Identify] Backend returned:", res);
 
             if (!res || !res.hn) {
-                console.error("❌ [Identify] Electron returned invalid result:", res);
+                console.error("❌ [Identify] Backend returned invalid result:", res);
                 throw new Error("Matching failed. Please try again.");
             }
 
             const hn = res.hn;
             console.log("📥 [Identify] Searching DB for HN:", hn);
 
-            // ✅ Query DB
-            const data = await window.electronAPI.searchByHN(hn);
+            // 4. QUERY DB VIA WEB API
+            const data = await webAPI.searchByHN(hn);
 
             console.log("📄 [Identify] DB returned:", data);
 
-            if (data.length > 0) {
+            if (data && data.length > 0) {
                 console.log("✅ [Identify] Match found:", data[0]);
 
                 setChildParentRecord(data[0]);
@@ -175,7 +180,7 @@ export default function Identify() {
                 throw new Error("Detection unsuccessfully, something went wrong. Please, try again.");
             }
 
-        } catch (err) {
+        } catch (err: any) {
             console.error("❌ [Identify] Identification error:", err);
             notifications.show({
                 title: "Error",
@@ -282,7 +287,7 @@ export default function Identify() {
                 <Stack pl={"xs"} gap={"sm"} align="stretch" justify="flex-start">
                     <Title order={4} ta={"center"}>Guideline</Title>
                     
-                    {/* ✅ New Table Component */}
+                    {/* New Table Component */}
                     <CameraStatusTable 
                         isCapturing={isCapturing} 
                         cameraData={cameraData}
