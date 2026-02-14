@@ -1,0 +1,16 @@
+node_modules
+.git
+.vscode
+.venv
+.vite
+dist
+out
+patients
+saved_images
+model
+runs
+build
+.env
+*.mp4
+*.avi
+__pycache__

@@ -6,6 +6,8 @@
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
+    "dev": "vite --config vite.config.mts",
+    "build": "vite build --config vite.config.mts",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",

@@ -10,7 +10,7 @@ import {
 } from '@mantine/core'
 
 import TableResult from './components/tableResult'
-import CameraStatusTable from './components/CameraStatusTable' 
+import CameraStatusTable from './components/cameraStatusTable' 
 import {IRecordChildParent} from "./interface/IRecord"
 import Camera from "./components/camera"
 import useCameraSocket from "./hooks/useCameraSocket"

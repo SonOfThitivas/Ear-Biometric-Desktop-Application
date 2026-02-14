@@ -8,16 +8,19 @@ const { Client } = pg;
 
 // Connection Config
 const DB_CONFIG = {
-  host: 'localhost',
-  database: 'ear_db',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME  || 'ear_db',
   port: parseInt(process.env.DB_PORT || '5438', 10),
+  ssl: process.env.DB_HOST && process.env.DB_HOST !== 'localhost'
+        ? { rejectUnauthorized: false}
+        : false
 };
 
 // Credentials
 const ROLES = {
-  gatekeeper: { user: 'app_gatekeeper', password: 'gatekeeper_pass' },
-  user:       { user: 'app_user',       password: 'secure_user_pass' },
-  admin:      { user: 'app_admin',      password: 'secure_admin_pass' }
+  gatekeeper: { user: 'app_gatekeeper', password: process.env.DB_PASS_GATEKEEPER || 'gatekeeper_pass' },
+  user:       { user: 'app_user',       password: process.env.DB_PASS_USER || 'secure_user_pass' },
+  admin:      { user: 'app_admin',      password: process.env.DB_PASS_ADMIN || 'secure_admin_pass' }
 };
 
 let client: pg.Client | null = null;
