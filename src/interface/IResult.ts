@@ -6,5 +6,13 @@ export default interface IResult {
     sex?: string | null
     nationality?: string | null
     dob?: string | null
-    // dob: Date | null
+    
+    // NEW FIELDS
+    address?: string | null
+    born_detail?: string | null
+    born_weight?: string | null
+    weight_now?: string | null
+    height_length?: string | null
+    integrity?: string | null
+    data?: string | null
 }
