@@ -79,7 +79,7 @@ export const logActivity = async (op_number: string, activity: string) => {
 // ==========================================
 
 export const getAllActiveChildren = async () => {
-  // Added new fields here as well for consistency
+  // This one works fine because it is a single query (no UNION)
   const query = `
     SELECT 
         c.hn_number as hn, 
@@ -101,6 +101,7 @@ export const getAllActiveChildren = async () => {
     LEFT JOIN parent_child pc ON c.id = pc.child_id
     LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
     WHERE c.active_status = '1'
+    ORDER BY c.firstname ASC
   `;
   try {
     const res = await client!.query(query);
@@ -108,7 +109,7 @@ export const getAllActiveChildren = async () => {
   } catch (error) { console.error(error); return []; }
 };
 
-// Base Columns (Updated with NEW FIELDS for Search)
+// Base Columns (Unchanged)
 const baseSelect = `
     SELECT 
         c.hn_number as child_hn, c.firstname as child_fname, c.lastname as child_lname, 
@@ -131,35 +132,41 @@ const baseSelect = `
         )) as parent_vector
 `;
 
-// 2. Search Multi-Criteria (Updated Joins)
+// 2. Search Multi-Criteria (FIXED)
 export const searchMultiCriteria = async (hn: string, fname: string, lname: string) => {
+    // REMOVED "ORDER BY" from inside q1
     const q1 = ` 
         ${baseSelect} 
         FROM child c 
         LEFT JOIN parent_child pc ON c.id = pc.child_id 
         LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
         WHERE c.active_status = '1' 
-        AND ($1 = '' OR c.hn_number =  $1) 
+        AND ($1 = '' OR c.hn_number ILIKE  $1) 
         AND ($2 = '' OR c.firstname ILIKE $2) 
         AND ($3 = '' OR c.lastname ILIKE $3)
     `;
 
+    // REMOVED "ORDER BY" from inside q2
     const q2 = ` 
         ${baseSelect} 
         FROM parent p 
         LEFT JOIN parent_child pc ON p.id = pc.parent_id 
         LEFT JOIN child c ON pc.child_id = c.id AND c.active_status = '1'
         WHERE p.active_status = '1' 
-        AND ($1 = '' OR p.hn_number =  $1) 
+        AND ($1 = '' OR p.hn_number ILIKE  $1) 
         AND ($2 = '' OR p.firstname ILIKE $2) 
         AND ($3 = '' OR p.lastname ILIKE $3) 
     `;
 
     try { 
-        const p1 = hn.trim(); 
+        const p1 = hn.trim() ? `%${hn.trim()}%` : ''; 
         const p2 = fname.trim() ? `%${fname.trim()}%` : ''; 
         const p3 = lname.trim() ? `%${lname.trim()}%` : ''; 
-        const res = await getClient().query(`${q1} UNION ${q2}`, [p1, p2, p3]); 
+        
+        // ADDED "ORDER BY child_fname" at the very end
+        const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
+        
+        const res = await getClient().query(finalQuery, [p1, p2, p3]); 
         return res.rows; 
     } catch (error) { 
         console.error(error); 
@@ -183,7 +190,9 @@ export const searchByFirstname = async (firstname: string) => {
       WHERE p.active_status = '1' AND p.firstname ILIKE $1
     `;
     try {
-      const res = await getClient().query(`${q1} UNION ${q2}`, [`%${firstname}%`]);
+      // ADDED ORDER BY HERE
+      const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
+      const res = await getClient().query(finalQuery, [`%${firstname}%`]);
       return res.rows;
     } catch (error) { console.error(error); return []; }
 };
@@ -194,17 +203,19 @@ export const searchByHN = async (hn: string) => {
       FROM child c
       LEFT JOIN parent_child pc ON c.id = pc.child_id 
       LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
-      WHERE c.active_status = '1' AND c.hn_number = $1
+      WHERE c.active_status = '1' AND c.hn_number like $1
     `;
     const q2 = `
       ${baseSelect}
       FROM parent p
       LEFT JOIN parent_child pc ON p.id = pc.parent_id 
       LEFT JOIN child c ON pc.child_id = c.id AND c.active_status = '1'
-      WHERE p.active_status = '1' AND p.hn_number = $1
+      WHERE p.active_status = '1' AND p.hn_number like $1
     `;
     try {
-      const res = await getClient().query(`${q1} UNION ${q2}`, [hn]);
+      // ADDED ORDER BY HERE
+      const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
+      const res = await getClient().query(finalQuery, [`%${hn}%`]);
       return res.rows;
     } catch (error) { console.error(error); return []; }
 };
@@ -225,7 +236,9 @@ export const searchByLastname = async (lastname: string) => {
       WHERE p.active_status = '1' AND p.lastname ILIKE $1
     `;
     try {
-      const res = await getClient().query(`${q1} UNION ${q2}`, [`%${lastname}%`]);
+      // ADDED ORDER BY HERE
+      const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
+      const res = await getClient().query(finalQuery, [`%${lastname}%`]);
       return res.rows;
     } catch (error) { console.error(error); return []; }
 };
