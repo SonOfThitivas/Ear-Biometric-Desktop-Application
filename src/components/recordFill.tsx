@@ -6,6 +6,7 @@ import {
     NumberInput,
     Radio,
     Input,
+    Textarea,
 } from "@mantine/core";
 import {
     DatesProvider,
@@ -29,10 +30,10 @@ function RecordFill(
             <Grid
                 h="100%"
                 p="md"
-                align='end'
+                align='start'
             >   
         
-                <Grid.Col span={6}>
+                <Grid.Col span={3}>
                     <TextInput
                         label="Hospital Number"
                         placeholder="Enter hospital number"
@@ -42,7 +43,8 @@ function RecordFill(
                         withAsterisk
                     />
                 </Grid.Col>
-                <Grid.Col span={6}>
+
+                <Grid.Col span={3}>
                     <TextInput
                         label={patient === "child" ? "Link with Parent's Hospital Number" : "Link with Child's Hospital Number"}
                         placeholder="Enter hospital number"
@@ -51,7 +53,9 @@ function RecordFill(
                         {...form.getInputProps(patient === "parent" ? "child_hn" : "parent_hn")}
                     />
                 </Grid.Col>
-                <Grid.Col span={6}>
+
+
+                <Grid.Col span={3}>
                     <TextInput
                         label="First name"
                         placeholder="Enter first name"
@@ -60,7 +64,8 @@ function RecordFill(
                         withAsterisk
                     />
                 </Grid.Col>
-                <Grid.Col span={6}>
+
+                <Grid.Col span={3}>
                     <TextInput
                         label="Last name"
                         placeholder="Enter last name"
@@ -69,7 +74,8 @@ function RecordFill(
                         // withAsterisk
                     />
                 </Grid.Col>
-                {/* <Grid.Col span={6}>
+
+                {/* <Grid.Col span={3}>
                     <NumberInput
                         label="Age"
                         placeholder="Enter age"
@@ -80,7 +86,8 @@ function RecordFill(
                         withAsterisk
                     />
                 </Grid.Col> */}
-                <Grid.Col span={6}>
+
+                <Grid.Col span={3}>
                     <TextInput
                         label="Age"
                         placeholder="Enter age"
@@ -89,7 +96,8 @@ function RecordFill(
                         // withAsterisk
                     />
                 </Grid.Col>
-                <Grid.Col span={6}>
+
+                <Grid.Col span={3}>
                     <DatesProvider settings={{locale:"en"}}>
                         <DateInput
                             valueFormat='DD MMM YYYY'
@@ -104,16 +112,8 @@ function RecordFill(
                         />
                     </DatesProvider>
                 </Grid.Col>
-                <Grid.Col span={6}>
-                    <TextInput
-                        label="Nationality"
-                        placeholder="Enter nationality"
-                        key={form.key(patient === "child" ? "child_nationality" : "parent_nationality")}
-                        {...form.getInputProps(patient === "child" ? "child_nationality" : "parent_nationality")}
-                        // withAsterisk
-                    />
-                </Grid.Col>
-                <Grid.Col span={6}>
+
+                <Grid.Col span={3}>
                     <Radio.Group
                         label="Sex"
                         key={form.key(patient === "child" ? "child_sex" : "parent_sex")}
@@ -126,6 +126,92 @@ function RecordFill(
                         </Group>
                     </Radio.Group>
                 </Grid.Col>
+
+                <Grid.Col span={3}>
+                    <TextInput
+                        label="Nationality"
+                        placeholder="Enter nationality"
+                        key={form.key(patient === "child" ? "child_nationality" : "parent_nationality")}
+                        {...form.getInputProps(patient === "child" ? "child_nationality" : "parent_nationality")}
+                        // withAsterisk
+                    />
+                </Grid.Col>
+
+
+                <Grid.Col span={6}>
+                    <Textarea
+                        label="Address"
+                        autosize
+                        minRows={1}
+                        placeholder="Enter address"
+                        key={form.key(patient === "child" ? "child_address" : "parent_address")}
+                        {...form.getInputProps(patient === "child" ? "child_address" : "parent_address")}
+                        // withAsterisk
+                    />
+                </Grid.Col>
+
+                 <Grid.Col span={3}>
+                    <TextInput
+                        label="Born Detail"
+                        placeholder="Enter born detail"
+                        key={form.key(patient === "child" ? "child_born_detail" : "parent_born_detail")}
+                        {...form.getInputProps(patient === "child" ? "child_born_detail" : "parent_born_detail")}
+                        // withAsterisk
+                    />
+                </Grid.Col>
+
+                <Grid.Col span={3}>
+                    <TextInput
+                        label="Born Weight"
+                        placeholder="Enter born weight"
+                        key={form.key(patient === "child" ? "child_born_weight" : "parent_born_weight")}
+                        {...form.getInputProps(patient === "child" ? "child_born_weight" : "parent_born_weight")}
+                        // withAsterisk
+                    />
+                </Grid.Col>
+
+                <Grid.Col span={3}>
+                    <TextInput
+                        label="Weight Now"
+                        placeholder="Enter weight now"
+                        key={form.key(patient === "child" ? "child_weight_now" : "parent_weight_now")}
+                        {...form.getInputProps(patient === "child" ? "child_weight_now" : "parent_weight_now")}
+                        // withAsterisk
+                    />
+                </Grid.Col>
+
+                <Grid.Col span={3}>
+                    <TextInput
+                        label="Height"
+                        placeholder="Enter height"
+                        key={form.key(patient === "child" ? "child_height_length" : "parent_height_length")}
+                        {...form.getInputProps(patient === "child" ? "child_height_length" : "parent_height_length")}
+                        // withAsterisk
+                    />
+                </Grid.Col>
+
+                <Grid.Col span={3}>
+                    <TextInput
+                        label="Integrity"
+                        placeholder="Enter integrity"
+                        key={form.key(patient === "child" ? "child_integrity" : "parent_integrity")}
+                        {...form.getInputProps(patient === "child" ? "child_integrity" : "parent_integrity")}
+                        // withAsterisk
+                    />
+                </Grid.Col>
+
+                <Grid.Col span={3}>
+                    <Textarea
+                        label="Note"
+                        autosize
+                        minRows={1}
+                        placeholder="Enter note"
+                        key={form.key(patient === "child" ? "child_data" : "parent_data")}
+                        {...form.getInputProps(patient === "child" ? "child_data" : "parent_data")}
+                        // withAsterisk
+                    />
+                </Grid.Col>
+
             </Grid>
         </Input.Wrapper>
   )
