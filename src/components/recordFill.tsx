@@ -12,18 +12,37 @@ import {
     DatesProvider,
     DateInput
 } from "@mantine/dates";
-import { IRecordChildParent } from '../interface/IRecord';
+import { IRecordChildParent} from '../interface/IRecord';
+import IRecord from '../interface/IRecord';
 import { UseFormReturnType } from '@mantine/form';
 import { MdChildCare, MdDateRange  } from "react-icons/md";
 import { IoIosPerson, IoMdMale, IoMdFemale  } from "react-icons/io";
 
 function RecordFill(
     {record, setRecord, patient, form}:{
-    record:IRecordChildParent,
-    setRecord:React.Dispatch<React.SetStateAction<IRecordChildParent>>,
+    record?:IRecordChildParent,
+    setRecord?:React.Dispatch<React.SetStateAction<IRecordChildParent>>,
     patient:string,
-    form: UseFormReturnType<IRecordChildParent, (values: IRecordChildParent) => IRecordChildParent>
+    form: UseFormReturnType<IRecordChildParent, (values: IRecordCihldParent) => Values> |
+    UseFormReturnType<IRecord, (values: IRecord) => Values>
 }) {
+    // Determine if form is IRecordChildParent or IRecord type
+    const isChildParentForm = 'child_hn' in form.values || 'parent_hn' in form.values;
+    
+    // Helper to get the correct field name based on form type
+    const getFieldName = (baseName: string, prefix?: string): string => {
+        if (isChildParentForm && prefix) {
+            return `${prefix}_${baseName}`;
+        }
+        
+        // Map short names to full names for IRecord
+        const nameMap: Record<string, string> = {
+            'fname': 'firstname',
+            'lname': 'lastname',
+        };
+        
+        return nameMap[baseName] || baseName;
+    };
 
     return (
         <Input.Wrapper>
@@ -38,29 +57,27 @@ function RecordFill(
                         label="Hospital Number"
                         placeholder="Enter hospital number"
                         leftSection={patient === "child" ? <MdChildCare size={20} color='black'/> : <IoIosPerson size={20} color='black'/>}
-                        key={form.key(patient === "child" ? "child_hn" : "parent_hn")}
-                        {...form.getInputProps(patient === "child" ? "child_hn" : "parent_hn")}
+                        key={form.key(getFieldName("hn", patient))}
+                        {...form.getInputProps(getFieldName("hn", patient) as any)}
                         withAsterisk
                     />
                 </Grid.Col>
-
-                <Grid.Col span={3}>
+                {isChildParentForm && <Grid.Col span={3}>
                     <TextInput
                         label={patient === "child" ? "Link with Parent's Hospital Number" : "Link with Child's Hospital Number"}
                         placeholder="Enter hospital number"
                         leftSection={patient === "parent" ? <MdChildCare size={20} color='black'/> : <IoIosPerson size={20} color='black'/>}
-                        key={form.key(patient === "parent" ? "child_hn" : "parent_hn")}
-                        {...form.getInputProps(patient === "parent" ? "child_hn" : "parent_hn")}
+                        key={form.key(getFieldName("hn", patient === "parent" ? "child" : "parent"))}
+                        {...form.getInputProps(getFieldName("hn", patient === "parent" ? "child" : "parent") as any)}
                     />
-                </Grid.Col>
-
-
+                </Grid.Col> || <Grid.Col span={3}></Grid.Col>}
+                <Grid.Col span={6}></Grid.Col>
                 <Grid.Col span={3}>
                     <TextInput
                         label="First name"
                         placeholder="Enter first name"
-                        key={form.key(patient === "child" ? "child_fname" : "parent_fname")}
-                        {...form.getInputProps(patient === "child" ? "child_fname" : "parent_fname")}
+                        key={form.key(getFieldName("fname", patient))}
+                        {...form.getInputProps(getFieldName("fname", patient) as any)}
                         withAsterisk
                     />
                 </Grid.Col>
@@ -69,8 +86,8 @@ function RecordFill(
                     <TextInput
                         label="Last name"
                         placeholder="Enter last name"
-                        key={form.key(patient === "child" ? "child_lname" : "parent_lname")}
-                        {...form.getInputProps(patient === "child" ? "child_lname" : "parent_lname")}
+                        key={form.key(getFieldName("lname", patient))}
+                        {...form.getInputProps(getFieldName("lname", patient) as any)}
                         // withAsterisk
                     />
                 </Grid.Col>
@@ -91,8 +108,8 @@ function RecordFill(
                     <TextInput
                         label="Age"
                         placeholder="Enter age"
-                        key={form.key(patient === "child" ? "child_age" : "parent_age")}
-                        {...form.getInputProps(patient === "child" ? "child_age" : "parent_age")}
+                        key={form.key(getFieldName("age", patient))}
+                        {...form.getInputProps(getFieldName("age", patient) as any)}
                         // withAsterisk
                     />
                 </Grid.Col>
@@ -104,8 +121,8 @@ function RecordFill(
                             label="Date of Birth"
                             placeholder="DD MMM YYYY"
                             leftSection={<MdDateRange size={20} color='black'/>}
-                            key={form.key(patient === "child" ? "child_dob" : "parent_dob")}
-                            {...form.getInputProps(patient === "child" ? "child_dob" : "parent_dob")}
+                            key={form.key(getFieldName("dob", patient))}
+                            {...form.getInputProps(getFieldName("dob", patient) as any)}
                             maxDate={new Date()}
                             clearable
                             // withAsterisk
@@ -116,8 +133,8 @@ function RecordFill(
                 <Grid.Col span={3}>
                     <Radio.Group
                         label="Sex"
-                        key={form.key(patient === "child" ? "child_sex" : "parent_sex")}
-                        {...form.getInputProps(patient === "child" ? "child_sex" : "parent_sex")}
+                        key={form.key(getFieldName("sex", patient))}
+                        {...form.getInputProps(getFieldName("sex", patient) as any)}
                         withAsterisk
                     >
                         <Group mt="xs">
@@ -131,21 +148,22 @@ function RecordFill(
                     <TextInput
                         label="Nationality"
                         placeholder="Enter nationality"
-                        key={form.key(patient === "child" ? "child_nationality" : "parent_nationality")}
-                        {...form.getInputProps(patient === "child" ? "child_nationality" : "parent_nationality")}
+                        key={form.key(getFieldName("nationality", patient))}
+                        {...form.getInputProps(getFieldName("nationality", patient) as any)}
                         // withAsterisk
                     />
                 </Grid.Col>
 
 
-                <Grid.Col span={6}>
+                <Grid.Col span={6} >
                     <Textarea
                         label="Address"
                         autosize
+                        resize="vertical"
                         minRows={1}
                         placeholder="Enter address"
-                        key={form.key(patient === "child" ? "child_address" : "parent_address")}
-                        {...form.getInputProps(patient === "child" ? "child_address" : "parent_address")}
+                        key={form.key(getFieldName("address", patient))}
+                        {...form.getInputProps(getFieldName("address", patient) as any)}
                         // withAsterisk
                     />
                 </Grid.Col>
@@ -154,38 +172,38 @@ function RecordFill(
                     <TextInput
                         label="Born Detail"
                         placeholder="Enter born detail"
-                        key={form.key(patient === "child" ? "child_born_detail" : "parent_born_detail")}
-                        {...form.getInputProps(patient === "child" ? "child_born_detail" : "parent_born_detail")}
+                        key={form.key(getFieldName("born_detail", patient))}
+                        {...form.getInputProps(getFieldName("born_detail", patient) as any)}
                         // withAsterisk
                     />
                 </Grid.Col>
 
                 <Grid.Col span={3}>
                     <TextInput
-                        label="Born Weight"
+                        label="Born Weight (kg)"
                         placeholder="Enter born weight"
-                        key={form.key(patient === "child" ? "child_born_weight" : "parent_born_weight")}
-                        {...form.getInputProps(patient === "child" ? "child_born_weight" : "parent_born_weight")}
+                        key={form.key(getFieldName("born_weight", patient))}
+                        {...form.getInputProps(getFieldName("born_weight", patient) as any)}
                         // withAsterisk
                     />
                 </Grid.Col>
 
                 <Grid.Col span={3}>
                     <TextInput
-                        label="Weight Now"
-                        placeholder="Enter weight now"
-                        key={form.key(patient === "child" ? "child_weight_now" : "parent_weight_now")}
-                        {...form.getInputProps(patient === "child" ? "child_weight_now" : "parent_weight_now")}
+                        label="Now Weight (kg)"
+                        placeholder="Enter now weight"
+                        key={form.key(getFieldName("weight_now", patient))}
+                        {...form.getInputProps(getFieldName("weight_now", patient) as any)}
                         // withAsterisk
                     />
                 </Grid.Col>
 
                 <Grid.Col span={3}>
                     <TextInput
-                        label="Height"
+                        label="Height (cm)"
                         placeholder="Enter height"
-                        key={form.key(patient === "child" ? "child_height_length" : "parent_height_length")}
-                        {...form.getInputProps(patient === "child" ? "child_height_length" : "parent_height_length")}
+                        key={form.key(getFieldName("height_length", patient))}
+                        {...form.getInputProps(getFieldName("height_length", patient) as any)}
                         // withAsterisk
                     />
                 </Grid.Col>
@@ -194,20 +212,21 @@ function RecordFill(
                     <TextInput
                         label="Integrity"
                         placeholder="Enter integrity"
-                        key={form.key(patient === "child" ? "child_integrity" : "parent_integrity")}
-                        {...form.getInputProps(patient === "child" ? "child_integrity" : "parent_integrity")}
+                        key={form.key(getFieldName("integrity", patient))}
+                        {...form.getInputProps(getFieldName("integrity", patient) as any)}
                         // withAsterisk
                     />
                 </Grid.Col>
 
-                <Grid.Col span={3}>
+                <Grid.Col span={9}>
                     <Textarea
                         label="Note"
                         autosize
+                        resize='vertical'
                         minRows={1}
                         placeholder="Enter note"
-                        key={form.key(patient === "child" ? "child_data" : "parent_data")}
-                        {...form.getInputProps(patient === "child" ? "child_data" : "parent_data")}
+                        key={form.key(getFieldName("data", patient))}
+                        {...form.getInputProps(getFieldName("data", patient) as any)}
                         // withAsterisk
                     />
                 </Grid.Col>
