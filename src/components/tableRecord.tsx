@@ -4,8 +4,10 @@ import {
     Title,
     Table,
     Text,
+    Flex,
     Center,
     Space,
+    Group,
 } from '@mantine/core'
 import dayjs from 'dayjs'
 import "dayjs/locale/th"
@@ -13,19 +15,24 @@ import { IRecordChildParent } from '../interface/IRecord' // Fixed path (removed
 import { FaCheck } from "react-icons/fa6";
 import { FaTimes } from "react-icons/fa";
 
-function TableRecord({title, record=[]}:
+function TableRecord({record=[], patient, hn, firstname, lastname}:
     {
-        title: string,
         record: IRecordChildParent[],
+        patient: string,
+        hn: string,
+        firstname: string,
+        lastname: string,
     }
-) {
+) { 
+    const [title, setTitle] = React.useState<string>(patient)
     const recordCount = React.useRef<number>(0)
     const vectorCount = React.useRef<number>(0)
 
     React.useEffect(()=>{
         recordCount.current = 0
         vectorCount.current = 0
-    },[record])
+        setTitle(patient)
+    },[record, patient, hn, firstname, lastname])
 
     const rows = record.map((data: IRecordChildParent, index: number) => {
         // --- CHILD TABLE LOGIC ---
@@ -52,6 +59,13 @@ function TableRecord({title, record=[]}:
                     <Table.Td>
                         {data.child_dob ? dayjs(data.child_dob).format("DD MMM YYYY") : "-"}
                     </Table.Td>
+                    <Table.Td>{data.child_address}</Table.Td>
+                    <Table.Td>{data.child_born_detail}</Table.Td>
+                    <Table.Td>{data.child_born_weight}</Table.Td>
+                    <Table.Td>{data.child_weight_now}</Table.Td>
+                    <Table.Td>{data.child_height_length}</Table.Td>
+                    <Table.Td>{data.child_integrity}</Table.Td>
+                    <Table.Td>{data.child_data}</Table.Td>
                     <Table.Td bg={data.child_vector ? "green.1" : "red.1"}>
                         <Center>
                             {data.child_vector ? <FaCheck /> : <FaTimes />}
@@ -85,6 +99,13 @@ function TableRecord({title, record=[]}:
                     <Table.Td>
                         {data.parent_dob ? dayjs(data.parent_dob).format("DD MMM YYYY") : "-"}
                     </Table.Td>
+                    <Table.Td>{data.parent_address}</Table.Td>
+                    <Table.Td>{data.parent_born_detail}</Table.Td>
+                    <Table.Td>{data.parent_born_weight}</Table.Td>
+                    <Table.Td>{data.parent_weight_now}</Table.Td>
+                    <Table.Td>{data.parent_height_length}</Table.Td>
+                    <Table.Td>{data.parent_integrity}</Table.Td>
+                    <Table.Td>{data.parent_data}</Table.Td>
                     <Table.Td bg={data.parent_vector ? "green.1" : "red.1"}>
                         <Center>
                             {data.parent_vector ? <FaCheck /> : <FaTimes />}
@@ -100,32 +121,55 @@ function TableRecord({title, record=[]}:
     return (
         <Box 
             component='div'
+            h={"80svh"}
             p={"sm"} 
             m={"xs"} 
-            bd={"2px black solid"} 
+            bd={"4px solid " + (patient === "child" ? "orange" : "green")} 
             bdrs={"sm"}
-        >
-            <Title order={4}>{title === "child" ? "Child" : "Parent"}</Title>
-            <Table.ScrollContainer minWidth={"100%"} maxHeight={225}>
-                <Table stickyHeader withTableBorder layout='fixed' striped highlightOnHover withColumnBorders>
+            style={{
+                transition: "border-color 0.3s ease"
+            }}
+        >   
+            <Group 
+                align={"stretch"}
+                justify={"space-between"}
+            >
+                <Title order={4}>{title === "child" ? "Child" : "Parent"}</Title>
+
+                <Title order={5} display={"flex"} p={"sm"}>
+                    found: {recordCount.current} record{recordCount.current > 1 && "s"}
+                    <Space w={"xl"} />
+                    checked vector: {vectorCount.current} record{vectorCount.current > 1 && "s"}
+                </Title>
+            </Group>
+
+            <Table.ScrollContainer minWidth={"100%"} maxHeight={"60svh"}>
+                <Table layout="auto" striped highlightOnHover withTableBorder withColumnBorders>
                     <Table.Thead>
                         <Table.Tr>
-                            <Table.Th bg={"gray.4"}>hn</Table.Th>
-                            <Table.Th bg={"gray.4"}>{title === "child" ? "hn_parent" : "hn_child"}</Table.Th>
-                            <Table.Th bg={"gray.4"}>firstname</Table.Th>
-                            <Table.Th bg={"gray.4"}>lastname</Table.Th>
-                            <Table.Th bg={"gray.4"}>age</Table.Th>
-                            <Table.Th bg={"gray.4"}>nationality</Table.Th>
-                            <Table.Th bg={"gray.4"}>sex</Table.Th>
-                            <Table.Th bg={"gray.4"}>dob</Table.Th>
-                            <Table.Th bg={"gray.4"}>vector</Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>HN</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>{title === "child" ? "HN-Parent" : "HN-Child"}</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>First Name</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Last Name</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Age</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Nationality</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Sex</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>DOB</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Address</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Born Detail</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Born Weight</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Now Weight</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Height</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Integrity</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Data</Center></Table.Th>
+                            <Table.Th bg={"gray.4"}><Center>Vector</Center></Table.Th>
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
                         {rows}
                         {(!record || record.length === 0) && (
                             <Table.Tr>
-                                <Table.Td colSpan={8} style={{textAlign: 'center', color: 'gray'}}>
+                                <Table.Td colSpan={16} style={{textAlign: 'center', color: 'gray'}}>
                                     No data
                                 </Table.Td>
                             </Table.Tr>
@@ -133,12 +177,7 @@ function TableRecord({title, record=[]}:
                     </Table.Tbody>
                 </Table>
             </Table.ScrollContainer>
-            <Title order={5} display={"flex"} pt={"sm"}>
-                found: {recordCount.current} record{recordCount.current > 1 && "s"}
-                <Space w={"xl"} />
-                checked vector: {vectorCount.current} record{vectorCount.current > 1 && "s"}
-            </Title>
-        </Box>  
+        </Box> 
     )
 }
 
