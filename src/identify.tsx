@@ -18,6 +18,12 @@ import PatientModeSelector from './components/patientMode'
 import CaptureNoti from './components/captureNoti'
 import { notifications } from '@mantine/notifications'
 
+import { useAudioPlayer } from 'react-use-audio-player'
+import { 
+    handleStartDetection,
+    handleDetectionFinish,
+} from './components/voicePlayer'
+
 const recordInit: IRecordChildParent = {
     child_hn: "",
     child_fname: "",
@@ -48,11 +54,19 @@ export default function Identify() {
     const [bgcolor, setBgcolor] = React.useState<string>("white")
 
     const [loading, setLoading] = React.useState<boolean>(false)
+    const { load: voiceLoad } = useAudioPlayer()
 
     // ✅ Changed from useState to useRef to avoid re-render loops during calculation
     const bgDist = React.useRef<string>("white")
     const bgHori = React.useRef<string>("white")
     const bgVert = React.useRef<string>("white")
+
+    // const handleStartDetection = () => {
+    //     voiceLoad("/public/voice/startDetection.m4a", {
+    //     autoplay: true,
+    //     initialVolume: 1.0,
+    // })
+    // }
 
     const handleReset = () => {
         setInsideZone(false)
@@ -72,6 +86,7 @@ export default function Identify() {
     // ✅ Start auto-capture workflow
     const handleDetect = () => {
         if (isCapturing) return
+        handleStartDetection(voiceLoad)
         setChildParentRecord(recordInit)
         setCountdown(2)
         setIsCapturing(true)
@@ -110,12 +125,13 @@ export default function Identify() {
         if (!captureResult) return
 
         setIsCapturing(false)
+        handleDetectionFinish(voiceLoad )
         setVector(captureResult.embedding)
 
         runIdentification(captureResult.embedding)
     }, [captureResult])
 
-    React.useEffect(()=>console.log("Patient:", patient),[patient])
+    // React.useEffect(()=>console.log("Patient:", patient),[patient])
 
     // ✅ Your existing DB lookup logic
     const runIdentification = async (vector: number[]) => {
