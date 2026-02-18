@@ -52,6 +52,14 @@ export interface IElectronAPI {
 
     getChildByHN: (hn: string) => Promise<any>; 
     getParentByHN: (hn: string) => Promise<any>; 
+
+    getActivityLogs: () => Promise<Array<{
+        activity: string;
+        time_stamp: string | Date;
+        firstname: string;
+        lastname: string;
+        username: string;
+    }>>;
 }
 
 declare global {

@@ -57,11 +57,12 @@ const getClient = () => {
 // 0. LOGGING HELPER (Resolves op_number -> UUID)
 // ==========================================
 export const logActivity = async (op_number: string, activity: string) => {
+  // CHANGED: Added 'AT TIME ZONE' to convert server time (UTC) to Thailand time
   const query = `
     INSERT INTO activity_time_stamp (operator_id, time_stamp, activity) 
     VALUES (
         (SELECT id FROM operator WHERE op_number = $1), 
-        NOW(), 
+        NOW() AT TIME ZONE 'Asia/Bangkok', 
         $2
     )
   `;
@@ -717,4 +718,30 @@ export const checkParentVectorExists = async (hn: string) => {
         console.error("❌ [DB] Check Parent Vector Failed:", error.message);
         return false;
     }
+};
+
+// ==========================================
+// LOG ACTIVITY 
+// ==========================================
+
+export const getActivityLogs = async () => {
+  const query = `
+    SELECT 
+      activity_time_stamp.activity, 
+      activity_time_stamp.time_stamp, 
+      operator.firstname, 
+      operator.lastname, 
+      operator.username 
+    FROM activity_time_stamp 
+    JOIN operator ON activity_time_stamp.operator_id = operator.id
+    ORDER BY time_stamp DESC;
+  `;
+
+  try {
+    const result = await getClient().query(query);
+    return result.rows;
+  } catch (error: any) {
+    console.error("Failed to fetch activity logs:", error);
+    return []; // Return empty array on error to prevent frontend crash
+  }
 };
