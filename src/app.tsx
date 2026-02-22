@@ -12,8 +12,15 @@ import {
     Box,
 } from '@mantine/core';
 
-import {  TbUserScan} from "react-icons/tb";
-import { FcAddDatabase, FcDeleteDatabase, FcButtingIn, FcConferenceCall, FcSettings } from "react-icons/fc";
+import { TbUserScan } from "react-icons/tb";
+import { 
+    FcAddDatabase, 
+    FcDeleteDatabase, 
+    FcButtingIn, 
+    FcConferenceCall, 
+    FcSettings,
+    FcClock,
+} from "react-icons/fc";
 
 import Identify from './identify';
 import Login from './components/login';
@@ -22,9 +29,10 @@ import Delete from './delete';
 import Update from './update'
 import Registry from './registry';
 import EditRecord from './editRecord';
+import Activity from './activity';
 
 const App = () => {
-    const [active, setActive] = React.useState<string | null>("Identify")
+    const [active, setActive] = React.useState<string>("Identify")
     const [operatorNumber, setOperatorNumber] = React.useState<string>("")
     
     // 1. Add Role State
@@ -38,6 +46,7 @@ const App = () => {
         {label: "Delete", child:<Delete role={role} operatorNumber={operatorNumber}/>, icon:<FcDeleteDatabase size={30}/>}, 
         {label: "Record", child:<Record tab={active} />, icon:<FcConferenceCall size={30}/>},
         {label: "Edit Record", child: <EditRecord operatorNumber={operatorNumber} />, icon:<FcSettings size={30}/>},
+        {label: "Activity", child: <Activity tab={active}/>, icon:<FcClock size={30}/>},
     ]
 
     return (

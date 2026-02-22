@@ -3,6 +3,7 @@ import * as db from './database';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import "./server"
+import { IActivityCategory } from './interface/IActivityCategory';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -146,6 +147,10 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('db:get-parent-by-hn', async (_event, hn: string) => {
     return await db.getParentByHN(hn);
+  });
+
+  ipcMain.handle('db:get-activity-logs', async (_event, category: IActivityCategory) => {
+    return await db.getActivityLogs(category);
   });
 
 });

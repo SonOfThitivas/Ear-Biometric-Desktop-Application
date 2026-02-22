@@ -1,5 +1,6 @@
 import pg from 'pg';
 import crypto from 'crypto';
+import { IActivityCategory, initIActivityCategory } from './interface/IActivityCategory';
 
 const { Client } = pg;
 
@@ -724,24 +725,25 @@ export const checkParentVectorExists = async (hn: string) => {
 // LOG ACTIVITY 
 // ==========================================
 
-export const getActivityLogs = async () => {
-  const query = `
-    SELECT 
-      activity_time_stamp.activity, 
-      activity_time_stamp.time_stamp, 
-      operator.firstname, 
-      operator.lastname, 
-      operator.username 
-    FROM activity_time_stamp 
-    JOIN operator ON activity_time_stamp.operator_id = operator.id
-    ORDER BY time_stamp DESC;
-  `;
-
-  try {
-    const result = await getClient().query(query);
-    return result.rows;
-  } catch (error: any) {
-    console.error("Failed to fetch activity logs:", error);
-    return []; // Return empty array on error to prevent frontend crash
-  }
+export const getActivityLogs = async (category:IActivityCategory) => {
+    // init query
+    const query = `
+        SELECT 
+        activity_time_stamp.activity, 
+        activity_time_stamp.time_stamp, 
+        operator.firstname, 
+        operator.lastname, 
+        operator.username 
+        FROM activity_time_stamp 
+        JOIN operator ON activity_time_stamp.operator_id = operator.id
+        ORDER BY time_stamp ${category.ordering};
+    `;
+    
+    try {
+        const result = await getClient().query(query);
+        return result.rows;
+    } catch (error: any) {
+        console.error("Failed to fetch activity logs:", error);
+        return []; // Return empty array on error to prevent frontend crash
+    }
 };
