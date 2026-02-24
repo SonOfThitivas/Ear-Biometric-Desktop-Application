@@ -61,13 +61,6 @@ export default function Identify() {
     const bgHori = React.useRef<string>("white")
     const bgVert = React.useRef<string>("white")
 
-    // const handleStartDetection = () => {
-    //     voiceLoad("/public/voice/startDetection.m4a", {
-    //     autoplay: true,
-    //     initialVolume: 1.0,
-    // })
-    // }
-
     const handleReset = () => {
         setInsideZone(false)
         setIsCapturing(false)
@@ -114,7 +107,11 @@ export default function Identify() {
         if (countdown !== 0) return
         if (!insideZone) return
         if (hasCaptured) return
-        if (countdown === 0) window.electronAPI.beep()
+        if (countdown === 0) {
+            window.electronAPI.beep()
+            // voice end detect
+            handleDetectionFinish(voiceLoad)
+        }
         
         setHasCaptured(true);
         capture("IDENTIFY", patient)
@@ -125,7 +122,6 @@ export default function Identify() {
         if (!captureResult) return
 
         setIsCapturing(false)
-        handleDetectionFinish(voiceLoad )
         setVector(captureResult.embedding)
 
         runIdentification(captureResult.embedding)
@@ -308,7 +304,13 @@ export default function Identify() {
                 </Stack>
             </Flex>
 
-            <CaptureNoti isCapture={isCapturing} insideZone={insideZone} countdown={countdown} setBgcolor={setBgcolor}/>
+            <CaptureNoti 
+                isCapture={isCapturing}
+                insideZone={insideZone}
+                countdown={countdown}
+                setBgcolor={setBgcolor}
+                load={voiceLoad}
+            />
 
         </Flex>
     )

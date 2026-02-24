@@ -61,10 +61,16 @@ const App = () => {
 
             {operatorNumber !== "" &&  
                 <Box component='div'>
-                    <Tabs defaultValue="Identify" variant="default" value={active} onChange={setActive}>
+                    <Tabs 
+                        defaultValue="Identify"
+                        variant="default"
+                        value={active}
+                        onChange={setActive}
+                        keepMounted={false}
+                    >
                         <Tabs.List justify='center' grow>
                             {
-                            tabList.map((item, index) => (
+                            tabList.map((item) => (
                                 <Tabs.Tab 
                                     key={item.label} 
                                     value={item.label} 
@@ -76,7 +82,7 @@ const App = () => {
                             }
                         </Tabs.List>
                         {
-                            tabList.map((item, index) => (
+                            tabList.map((item) => (
                                 <Tabs.Panel 
                                     key={item.label}
                                     w={"100%"} 
