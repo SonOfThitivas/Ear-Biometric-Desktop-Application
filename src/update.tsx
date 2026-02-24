@@ -117,8 +117,8 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     if (countdown === 0) {
         window.electronAPI.beep()
         // voice capture step
-        handleCaptureAt(voiceLoad, step+1)
-        setStep(step+1)
+        handleCaptureAt(voiceLoad, step + 1)
+        setStep(captures.length + 1)
     }
     setLoading(false)
     capture(hn, patient);
