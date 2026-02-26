@@ -14,6 +14,10 @@ from ultralytics import YOLO
 from PIL import Image
 from dotenv import load_dotenv
 
+global save_in_prog
+save_in_prog = False
+
+sys.stdout.reconfigure(line_buffering=True)
 # --- SETUP LOGGING ---
 logging.basicConfig(
     filename='camera_debug.log', 
@@ -79,7 +83,13 @@ print_lock = threading.Lock()
 def safe_print(data_dict):
     """Thread-safe print function to prevent JSON collision"""
     with print_lock:
+        log_data = data_dict.copy()
+        if "saved" in log_data:
+            logging.info(f"STDOUT: {json.dumps(log_data)}")
+            print(json.dumps(data_dict), flush=True)
+        
         print(json.dumps(data_dict), flush=True)
+        
 
 def listen_to_nodejs():
     global save_flag, hn_value, mode_value
@@ -442,13 +452,20 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
                 
                 if embedding is not None:
                     embed_list = embedding.tolist()
+
+                    # with open("file.txt", "w") as debug_file:
+                    #     debug_file.write(str(embed_list))
+                    
+                    with open(f"{EMBED_FOLDER}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
                     with open(f"{EMBED_FOLDER}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
                     with open(f"{folder_path}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
                     
                     logging.info("Save Worker Completed Successfully.")
-                    # USE SAFE PRINT
-                    safe_print({"event": "saved", "folder": folder_path, "embedding": embed_list})
-                    print(json.dumps({"event": "saved", "folder": folder_path, "embedding": embed_list}), flush=True)
+                    
+                    embed_bytes = np.array(embed_list, dtype=np.float32).tobytes()
+                    embed_b64 = base64.b64encode(embed_bytes).decode('utf-8')
+
+                    safe_print({"event": "saved", "folder": folder_path, "embedding": embed_b64})
                     return
 
         logging.warning("Save Worker: No embedding generated.")
@@ -487,6 +504,8 @@ def main():
                         args=(color_image.copy(), depth_image.copy(), None, timestamp, hn_value, mode_value, last_bbox)
                     )
                     t.start()
+                    t.join()
+                    # save_worker_thread(color_image.copy(), depth_image.copy(), None, timestamp, hn_value, mode_value, last_bbox)
                     save_flag = False
 
                 frame_count += 1
@@ -512,17 +531,18 @@ def main():
                 dist = get_robust_center_distance(depth_image)
 
                 # USE SAFE PRINT
-                safe_print({
-                    "distance": round(dist, 3),
-                    "image": jpg_as_text,
-                    "bbox": last_bbox,
-                    "horiz_status": horiz_ok,
-                    "vert_status": vert_ok,
-                    "horiz_diff": round(h_diff, 4),
-                    "vert_diff": round(v_diff, 4),
-                    "horiz_msg": h_msg, 
-                    "vert_msg": v_msg
-                })
+                if not save_in_prog:
+                    safe_print({
+                        "distance": round(dist, 3),
+                        "image": jpg_as_text,
+                        "bbox": last_bbox,
+                        "horiz_status": horiz_ok,
+                        "vert_status": vert_ok,
+                        "horiz_diff": round(h_diff, 4),
+                        "vert_diff": round(v_diff, 4),
+                        "horiz_msg": h_msg, 
+                        "vert_msg": v_msg
+                    })
 
             except Exception as loop_e:
                 if frame_count % 100 == 0:

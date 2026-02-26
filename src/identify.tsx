@@ -107,15 +107,33 @@ export default function Identify() {
 
     // ✅ When Python returns embedding → run your DB logic
     React.useEffect(() => {
-        if (!captureResult) return
+            if (!captureResult || !captureResult.embedding) return
 
-        setIsCapturing(false)
-        setVector(captureResult.embedding)
+            setIsCapturing(false)
 
-        runIdentification(captureResult.embedding)
-    }, [captureResult])
+            try {
 
-    React.useEffect(()=>console.log("Patient:", patient),[patient])
+                const binaryString = atob(captureResult.embedding);
+
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const floatArray = new Float32Array(bytes.buffer);
+                const decodedVector = Array.from(floatArray);
+
+                setVector(decodedVector)
+                runIdentification(decodedVector) // Send the decoded array to your DB logic
+            } catch (error) {
+                console.error("❌ Failed to decode base64 embedding:", error)
+                notifications.show({
+                    title: "Decoding Error",
+                    message: "Failed to process the camera data.",
+                    color: "red",
+                    bg: "red.1"
+                })
+            }
+        }, [captureResult])
 
     // ✅ Your existing DB lookup logic
     const runIdentification = async (vector: number[]) => {

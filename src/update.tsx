@@ -77,7 +77,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         withCloseButton: true,}
     ) 
     return}
-    setStep(step+1)
+    // setStep(step+1)
     setCaptures([]);
     setCountdown(2);
     setIsCapturing(true);
@@ -110,7 +110,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     if (!insideZone) return;
     if (countdown === 0) {
         window.electronAPI.beep()
-        setStep(step+1)
+        // setStep(step+1)
     }
     setLoading(false)
     capture(hn, patient);
@@ -120,16 +120,28 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
   // Store each capture result
   React.useEffect(() => {
     if (!captureResult) return;
-
+    console.log("outsidesetcap");
     setCaptures((prev) => {
+      // const updated = [...prev, captureResult];
+
+      // if (updated.length === 3) {
+      //   setIsCapturing(false);
+      //   console.log("All 3 captures complete:", updated);
+      //   sendToDatabase(updated, hn, patient);
+      // }
+
+      // return updated;
+      const isNew = !prev.find(c => c.receivedAt === captureResult.receivedAt);
+      if (!isNew) return prev;
+
       const updated = [...prev, captureResult];
 
+      setStep(updated.length);
       if (updated.length === 3) {
         setIsCapturing(false);
-        console.log("All 3 captures complete:", updated);
+        setLoading(false);
         sendToDatabase(updated, hn, patient);
       }
-
       return updated;
     });
   }, [captureResult]);
@@ -144,9 +156,42 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
       return;
     }
 
-    const v1 = captures[0]?.embedding;
-    const v2 = captures[1]?.embedding;
-    const v3 = captures[2]?.embedding;
+    const decodeEmbedding = (b64Str: string) => {
+      if (!b64Str) return null;
+      try {
+        // 1. Decode base64 to raw binary string
+        const binaryString = atob(b64Str);
+        
+        // 2. Convert binary string to a byte array
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        const floatArray = new Float32Array(bytes.buffer);
+        const finalArray = Array.from(floatArray);
+        
+        // // --- DEBUG: FORCE DOWNLOAD AS A TEXT FILE ---
+        // const jsonString = JSON.stringify(finalArray);
+        // const blob = new Blob([jsonString], { type: "text/plain" });
+        // const url = URL.createObjectURL(blob);
+        // const a = document.createElement('a');
+        // a.href = url;
+        // a.download = 'frontend_debug_array.txt';
+        // a.click(); // This magically downloads the file immediately!
+        // URL.revokeObjectURL(url);
+        // // ---------------------------------------------
+
+        return Array.from(floatArray); 
+      } catch (err) {
+        console.error("Failed to decode embedding:", err);
+        return null;
+      }
+    };
+
+    const v1 = decodeEmbedding(captures[0]?.embedding);
+    const v2 = decodeEmbedding(captures[1]?.embedding);
+    const v3 = decodeEmbedding(captures[2]?.embedding);
     const folderPath = captures[0]?.folder || "";
 
     try {

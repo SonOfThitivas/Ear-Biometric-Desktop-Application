@@ -20,9 +20,12 @@ export default function useCameraSocket() {
             setCameraData(data);
 
             if (data.event === "saved") {
+                console.log("saved")
                 setCaptureResult({
                     folder: data.folder,
-                    embedding: data.embedding
+                    embedding: data.embedding,
+                    status: data.status || "success",
+                    receivedAt: Date.now()
                 });
             }
         });

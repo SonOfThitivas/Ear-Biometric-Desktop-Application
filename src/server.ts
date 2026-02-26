@@ -51,6 +51,9 @@ function startCamera() {
             try {
                 if(!line) return;
                 const jsonData = JSON.parse(line);
+                if(!jsonData.image){
+                    console.log(`python: ${line}`)
+                }
                 // Broadcast data to all connected web clients
                 io.emit('camera-data', jsonData);
             } catch (e) {

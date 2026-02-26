@@ -33,7 +33,7 @@ export default function Camera({ onInsideZoneChange }) {
       ctx.clearRect(0, 0, imgWidth, imgHeight);
 
       // --- 1. DRAW TARGET ZONE (Static Yellow Box) ---
-      const zoneWidth = imgWidth * 0.25;
+      const zoneWidth = imgWidth * 0.275;
       const zoneHeight = imgHeight * 0.5;
       const zoneX = (imgWidth - zoneWidth) / 2;
       const zoneY = (imgHeight - zoneHeight) / 2;
@@ -49,7 +49,7 @@ export default function Camera({ onInsideZoneChange }) {
       const isFlat = isFlatHoriz && isFlatVert;
 
       const distVal = Number(cameraData.distance);
-      const validDistance = (distVal >= 0.20 && distVal <= 0.30) || distVal === 0.0;
+      const validDistance = (distVal >= 0.25 && distVal <= 0.30) || distVal === 0.0;
 
       let insideBox = false;
 
