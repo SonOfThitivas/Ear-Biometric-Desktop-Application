@@ -1,9 +1,24 @@
 import React, { useEffect, useRef, useState } from "react";
 import useCameraSocket from "../hooks/useCameraSocket";
+import { Skeleton } from "@mantine/core";
+// interface distance range
+import { 
+    IDistanceRange,
+    childDistanceRange,
+    parentDistanceRange,
+} from "../interface/IDistanceRange";
 
-export default function Camera({ onInsideZoneChange }) {
+export default function Camera(
+    { 
+        onInsideZoneChange,
+        patient,
+    }:{
+        onInsideZoneChange: React.Dispatch<React.SetStateAction<boolean>>,
+        patient: string,
+}) {
   const {
     cameraData,
+    cameraStatus,
     startCamera,
     stopCamera,
   } = useCameraSocket();
@@ -12,10 +27,30 @@ export default function Camera({ onInsideZoneChange }) {
   const canvasRef = useRef(null);
   // eslint-disable-next-line no-unused-vars
   const [insideZone, setInsideZone] = useState(false);
+  // min/max distance
+  const [distRange, setDistRange] = useState<IDistanceRange>(patient === "child" ? childDistanceRange : parentDistanceRange)
+  // preloading
+  const [loading, setLoading] = useState<boolean>(true)
+
+  // switch range
+  useEffect(()=>{
+    if (patient === "child") setDistRange(childDistanceRange)
+    else setDistRange(parentDistanceRange)
+  }, [patient])
+
+  // camera status change
+  useEffect(()=>{
+    // console.log(cameraStatus)
+    if (cameraStatus.running) {
+        setLoading(false)
+    } else {
+        setLoading(true)
+    }
+  },[cameraStatus])
 
   useEffect(() => {
-    if (!cameraData?.image) return;
-
+    if (!cameraData?.image) return
+        
     const img = imgRef.current;
     const canvas = canvasRef.current;
     if (!img || !canvas) return;
@@ -49,7 +84,7 @@ export default function Camera({ onInsideZoneChange }) {
       const isFlat = isFlatHoriz && isFlatVert;
 
       const distVal = Number(cameraData.distance);
-      const validDistance = (distVal >= 0.20 && distVal <= 0.30) || distVal === 0.0;
+      const validDistance = (distVal >= distRange.min && distVal <= distRange.max) || distVal === 0.0;
 
       let insideBox = false;
 
@@ -100,27 +135,30 @@ export default function Camera({ onInsideZoneChange }) {
           Stop Camera
         </button>
       </div>
-
-      <div style={{ position: "relative", width: "640px", maxWidth: "100%", border: "2px solid #333" }}>
-        {cameraData?.image && (
-          <img
-            ref={imgRef}
-            src={`data:image/jpeg;base64,${cameraData.image}`}
-            alt="live"
-            style={{ width: "100%", display: "block" }}
-          />
-        )}
+    
+      <div style={{ position: "relative", width: "640px", height:"480px", maxWidth: "100%", border: "2px solid #333" }}>
+        <Skeleton visible={loading} pos={"relative"} w={"100%"} h={"100%"}>
+            {cameraData?.image && (
+            <img
+                ref={imgRef}
+                src={`data:image/jpeg;base64,${cameraData.image}`}
+                alt="live"
+                style={{ width: "100%", height: "100%", display: "block" }}
+            />
+            )}
         <canvas
           ref={canvasRef}
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            pointerEvents: "none",
-          }}
-        />
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              pointerEvents: "none",
+            }}
+            />
+
+        </Skeleton>
       </div>
     </div>
   );

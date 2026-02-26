@@ -396,13 +396,18 @@ def main():
                         h_diff, v_diff, h_msg, v_msg = res
                         horiz_ok = (h_msg == "OK")
                         vert_ok = (v_msg == "OK")
-
+                        
+                dist = get_robust_center_distance(depth_image)
+                # DISTANCE DEBUG
+                # cv2.putText(color_image, f"Distance ${dist}",
+                #             (50, 50), cv2.FONT_HERSHEY_SIMPLEX,
+                #             2, (0, 255, 0), 2, cv2.LINE_AA) 
+                
                 # Small JPG for frontend preview
                 small_frame = cv2.resize(color_image, (0,0), fx=0.5, fy=0.5) 
                 _, buffer = cv2.imencode('.jpg', small_frame)
                 jpg_as_text = base64.b64encode(buffer).decode('utf-8')
                 
-                dist = get_robust_center_distance(depth_image)
 
                 print(json.dumps({
                     "distance": round(dist, 3),

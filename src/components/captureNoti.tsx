@@ -35,10 +35,28 @@ function CaptureNoti({isCapture, insideZone, countdown, setBgcolor, load}:ICaptu
                 setBgcolor("green.4")
                 // play voice countdown
                 handleCount(load, countdown)
+                notifications.update({
+                    id: "noti-countdown",
+                    color:"yellow",
+                    loading: true,
+                    title: "Capturing...",
+                    message: `Capture in ${countdown} seconds`,
+                    autoClose: false,
+                    withCloseButton: false,
+                })
                 
             } else {
                 // ear outside zone
                 setBgcolor("red.4")
+                notifications.update({
+                    id: "noti-countdown",
+                    color:"yellow",
+                    loading: true,
+                    title: "Capturing...",
+                    message: `Capture in ${countdown} seconds`,
+                    autoClose: false,
+                    withCloseButton: false,
+                })
             }
         }
     }, [insideZone, isCapture, countdown])

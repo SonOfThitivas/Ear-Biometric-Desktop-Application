@@ -74,6 +74,17 @@ export default function Identify() {
         bgDist.current = "white"
         bgHori.current = "white"
         bgVert.current = "white"
+
+        notifications.show({
+            id: "identify-reset-id",
+            title: "Reset!",
+            message: "The state has been reset!",
+            color:"yellow",
+            bg:"yellow.1",
+            autoClose: 4000,
+            withCloseButton: true,
+            withBorder:true,
+        })
     }
 
     // ✅ Start auto-capture workflow
@@ -91,7 +102,10 @@ export default function Identify() {
     // ✅ Drive countdown
     React.useEffect(() => {
         if (!isCapturing) return
-        if (!insideZone) return
+        if (!insideZone) {
+            setCountdown(2)
+            return
+        } 
         if (countdown <= 0) return
 
         const timer = setTimeout(() => {
@@ -288,7 +302,7 @@ export default function Identify() {
                 >
                 <Box component='div' pl={"xs"}>
                     <Text size='md' fw={500}>Camera</Text>
-                    <Camera onInsideZoneChange={setInsideZone} />
+                    <Camera onInsideZoneChange={setInsideZone} patient={patient}/>
                 </Box>
 
                 <Stack pl={"xs"} gap={"sm"} align="stretch" justify="flex-start">

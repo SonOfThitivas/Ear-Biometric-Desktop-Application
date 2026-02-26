@@ -18,8 +18,8 @@ import PatientModeSelector from "./components/patientMode";
 import CaptureNoti from "./components/captureNoti";
 import { notifications } from '@mantine/notifications'
 import { useAudioPlayer } from "react-use-audio-player";
+// voice hook
 import { 
-    handleCount, 
     handleCaptureAt, 
     handleStartCapture, 
     handleCaptureFinish,
@@ -83,7 +83,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         return}
         // voice start capture
         handleStartCapture(voiceLoad)
-        setStep(step+1)
+        setStep(1)
         setCaptures([]);
         setCountdown(2);
         setIsCapturing(true);
@@ -118,7 +118,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         window.electronAPI.beep()
         // voice capture step
         handleCaptureAt(voiceLoad, step + 1)
-        setStep(captures.length + 1)
+        setStep(step + 1)
     }
     setLoading(false)
     capture(hn, patient);
@@ -136,6 +136,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         setIsCapturing(false);
         console.log("All 3 captures complete:", updated);
         sendToDatabase(updated, hn, patient);
+        handleReset()
       }
 
       return updated;
@@ -280,7 +281,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         >
         <Box component='div' pl={"xs"}>
             <Text size='md' fw={500}>Camera</Text>
-            <Camera onInsideZoneChange={setInsideZone} />
+            <Camera onInsideZoneChange={setInsideZone} patient={patient}/>
         </Box>
 
         <Stack pl={"xs"} gap={"sm"} align="stretch" justify="flex-start">
