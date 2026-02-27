@@ -20,6 +20,13 @@ import { notifications } from '@mantine/notifications'
 
 // 1. IMPORT THE NEW API
 import { webAPI } from './web-api';
+import { useAudioPlayer } from "react-use-audio-player";
+// voice hook
+import { 
+    handleCaptureAt, 
+    handleStartCapture, 
+    handleCaptureFinish,
+} from "./components/voicePlayer";
 
 interface UpdatePageProps {
   operatorNumber: string;
@@ -36,14 +43,12 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     const [captures, setCaptures] = React.useState<any[]>([]);
     const [isCapturing, setIsCapturing] = React.useState(false);
     const [bgcolor, setBgcolor] = React.useState<string>("white")
-
     const [step, setStep] = React.useState(0);
-
     const [resetID, setResetID] = React.useState<string>("reset-id")
-
-
-  // Alert state
-  const [loading, setLoading] = React.useState<boolean>(false)
+    // audio hook
+    const { load: voiceLoad} = useAudioPlayer()
+    // Alert state
+    const [loading, setLoading] = React.useState<boolean>(false)
 
     const handleReset = () => {
         setInsideZone(false)
@@ -65,45 +70,47 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         })
     }
 
-  // Start workflow
-  const handleCapture = () => {
-    if (isCapturing) return;
-    if (hn === ""){ notifications.show({
-        id: "update-captue-id",
-        title: "Error!",
-        color:"red",
-        message: "You have to enter the hospital number.",
-        bg:"red.1",
-        withBorder: true,
-        autoClose: 4000,
-        withCloseButton: true,}
-    ) 
-    return}
-    setStep(step+1)
-    setCaptures([]);
-    setCountdown(2);
-    setIsCapturing(true);
-    setLoading(true)
-  };
+    // Start workflow
+    const handleCapture = () => {
+        if (isCapturing) return;
+        if (hn === ""){ notifications.show({
+            id: "update-captue-id",
+            title: "Error!",
+            color:"red",
+            message: "You have to enter the hospital number.",
+            bg:"red.1",
+            withBorder: true,
+            autoClose: 4000,
+            withCloseButton: true,}
+        ) 
+        return}
+        // voice start capture
+        handleStartCapture(voiceLoad)
+        setStep(1)
+        setCaptures([]);
+        setCountdown(2);
+        setIsCapturing(true);
+        setLoading(true)
+    };
 
-  // Reset countdown when ear leaves zone
-  React.useEffect(() => {
-    if (!isCapturing) return;
-    if (!insideZone) setCountdown(2);
-  }, [insideZone, isCapturing]);
+    // Reset countdown when ear leaves zone
+    React.useEffect(() => {
+        if (!isCapturing) return;
+        if (!insideZone) setCountdown(2);
+    }, [insideZone, isCapturing]);
 
-  // Drive countdown every second
-  React.useEffect(() => {
-    if (!isCapturing) return;
-    if (!insideZone) return;
-    if (countdown <= 0) return;
+    // Drive countdown every second
+    React.useEffect(() => {
+        if (!isCapturing) return;
+        if (!insideZone) return;
+        if (countdown <= 0) return;
 
-    const timer = setTimeout(() => {
-      setCountdown((c) => c - 1);
-    }, 1000);
+        const timer = setTimeout(() => {
+            setCountdown((c) => c - 1);
+        }, 1000);
 
-    return () => clearTimeout(timer);
-  }, [countdown, insideZone, isCapturing]);
+        return () => clearTimeout(timer);
+    }, [countdown, insideZone, isCapturing]);
 
   // When countdown hits 0 -> capture
   React.useEffect(() => {
@@ -114,6 +121,10 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         // 2. USE WEB API BEEP
         webAPI.beep()
         setStep(step+1)
+        window.electronAPI.beep()
+        // voice capture step
+        handleCaptureAt(voiceLoad, step + 1)
+        setStep(step + 1)
     }
     setLoading(false)
     capture(hn, patient);
@@ -131,10 +142,15 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         setIsCapturing(false);
         console.log("All 3 captures complete:", updated);
         sendToDatabase(updated, hn, patient);
+        handleReset()
       }
 
       return updated;
     });
+
+    // voice end capture
+    handleCaptureFinish(voiceLoad)
+
   }, [captureResult]);
 
   // Send to database
@@ -216,6 +232,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         gap="sm" 
         justify="start" 
         direction="row" 
+        h={"100svh"}
         p="md" 
         bg={bgcolor}
         style={{
@@ -271,7 +288,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         >
         <Box component='div' pl={"xs"}>
             <Text size='md' fw={500}>Camera</Text>
-            <Camera onInsideZoneChange={setInsideZone} />
+            <Camera onInsideZoneChange={setInsideZone} patient={patient}/>
         </Box>
 
         <Stack pl={"xs"} gap={"sm"} align="stretch" justify="flex-start">
@@ -287,7 +304,13 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     </Flex>
 
       {/* Mantine Alert */}
-      <CaptureNoti isCapture={isCapturing} insideZone={insideZone} countdown={countdown} setBgcolor={setBgcolor}/>
+        <CaptureNoti
+            isCapture={isCapturing}
+            insideZone={insideZone}
+            countdown={countdown}
+            setBgcolor={setBgcolor}
+            load={voiceLoad}
+        />
     </Flex>
   );
 }

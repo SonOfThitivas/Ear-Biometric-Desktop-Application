@@ -6,11 +6,27 @@ interface StatusTableProps {
     cameraData: any; // You can replace 'any' with your specific interface if available
     patientMode: string;
 }
+// interface distance range
+import { 
+    IDistanceRange,
+    childDistanceRange,
+    parentDistanceRange,
+} from "../interface/IDistanceRange";
 
 export default function CameraStatusTable({ isCapturing, cameraData, patientMode="child" }: StatusTableProps) {
 
-    const maxDist = React.useRef<number>(patientMode === "child" ? 0.25 : 0.3)
-    const minDist = React.useRef<number>(patientMode === "child" ? 0.2 : 0.25)
+    const maxDist = React.useRef<number>(patientMode === "child" ? childDistanceRange.max : parentDistanceRange.max)
+    const minDist = React.useRef<number>(patientMode === "child" ? childDistanceRange.min : parentDistanceRange.min)
+
+    React.useEffect(()=>{
+        if (patientMode === "child") {
+            maxDist.current = childDistanceRange.max
+            minDist.current = childDistanceRange.min
+        } else {
+            maxDist.current = parentDistanceRange.max
+            minDist.current = parentDistanceRange.min
+        }
+    },[patientMode])
 
     // Helper: Calculate Distance Status
     const getDistanceStatus = () => {

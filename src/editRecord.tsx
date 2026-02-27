@@ -2,6 +2,7 @@ import React from 'react'
 import {
   MantineProvider,
   Container,
+  Box,
   Paper,
   Title,
   Button,
@@ -9,17 +10,16 @@ import {
   Stack,
   Radio,
   TextInput,
-  NumberInput,
   Grid,
   Loader,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { DateInput, DatesProvider } from '@mantine/dates';
 import { notifications, Notifications } from '@mantine/notifications';
-import IRecord, {IRecordInit, IRecordChildParent} from './interface/IRecord';
+import IRecord, {IRecordInit,} from './interface/IRecord';
 import PatientModeSelector from './components/patientMode';
-import { MdChildCare, MdDateRange  } from "react-icons/md";
-import { IoIosPerson, IoMdMale, IoMdFemale  } from "react-icons/io";
+import RecordFill from './components/recordFill';
+import { MdChildCare,  } from "react-icons/md";
+import { IoIosPerson, } from "react-icons/io";
 
 // 1. IMPORT THE NEW API
 import { webAPI } from './web-api';
@@ -79,6 +79,13 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                     age_text: record.age_text,
                     dob: record.dob !== null ? new Date(record.dob) : null, 
                     nationality: record.nationality,
+                    address: record.address,
+                    born_detail: record.born_detail,
+                    born_weight: record.born_weight,
+                    weight_now: record.weight_now,
+                    height_length: record.height_length,
+                    integrity: record.integrity,
+                    data: record.data,
                 };
                 console.log(data)
                 
@@ -87,6 +94,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
 
             } else {
                 notifications.show({
+                    id: "edit-record-error-id-hn-not-found",
                     title:"Error",
                     message: 'Hospital Number not found in database. Please enter a valid HN.',
                     color:"red",
@@ -96,8 +104,9 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
             }
         } catch (err) {
             notifications.show({
+                id: "edit-record-error-id-hn",
                 title:"Error",
-                message: 'An error occurred while fetching patient record. Please try again.',
+                message: err.message,
                 color:"red",
                 bg:"red.1",
                 autoClose:4000,
@@ -107,21 +116,30 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
         }
     };
 
-    const handleRecordSubmit = async (values: IRecord) => {
+    const handleRecordSubmit = async (values: typeof formEditStep.values) => {
         setLoading(true);
 
         try {
             const hn = values.hn
-            const data = {
+            const data: IRecord = {
                 firstname: values.firstname,
                 lastname: values.lastname,
                 age_text: values.age_text,
                 sex: values.sex,
                 dob: values.dob !== null ? values.dob.toISOString().split('T')[0] : null,
-                nationality: values.nationality
+                nationality: values.nationality,
+                address: values.address,
+                born_detail: values.born_detail,
+                born_weight: values.born_weight,
+                weight_now: values.weight_now,
+                height_length: values.height_length,
+                integrity: values.integrity,
+                data: values.data,
+
             }
             
             // 3. USE WEB API UPDATE
+            console.log("[Data] ", data)
             let res:{success:boolean, message?:string, error?:string}
             if (patient === "child"){
                 res = await webAPI.updateChild(
@@ -139,6 +157,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
 
             if (res.success) {
                 notifications.show({
+                    id: "edit-record-edit-success-id",
                     title: "Success!",
                     message: "Record is updated succesfully.",
                     color: "green",
@@ -147,6 +166,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                 })
             } else {
                 notifications.show({
+                    id: "edit-record-edit-error-id-1",
                     title: "Error!",
                     message: res.message ? res.message : res.error,
                     color: "red",
@@ -156,6 +176,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
             }
         } catch (err: any) {
             notifications.show({
+                id: "edit-record-edit-error-id-2",
                 title: "Error!",
                 message: err.message,
                 color: "red",
@@ -174,10 +195,11 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
 
     return (
         <MantineProvider theme={{primaryColor: (patient === "child" ? "orange" : "green")}}>
-            <Container size="sm" py="xl">
+            <Box>
                 <Paper 
                     shadow="md" 
                     p="xl" 
+                    m="lg"
                     radius="md" 
                     bd={`3 solid ${patient === "child" ? "orange" : "green"}`}
                     style={{
@@ -218,106 +240,29 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                         </form>
                     ) : (
                         <form onSubmit={formEditStep.onSubmit((values)=>handleRecordSubmit(values))}>
-                            <Stack gap="md">
-                                <Grid
-                                    h="100%"
-                                    p="md"
-                                    align='end'
-                                > 
-                                    <Grid.Col span={6} >
-                                        <TextInput
-                                            label="Hospital Number (HN)"
-                                            withAsterisk
-                                            key={formEditStep.key("hn")}
-                                            {...formEditStep.getInputProps('hn')}
-                                        />
-                                    </Grid.Col>
-                                    <Grid.Col span={6}></Grid.Col>
-                                    <Grid.Col span={6}>
-                                        <TextInput
-                                            label="First Name"
-                                            placeholder="Enter first name"
-                                            withAsterisk
-                                            key={formEditStep.key("firstname")}
-                                            {...formEditStep.getInputProps('firstname')}
-                                        />
-                                    </Grid.Col>
-                                    <Grid.Col span={6}>
-                                        <TextInput
-                                            label="Last Name"
-                                            placeholder="Enter last name"
-                                            // withAsterisk
-                                            key={formEditStep.key("lastname")}
-                                            {...formEditStep.getInputProps('lastname')}
-                                        />
-                                    </Grid.Col>
-                                    <Grid.Col span={6}>
-                                        <TextInput
-                                            label="Age"
-                                            placeholder="Enter age"
-                                            // withAsterisk
-                                            key={formEditStep.key("age_text")}
-                                            {...formEditStep.getInputProps('age_text')}
-                                        />
-                                    </Grid.Col>
-                                    <Grid.Col span={6}>
-                                        <DatesProvider settings={{locale:"en"}}>
-                                            <DateInput
-                                                valueFormat='DD MMM YYYY'
-                                                label="Date of Birth"
-                                                placeholder="Select date"
-                                                leftSection={<MdDateRange size={20} color='black'/>}
-                                                // withAsterisk
-                                                key={formEditStep.key("dob")}
-                                                {...formEditStep.getInputProps('dob')}
-                                            />
-                                        </DatesProvider>
-                                    </Grid.Col>
-                                    <Grid.Col span={6}>
-                                        <TextInput
-                                            label="Nationality"
-                                            placeholder="Enter nationality"
-                                            key={formEditStep.key("nationality")}
-                                            {...formEditStep.getInputProps("nationality")}
-                                            // withAsterisk
-                                        />
-                                    </Grid.Col>
-                                    <Grid.Col span={6}>
-                                        <Radio.Group
-                                            label="Sex"
-                                            withAsterisk
-                                            key={formEditStep.key("sex")}
-                                            {...formEditStep.getInputProps('sex')}
-                                        >
-                                            <Group mt="xs">
-                                            <Radio value="M" label={<Group><IoMdMale size={20}/>Male</Group>} />
-                                            <Radio value="F" label={<Group><IoMdFemale size={20}/>Female</Group>} />
-                                            </Group>
-                                        </Radio.Group>
-                                    </Grid.Col>
-                                    
-                                </Grid>
+                            <RecordFill patient={patient} form={formEditStep}/>
+                            
+                            <Group justify="space-between" mt="md">
+                                <Button 
+                                    color='red' 
+                                    onClick={handleBack}
+                                >
+                                Back
+                                </Button>
+                                <Button
+                                    type='submit'
+                                    color='green'
+                                >
+                                    Save Changes
+                                </Button>
+                            </Group>
 
-                                <Group justify="space-between" mt="md">
-                                    <Button 
-                                        color='red' 
-                                        onClick={handleBack}
-                                    >
-                                    Back
-                                    </Button>
-                                    <Button
-                                        type='submit'
-                                        color='green'
-                                    >
-                                        Save Changes
-                                    </Button>
-                                </Group>
-                            </Stack>
                         </form>
+                        
                     )}
                 </Paper>
                 <Notifications/>
-            </Container>
+            </Box>
         </MantineProvider>
     );
 }

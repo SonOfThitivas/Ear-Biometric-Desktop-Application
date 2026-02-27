@@ -2,6 +2,7 @@ import './index.css';
 import './app';
 // 1. Import your existing interface
 import IRecord from './interface/IRecord'; 
+import { IActivityCategory } from './interface/IActivityCategory';
 
 export interface IElectronAPI {
     connectDB: () => Promise<{success: boolean, message?: string}>;
@@ -52,6 +53,14 @@ export interface IElectronAPI {
 
     getChildByHN: (hn: string) => Promise<any>; 
     getParentByHN: (hn: string) => Promise<any>; 
+
+    getActivityLogs: (category: IActivityCategory) => Promise<Array<{
+        activity: string;
+        time_stamp: string | Date;
+        firstname: string;
+        lastname: string;
+        username: string;
+    }>>;
 }
 
 declare global {
