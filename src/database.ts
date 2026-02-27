@@ -488,7 +488,7 @@ export const loginOperator = async (username: string, pass: string) => {
 // 7. VECTOR SEARCH
 // ==========================================
 
-export const findClosestChild = async (vector: number[]) => {
+export const findClosestChild = async (vector: number[], op_number: string) => {
     const vectorStr = JSON.stringify(vector);
     const query = `
         SELECT 
@@ -507,6 +507,7 @@ export const findClosestChild = async (vector: number[]) => {
     `;
     try { 
         const res = await getClient().query(query, [vectorStr]); 
+        await logActivity(op_number, `Identify child got ${res.rows[0].hn}`);
         return res.rows[0] || null; 
     } catch (error: any) { 
         console.error("❌ [DB] Child Vector Search Failed:", error.message); 
@@ -514,7 +515,7 @@ export const findClosestChild = async (vector: number[]) => {
     }
 };
 
-export const findClosestParent = async (vector: number[]) => {
+export const findClosestParent = async (vector: number[], op_number: string) => {
     const vectorStr = JSON.stringify(vector);
     const query = `
         SELECT 
@@ -533,6 +534,7 @@ export const findClosestParent = async (vector: number[]) => {
     `;
     try { 
         const res = await getClient().query(query, [vectorStr]); 
+        await logActivity(op_number, `Identify parent got ${res.rows[0].hn}`);
         return res.rows[0] || null; 
     } catch (error: any) { 
         console.error("❌ [DB] Parent Vector Search Failed:", error.message); 

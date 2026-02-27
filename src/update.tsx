@@ -12,7 +12,7 @@ import {
 } from "@mantine/core";
 
 import Camera from "./components/camera";
-import CameraStatusTable from "./components/CameraStatusTable";
+import CameraStatusTable from "./components/cameraStatusTable";
 import useCameraSocket from "./hooks/useCameraSocket";
 import PatientModeSelector from "./components/patientMode";
 import CaptureNoti from "./components/captureNoti";

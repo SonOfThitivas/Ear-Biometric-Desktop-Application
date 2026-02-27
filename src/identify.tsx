@@ -10,7 +10,7 @@ import {
 } from '@mantine/core'
 
 import TableResult from './components/tableResult'
-import CameraStatusTable from './components/CameraStatusTable' // ✅ Import the new component
+import CameraStatusTable from './components/cameraStatusTable' // ✅ Import the new component
 import {IRecordChildParent} from "./interface/IRecord"
 import Camera from "./components/camera"
 import useCameraSocket from "./hooks/useCameraSocket"
@@ -39,7 +39,11 @@ const recordInit: IRecordChildParent = {
     parent_dob: null
 }
 
-export default function Identify() {
+interface IdentifyProps {
+  operatorNumber: string;
+}
+
+export default function Identify({ operatorNumber }: IdentifyProps) {
     const [patient, setPatient] = React.useState<string>("child")
     const [childParentRecord, setChildParentRecord] = React.useState<IRecordChildParent>(recordInit)
 
@@ -181,10 +185,10 @@ export default function Identify() {
             // ✅ Call Electron backend
             if (patient === "child") {
                 console.log("➡️ [Identify] Calling findClosestChild()");
-                res = await window.electronAPI.findClosestChild(vector);
+                res = await window.electronAPI.findClosestChild(vector, operatorNumber);
             } else {
                 console.log("➡️ [Identify] Calling findClosestParent()");
-                res = await window.electronAPI.findClosestParent(vector);
+                res = await window.electronAPI.findClosestParent(vector, operatorNumber);
             }
 
             console.log("✅ [Identify] Electron returned:", res);

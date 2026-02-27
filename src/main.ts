@@ -93,12 +93,12 @@ app.whenReady().then(async () => {
     return await db.insertParentVectors(hn, v1, v2, v3, folder, op_number);
   });
 
-  ipcMain.handle("findClosestChild", async (_event, vector: number[]) => {
-      return await db.findClosestChild(vector);
+  ipcMain.handle("findClosestChild", async (_event, vector: number[], op_number) => {
+      return await db.findClosestChild(vector, op_number);
   });
 
-  ipcMain.handle("findClosestParent", async (_event, vector: number[]) => {
-      return await db.findClosestParent(vector);
+  ipcMain.handle("findClosestParent", async (_event, vector: number[], op_number) => {
+      return await db.findClosestParent(vector, op_number);
   });
 
   // --- LINKING ---

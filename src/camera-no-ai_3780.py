@@ -464,7 +464,6 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
                     
                     embed_bytes = np.array(embed_list, dtype=np.float32).tobytes()
                     embed_b64 = base64.b64encode(embed_bytes).decode('utf-8')
-
                     safe_print({"event": "saved", "folder": folder_path, "embedding": embed_b64})
                     return
 

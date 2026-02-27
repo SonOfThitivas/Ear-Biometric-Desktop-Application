@@ -26,8 +26,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   insertParentVectors: (hn: string, v1: number[], v2: number[], v3: number[], folder: string, op_number: string) => 
     ipcRenderer.invoke('db:insert-parent-vectors', { hn, v1, v2, v3, folder, op_number }),
 
-  findClosestChild: (vector: number[]) => ipcRenderer.invoke("findClosestChild", vector),
-  findClosestParent: (vector: number[]) => ipcRenderer.invoke("findClosestParent", vector),
+  findClosestChild: (vector: number[], op_number: string) => ipcRenderer.invoke("findClosestChild", vector, op_number),
+  findClosestParent: (vector: number[], op_number: string) => ipcRenderer.invoke("findClosestParent", vector, op_number),
 
   // Relations
   linkParentChild: (parent_hn: string, child_hn: string) => 

@@ -24,8 +24,9 @@ export interface IElectronAPI {
     // Vectors
     insertChildVectors: (hn: string, v1: number[], v2: number[], v3: number[], folder: string, op_number: string) => Promise<{ success: boolean; error?: string }>;
     insertParentVectors: (hn: string, v1: number[], v2: number[], v3: number[], folder: string, op_number: string) => Promise<{ success: boolean; error?: string }>;
-    findClosestChild: (vector: number[]) => Promise<{ hn?: string; distance?: number } | null>;
-    findClosestParent: (vector: number[]) => Promise<{ hn?: string; distance?: number } | null>;
+    
+    findClosestChild: (vector: number[], op_number: string) => Promise<{ hn?: string; distance?: number } | null>;
+    findClosestParent: (vector: number[], op_number: string) => Promise<{ hn?: string; distance?: number } | null>;
 
     // Relations
     linkParentChild: (parent_hn: string, child_hn: string) => Promise<{ success: boolean; error?: string }>;

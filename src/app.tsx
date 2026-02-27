@@ -40,7 +40,7 @@ const App = () => {
 
     // 2. Move tabList inside to access 'role'
     const tabList = [
-        {label: "Identify", child:<Identify/>, icon:<TbUserScan size={30}/>},
+        {label: "Identify", child:<Identify operatorNumber={operatorNumber}/>, icon:<TbUserScan size={30}/>},
         {label: "Registry", child:<Registry operatorNumber={operatorNumber}/>, icon:<FcAddDatabase size={30}/>},
         {label: "Update", child:<Update operatorNumber={operatorNumber}/>, icon:<FcButtingIn size={30}/>},
         {label: "Delete", child:<Delete role={role} operatorNumber={operatorNumber}/>, icon:<FcDeleteDatabase size={30}/>}, 
