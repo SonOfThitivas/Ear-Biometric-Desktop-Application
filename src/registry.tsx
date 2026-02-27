@@ -175,6 +175,13 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 sex: record.child_sex,
                 dob: record.child_dob,
                 nationality: record.child_nationality,
+                address: record.child_address,
+                born_detail: record.child_born_detail,
+                born_weight: record.child_born_weight,
+                weight_now: record.child_weight_now,
+                height_length: record.child_height_length,
+                integrity: record.child_integrity,
+                data: record.child_data,
             } : {
                 hn: record.parent_hn,
                 firstname: record.parent_fname,
@@ -184,6 +191,13 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 sex: record.parent_sex,
                 dob: record.parent_dob,
                 nationality: record.parent_nationality,
+                address: record.parent_address,
+                born_detail: record.parent_born_detail,
+                born_weight: record.parent_born_weight,
+                weight_now: record.parent_weight_now,
+                height_length: record.parent_height_length,
+                integrity: record.parent_integrity,
+                data: record.parent_data,
             })
             console.log(currentRecord)
             const hn = currentRecord.hn
@@ -223,6 +237,13 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                     sex: currentRecord.sex,
                     dob: currentRecord.dob !== null ? (currentRecord.dob).toISOString().split('T')[0] : null,
                     nationality: currentRecord.nationality,
+                    address: currentRecord.address,
+                    born_detail: currentRecord.born_detail,
+                    born_weight: currentRecord.born_weight,
+                    weight_now: currentRecord.weight_now,
+                    height_length: currentRecord.height_length,
+                    integrity: currentRecord.integrity,
+                    data: currentRecord.data,
                 };
 
                 // Add op_number to the call

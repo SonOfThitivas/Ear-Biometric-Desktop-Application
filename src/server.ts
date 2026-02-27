@@ -220,11 +220,21 @@ function startCamera() {
         
         lines.forEach((line: string) => {
             try {
-                if(!line) return;
+                if(!line) {
+                    io.emit('camera-status', { running: false });
+                    return
+                };
                 const jsonData = JSON.parse(line);
                 io.emit('camera-data', jsonData);
+                // Notify frontend that camera is starting
+                io.emit('camera-status', { running: true });
             } catch (e) {
+<<<<<<< HEAD
                 // Ignore incomplete JSON chunks
+=======
+                // Ignore parsing errors (e.g., incomplete JSON chunks)
+                io.emit('camera-status', { running: false });
+>>>>>>> 0a4b08c47174dbc427a392aca76705b643ecc06d
             }
         });
     });
@@ -239,8 +249,11 @@ function startCamera() {
         io.emit('camera-status', { running: false });
     });
 
+<<<<<<< HEAD
     io.emit('camera-status', { running: true });
     */
+=======
+>>>>>>> 0a4b08c47174dbc427a392aca76705b643ecc06d
 }
 
 function stopCamera() {
