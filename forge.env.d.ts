@@ -10,6 +10,7 @@ interface ImportMetaEnv {
     readonly VITE_CHILD_MODEL: string
     readonly VITE_MOM_MODEL: string
     readonly VITE_YOLO_MODEL: string
+    readonly VITE_YOLO_MODEL_DETECT: string
     readonly VITE_DATABASE_PORT: number
 }
 

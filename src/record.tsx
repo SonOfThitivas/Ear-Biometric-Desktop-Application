@@ -1,5 +1,6 @@
 import React from 'react'
 import { 
+    Box,
     Stack, 
     TextInput, 
     Title, 
@@ -12,6 +13,7 @@ import { IRecordChildParent } from './interface/IRecord'
 import TableRecord from './components/tableRecord'
 import { notifications, Notifications } from '@mantine/notifications'
 import { useDebouncedCallback } from '@mantine/hooks';
+import PatientModeSelector from './components/patientMode'
 
 function Record({
     tab="Record"
@@ -23,7 +25,7 @@ function Record({
     const [hn, setHn] = React.useState<string>("")  // hospital number fill
     const [firstname, setFirstname] = React.useState<string>("")  // firstname fill
     const [lastname, setLastname] = React.useState<string>("")   // lastname fill
-
+    const [patient, setPatient] = React.useState<string>("child")   // patient mode
     const [loading, setLoading] = React.useState<boolean>(false) // loading icon when click
 
     // Fetch all data automatically when page opens
@@ -107,7 +109,7 @@ function Record({
     return (
         <Grid component='div' p={"md"} maw={"100%"}>
             {/* Section Filter */}
-            <Grid.Col span={3}>
+            <Grid.Col span={2}>
                 <Stack
                     bg="yellow.1"
                     align="stretch"
@@ -119,6 +121,8 @@ function Record({
                     <Title order={4}>
                         Search
                     </Title>
+                    
+                    <PatientModeSelector title={""}  patient={patient} setPatient={setPatient}/>
 
                     <TextInput
                         label="Hospital Number"
@@ -175,13 +179,10 @@ function Record({
                 </Stack>
             </Grid.Col>
 
-            <Grid.Col span={9} pos={"relative"}>
+            <Grid.Col span={10} pos={"relative"}>
                 <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
                 {/* child parent */}
-                <TableRecord title="child" record={record}/>
-
-                {/* parent table */}
-                <TableRecord title="parent" record={record}/>
+                <TableRecord patient={patient} record={record} hn={hn} firstname={firstname} lastname={lastname}/>
 
             </Grid.Col>
 

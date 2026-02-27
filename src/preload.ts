@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import { IActivityCategory } from './interface/IActivityCategory';
 
 contextBridge.exposeInMainWorld('electronAPI', {
     connectDB: () => ipcRenderer.invoke("db:connect"),
@@ -48,6 +49,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getChildByHN: (hn: string) => ipcRenderer.invoke('db:get-child-by-hn', hn),
   getParentByHN: (hn: string) => ipcRenderer.invoke('db:get-parent-by-hn', hn),
 
-  getActivityLogs: () => ipcRenderer.invoke('db:get-activity-logs'),
+  getActivityLogs: (category: IActivityCategory) => ipcRenderer.invoke('db:get-activity-logs', category),
 
 });

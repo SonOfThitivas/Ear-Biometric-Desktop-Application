@@ -18,6 +18,12 @@ import PatientModeSelector from './components/patientMode'
 import CaptureNoti from './components/captureNoti'
 import { notifications } from '@mantine/notifications'
 
+import { useAudioPlayer } from 'react-use-audio-player'
+import { 
+    handleStartDetection,
+    handleDetectionFinish,
+} from './components/voicePlayer'
+
 const recordInit: IRecordChildParent = {
     child_hn: "",
     child_fname: "",
@@ -48,6 +54,7 @@ export default function Identify() {
     const [bgcolor, setBgcolor] = React.useState<string>("white")
 
     const [loading, setLoading] = React.useState<boolean>(false)
+    const { load: voiceLoad } = useAudioPlayer()
 
     // ✅ Changed from useState to useRef to avoid re-render loops during calculation
     const bgDist = React.useRef<string>("white")
@@ -67,11 +74,23 @@ export default function Identify() {
         bgDist.current = "white"
         bgHori.current = "white"
         bgVert.current = "white"
+
+        notifications.show({
+            id: "identify-reset-id",
+            title: "Reset!",
+            message: "The state has been reset!",
+            color:"yellow",
+            bg:"yellow.1",
+            autoClose: 4000,
+            withCloseButton: true,
+            withBorder:true,
+        })
     }
 
     // ✅ Start auto-capture workflow
     const handleDetect = () => {
         if (isCapturing) return
+        handleStartDetection(voiceLoad)
         setChildParentRecord(recordInit)
         setCountdown(2)
         setIsCapturing(true)
@@ -83,7 +102,10 @@ export default function Identify() {
     // ✅ Drive countdown
     React.useEffect(() => {
         if (!isCapturing) return
-        if (!insideZone) return
+        if (!insideZone) {
+            setCountdown(2)
+            return
+        } 
         if (countdown <= 0) return
 
         const timer = setTimeout(() => {
@@ -99,7 +121,11 @@ export default function Identify() {
         if (countdown !== 0) return
         if (!insideZone) return
         if (hasCaptured) return
-        if (countdown === 0) window.electronAPI.beep()
+        if (countdown === 0) {
+            window.electronAPI.beep()
+            // voice end detect
+            handleDetectionFinish(voiceLoad)
+        }
         
         setHasCaptured(true);
         capture("IDENTIFY", patient)
@@ -134,6 +160,7 @@ export default function Identify() {
                 })
             }
         }, [captureResult])
+    // React.useEffect(()=>console.log("Patient:", patient),[patient])
 
     // ✅ Your existing DB lookup logic
     const runIdentification = async (vector: number[]) => {
@@ -294,7 +321,7 @@ export default function Identify() {
                 >
                 <Box component='div' pl={"xs"}>
                     <Text size='md' fw={500}>Camera</Text>
-                    <Camera onInsideZoneChange={setInsideZone} />
+                    <Camera onInsideZoneChange={setInsideZone} patient={patient}/>
                 </Box>
 
                 <Stack pl={"xs"} gap={"sm"} align="stretch" justify="flex-start">
@@ -310,7 +337,13 @@ export default function Identify() {
                 </Stack>
             </Flex>
 
-            <CaptureNoti isCapture={isCapturing} insideZone={insideZone} countdown={countdown} setBgcolor={setBgcolor}/>
+            <CaptureNoti 
+                isCapture={isCapturing}
+                insideZone={insideZone}
+                countdown={countdown}
+                setBgcolor={setBgcolor}
+                load={voiceLoad}
+            />
 
         </Flex>
     )
