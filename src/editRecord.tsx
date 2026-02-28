@@ -126,7 +126,7 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                 lastname: values.lastname,
                 age_text: values.age_text,
                 sex: values.sex,
-                dob: values.dob !== null ? values.dob.toISOString().split('T')[0] : null,
+                dob: values.dob !== null ? values.dob.toString().split('T')[0] : null,
                 nationality: values.nationality,
                 address: values.address,
                 born_detail: values.born_detail,

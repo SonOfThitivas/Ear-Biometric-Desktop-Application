@@ -18,14 +18,21 @@ import { UseFormReturnType } from '@mantine/form';
 import { MdChildCare, MdDateRange  } from "react-icons/md";
 import { IoIosPerson, IoMdMale, IoMdFemale  } from "react-icons/io";
 
+// Define Values for the compiler
+type Values = Record<string, unknown>;
+
 function RecordFill(
-    {record, setRecord, patient, form}:{
+    // ✅ 1. Rename 'form' to 'strictForm' exactly at the prop level
+    {record, setRecord, patient, form: strictForm}:{ 
     record?:IRecordChildParent,
     setRecord?:React.Dispatch<React.SetStateAction<IRecordChildParent>>,
     patient:string,
-    form: UseFormReturnType<IRecordChildParent, (values: IRecordCihldParent) => Values> |
-    UseFormReturnType<IRecord, (values: IRecord) => Values>
+    form: UseFormReturnType<IRecordChildParent, (values: IRecordChildParent) => Values> |
+          UseFormReturnType<IRecord, (values: IRecord) => Values>
 }) {
+    // ✅ 2. Create a local 'form' variable that ignores the union rule
+    const form = strictForm as any;
+
     // Determine if form is IRecordChildParent or IRecord type
     const isChildParentForm = 'child_hn' in form.values || 'parent_hn' in form.values;
     

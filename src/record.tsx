@@ -65,21 +65,19 @@ function Record({
         const searchFirst = firstname_para !== undefined ? firstname_para : firstname;
         const searchLast = lastname_para !== undefined ? lastname_para : lastname;
         await fetchData(searchHn, searchFirst, searchLast)
-        setLoading(false)
+        
     }, 500)
 
     // UPDATED: fetchData now accepts optional overrides
     const fetchData = async (overrideHn?: string, overrideFirst?: string, overrideLast?: string) => {
-        // Determine values: use override if provided, otherwise use current state
-        const searchHn = overrideHn
-        const searchFirst = overrideFirst
-        const searchLast = overrideLast
+        // FIX: If override is undefined (not provided), use the current state
+        const searchHn = overrideHn !== undefined ? overrideHn : hn;
+        const searchFirst = overrideFirst !== undefined ? overrideFirst : firstname;
+        const searchLast = overrideLast !== undefined ? overrideLast : lastname;
 
         try {
-            console.log(`🚀 [UI] Searching Multi: HN="${searchHn}", First="${searchFirst}", Last="${searchLast}"`);
-            
-            // 2. USE WEB API
-            const res = await webAPI.searchMultiCriteria(searchHn || '', searchFirst || '', searchLast || '');
+            setLoading(true); // Ensure loading is on
+            const res = await webAPI.searchMultiCriteria(searchHn, searchFirst, searchLast);
 
             console.log(`✅ [UI] Found ${res.length} records`);
             console.log(res)
@@ -106,6 +104,8 @@ function Record({
                 autoClose: 4000,
                 withCloseButton: true,
             })
+        } finally {
+            setLoading(false);
         }
     }
 

@@ -9,12 +9,11 @@ const { Client } = pg;
 
 // Connection Config
 const DB_CONFIG = {
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME  || 'ear_db',
-  port: parseInt(process.env.DB_PORT || '5438', 10),
-  ssl: process.env.DB_HOST && process.env.DB_HOST !== 'localhost'
-        ? { rejectUnauthorized: false}
-        : false
+  host: process.env.DB_HOST || 'ear-biometric-db.postgres.database.azure.com',
+  database: process.env.DB_NAME  || 'postgres',
+  port: parseInt(process.env.DB_PORT || '5432', 10),
+  
+  ssl: { rejectUnauthorized: false }
 };
 
 // Credentials
@@ -87,24 +86,15 @@ export const logActivity = async (op_number: string, activity: string) => {
 // ==========================================
 
 export const getAllActiveChildren = async () => {
-  // Added new fields here as well for consistency
-  // This one works fine because it is a single query (no UNION)
   const query = `
     SELECT 
-        c.hn_number as hn, 
-        c.firstname, 
-        c.lastname, 
-        c.age_text, 
-        c.nationality,
-        c.sex, 
-        c.dob,
-        c.address,
-        c.born_detail,
-        c.born_weight,
-        c.weight_now,
-        c.height_length,
-        c.integrity,
-        c.data,
+        c.hn_number as hn, c.firstname, c.lastname, c.age_text, c.nationality,
+        c.sex, c.dob, c.address, c.born_detail, c.born_weight,
+        c.weight_now, c.height_length,
+        
+        c.data_integrity as integrity, -- ✨ Fixed spelling
+        c.data_text as data,           
+        
         p.hn_number as hn_parent 
     FROM child c
     LEFT JOIN parent_child pc ON c.id = pc.child_id
@@ -125,12 +115,18 @@ const baseSelect = `
         c.hn_number as child_hn, c.firstname as child_fname, c.lastname as child_lname, 
         c.age_text as child_age_text, c.nationality as child_nationality, c.sex as child_sex, c.dob as child_dob,
         c.address as child_address, c.born_detail as child_born_detail, c.born_weight as child_born_weight,
-        c.weight_now as child_weight_now, c.height_length as child_height_length, c.integrity as child_integrity, c.data as child_data,
+        c.weight_now as child_weight_now, c.height_length as child_height_length, 
+        
+        c.data_integrity as child_integrity, 
+        c.data_text as child_data,
         
         p.hn_number as parent_hn, p.firstname as parent_fname, p.lastname as parent_lname, 
         p.age_text as parent_age_text, p.nationality as parent_nationality, p.sex as parent_sex, p.dob as parent_dob,
         p.address as parent_address, p.born_detail as parent_born_detail, p.born_weight as parent_born_weight,
-        p.weight_now as parent_weight_now, p.height_length as parent_height_length, p.integrity as parent_integrity, p.data as parent_data,
+        p.weight_now as parent_weight_now, p.height_length as parent_height_length, 
+        
+        p.data_integrity as parent_integrity, 
+        p.data_text as parent_data,
 
         (EXISTS (
             SELECT 1 FROM identity_vector_child 
@@ -261,7 +257,7 @@ export const insertChild = async (data: any, op_number: string) => {
   const query = `
     INSERT INTO child (
         hn_number, firstname, lastname, age_text, dob, sex, nationality, active_status,
-        address, born_detail, born_weight, weight_now, height_length, integrity, data
+        address, born_detail, born_weight, weight_now, height_length, data_integrity, data_text
     ) 
     VALUES ($1, $2, $3, $4, $5, $6, $7, '1', $8, $9, $10, $11, $12, $13, $14)
   `;
@@ -279,7 +275,7 @@ export const insertParent = async (data: any, op_number: string) => {
   const query = `
     INSERT INTO parent (
         hn_number, firstname, lastname, age_text, dob, sex, nationality, active_status,
-        address, born_detail, born_weight, weight_now, height_length, integrity, data
+        address, born_detail, born_weight, weight_now, height_length, data_integrity, data_text
     ) 
     VALUES ($1, $2, $3, $4, $5, $6, $7, '1', $8, $9, $10, $11, $12, $13, $14)
   `;
@@ -574,27 +570,16 @@ export const updateChild = async (hn: string, data: UpdateData, op_number: strin
     UPDATE child 
     SET firstname = $2, lastname = $3, age_text = $4, dob = $5, sex = $6, nationality = $7,
         address = $8, born_detail = $9, born_weight = $10, weight_now = $11, 
-        height_length = $12, integrity = $13, data = $14
+        height_length = $12, data_integrity = $13, data_text = $14
     WHERE hn_number = $1 AND active_status = '1'
   `;
   
-  try {
+    try {
     const client = getClient();
     const res = await client.query(query, [
-      hn, 
-      data.firstname, 
-      data.lastname, 
-      data.age_text, 
-      data.dob, 
-      data.sex,
-      data.nationality,
-      data.address || null,
-      data.born_detail || null,
-      data.born_weight || null,
-      data.weight_now || null,
-      data.height_length || null,
-      data.integrity || null,
-      data.data || null
+      hn, data.firstname, data.lastname, data.age_text, data.dob, data.sex, data.nationality,
+      data.address || null, data.born_detail || null, data.born_weight || null, data.weight_now || null,
+      data.height_length || null, data.integrity || null, data.data || null
     ]);
 
     if (res.rowCount === 0) {
@@ -615,29 +600,17 @@ export const updateParent = async (hn: string, data: UpdateData, op_number: stri
     UPDATE parent 
     SET firstname = $2, lastname = $3, age_text = $4, dob = $5, sex = $6, nationality = $7,
         address = $8, born_detail = $9, born_weight = $10, weight_now = $11, 
-        height_length = $12, integrity = $13, data = $14
+        height_length = $12, data_integrity = $13, data_text = $14
     WHERE hn_number = $1 AND active_status = '1'
   `;
 
-  try {
+    try {
     const client = getClient();
     const res = await client.query(query, [
-      hn, 
-      data.firstname, 
-      data.lastname, 
-      data.age_text, 
-      data.dob, 
-      data.sex,
-      data.nationality,
-      data.address || null,
-      data.born_detail || null,
-      data.born_weight || null,
-      data.weight_now || null,
-      data.height_length || null,
-      data.integrity || null,
-      data.data || null
+      hn, data.firstname, data.lastname, data.age_text, data.dob, data.sex, data.nationality,
+      data.address || null, data.born_detail || null, data.born_weight || null, data.weight_now || null,
+      data.height_length || null, data.integrity || null, data.data || null
     ]);
-
     if (res.rowCount === 0) {
       return { success: false, message: `Update failed: Parent HN ${hn} not found or inactive.` };
     }
@@ -658,7 +631,8 @@ export const updateParent = async (hn: string, data: UpdateData, op_number: stri
 export const getChildByHN = async (hn: string) => {
     const query = `
         SELECT hn_number, firstname, lastname, age_text, dob, sex, nationality,
-               address, born_detail, born_weight, weight_now, height_length, integrity, data
+               address, born_detail, born_weight, weight_now, height_length, 
+               data_integrity as integrity, data_text as data
         FROM child 
         WHERE hn_number = $1 AND active_status = '1'
         LIMIT 1
@@ -675,7 +649,8 @@ export const getChildByHN = async (hn: string) => {
 export const getParentByHN = async (hn: string) => {
     const query = `
         SELECT hn_number, firstname, lastname, age_text, dob, sex, nationality,
-               address, born_detail, born_weight, weight_now, height_length, integrity, data
+               address, born_detail, born_weight, weight_now, height_length, 
+               data_integrity as integrity, data_text as data
         FROM parent 
         WHERE hn_number = $1 AND active_status = '1'
         LIMIT 1

@@ -6,7 +6,7 @@ export default interface IRecord {
     nationality?: string | null
     age?: string | null
     sex?: string | null
-    dob?: Date | null
+    dob?: Date | string | null
     vector?: boolean | null
     r1?: number[] | null
     r2?: number[] | null
