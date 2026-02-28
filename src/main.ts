@@ -55,20 +55,20 @@ app.whenReady().then(async () => {
         return await db.getAllActiveChildren();
     });
 
-  ipcMain.handle('db:search-firstname', async (_event, firstname: string) => {
-    return await db.searchByFirstname(firstname);
-  });
+  // ipcMain.handle('db:search-firstname', async (_event, firstname: string) => {
+  //   return await db.searchByFirstname(firstname);
+  // });
 
-  ipcMain.handle('db:search-hn', async (_event, hn: string) => {
-    return await db.searchByHN(hn);
-  });
+  // ipcMain.handle('db:search-hn', async (_event, hn: string) => {
+  //   return await db.searchByHN(hn);
+  // });
 
-  ipcMain.handle('db:search-lastname', async (_event, lastname: string) => {
-    return await db.searchByLastname(lastname);
-  });
+  // ipcMain.handle('db:search-lastname', async (_event, lastname: string) => {
+  //   return await db.searchByLastname(lastname);
+  // });
 
-  ipcMain.handle('db:search-multi', async (_event, { hn, firstname, lastname }) => {
-    return await db.searchMultiCriteria(hn, firstname, lastname);
+  ipcMain.handle('db:search-multi', async (_event, { hn, firstname, lastname, sex, nationality, sortBy, sortDir }) => {
+    return await db.searchMultiCriteria(hn, firstname, lastname, sex, nationality, sortBy, sortDir);
   });
 
   // --- INSERTS (Destructuring fixed) ---

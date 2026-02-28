@@ -10,10 +10,10 @@ export interface IElectronAPI {
     loginOperator: (username: string, password: string) => Promise<{ success: boolean, op_number?: string, role?: string, message?: string }>;
   
     // Search
-    searchByHN: (hn: string) => Promise<any[]>;
-    searchByFirstname: (name: string) => Promise<any[]>;
-    searchByLastname: (name: string) => Promise<any[]>;
-    searchMultiCriteria: (hn: string, fname: string, lname: string) => Promise<any[]>;
+    // searchByHN: (hn: string) => Promise<any[]>;
+    // searchByFirstname: (name: string) => Promise<any[]>;
+    // searchByLastname: (name: string) => Promise<any[]>;
+    searchMultiCriteria: (hn: string, fname: string, lname: string, sex: string, nationality: string, sortBy:string, sortDir:string) => Promise<any[]>;
 
     // Delete / Status
     deactivateChild: (hn: string, op_number: string) => Promise<{ success: boolean; message?: string; error?: string }>;

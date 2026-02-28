@@ -8,11 +8,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loginOperator: (username: string, password: string) => ipcRenderer.invoke('db:login-operator', { username, password }),
   
   // Search
-  searchByHN: (hn: string) => ipcRenderer.invoke('db:search-hn', hn),
-  searchByFirstname: (name: string) => ipcRenderer.invoke('db:search-firstname', name),
-  searchByLastname: (name: string) => ipcRenderer.invoke('db:search-lastname', name),
-  searchMultiCriteria: (hn: string, f: string, l: string) => ipcRenderer.invoke('db:search-multi', { hn, firstname: f, lastname: l }),
-  
+  // searchByHN: (hn: string) => ipcRenderer.invoke('db:search-hn', hn),
+  // searchByFirstname: (name: string) => ipcRenderer.invoke('db:search-firstname', name),
+  // searchByLastname: (name: string) => ipcRenderer.invoke('db:search-lastname', name),
+  searchMultiCriteria: (
+      hn: string, 
+      f: string, 
+      l: string, 
+      sex: string, 
+      nationality: string, 
+      sortBy: string, 
+      sortDir: string
+  ) => ipcRenderer.invoke('db:search-multi', { 
+      hn, 
+      firstname: f, 
+      lastname: l, 
+      sex, 
+      nationality, 
+      sortBy, 
+      sortDir 
+  }),   
   // Delete
   deactivateChild: (hn: string, op_number: string) => ipcRenderer.invoke('db:deactivate-child', { hn, op_number }),
   deactivateParent: (hn: string, op_number: string) => ipcRenderer.invoke('db:deactivate-parent', { hn, op_number }),

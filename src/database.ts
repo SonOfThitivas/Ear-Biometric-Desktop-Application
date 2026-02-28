@@ -80,36 +80,36 @@ export const logActivity = async (op_number: string, activity: string) => {
 // 1. SELECT & SEARCH (Updated Joins to use IDs)
 // ==========================================
 
-export const getAllActiveChildren = async () => {
-  // This one works fine because it is a single query (no UNION)
-  const query = `
-    SELECT 
-        c.hn_number as hn, 
-        c.firstname, 
-        c.lastname, 
-        c.age_text, 
-        c.nationality,
-        c.sex, 
-        c.dob,
-        c.address,
-        c.born_detail,
-        c.born_weight,
-        c.weight_now,
-        c.height_length,
-        c.integrity,
-        c.data,
-        p.hn_number as hn_parent 
-    FROM child c
-    LEFT JOIN parent_child pc ON c.id = pc.child_id
-    LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
-    WHERE c.active_status = '1'
-    ORDER BY c.firstname ASC
-  `;
-  try {
-    const res = await client!.query(query);
-    return res.rows;
-  } catch (error) { console.error(error); return []; }
-};
+// export const getAllActiveChildren = async () => {
+//   // This one works fine because it is a single query (no UNION)
+//   const query = `
+//     SELECT 
+//         c.hn_number as hn, 
+//         c.firstname, 
+//         c.lastname, 
+//         c.age_text, 
+//         c.nationality,
+//         c.sex, 
+//         c.dob,
+//         c.address,
+//         c.born_detail,
+//         c.born_weight,
+//         c.weight_now,
+//         c.height_length,
+//         c.integrity,
+//         c.data,
+//         p.hn_number as hn_parent 
+//     FROM child c
+//     LEFT JOIN parent_child pc ON c.id = pc.child_id
+//     LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
+//     WHERE c.active_status = '1'
+//     ORDER BY c.firstname ASC
+//   `;
+//   try {
+//     const res = await client!.query(query);
+//     return res.rows;
+//   } catch (error) { console.error(error); return []; }
+// };
 
 // Base Columns (Unchanged)
 const baseSelect = `
@@ -134,41 +134,76 @@ const baseSelect = `
         )) as parent_vector
 `;
 
-// 2. Search Multi-Criteria (FIXED)
-export const searchMultiCriteria = async (hn: string, fname: string, lname: string) => {
-    // REMOVED "ORDER BY" from inside q1
+export const searchMultiCriteria = async (
+    hn: string, 
+    fname: string, 
+    lname: string,
+    sex: string = '',         
+    nationality: string = '', 
+    sortBy: string = 'fname', 
+    sortDir: 'ASC' | 'DESC' = 'ASC' 
+) => {
+
     const q1 = ` 
         ${baseSelect} 
         FROM child c 
         LEFT JOIN parent_child pc ON c.id = pc.child_id 
         LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
         WHERE c.active_status = '1' 
-        AND ($1 = '' OR c.hn_number ILIKE  $1) 
+        AND ($1 = '' OR c.hn_number ILIKE $1) 
         AND ($2 = '' OR c.firstname ILIKE $2) 
         AND ($3 = '' OR c.lastname ILIKE $3)
+        AND ($4 = '' OR c.sex = $4) 
+        AND ($5 = '' OR c.nationality ILIKE $5)
     `;
 
-    // REMOVED "ORDER BY" from inside q2
+
     const q2 = ` 
         ${baseSelect} 
         FROM parent p 
         LEFT JOIN parent_child pc ON p.id = pc.parent_id 
         LEFT JOIN child c ON pc.child_id = c.id AND c.active_status = '1'
         WHERE p.active_status = '1' 
-        AND ($1 = '' OR p.hn_number ILIKE  $1) 
+        AND ($1 = '' OR p.hn_number ILIKE $1) 
         AND ($2 = '' OR p.firstname ILIKE $2) 
         AND ($3 = '' OR p.lastname ILIKE $3) 
+        AND ($4 = '' OR p.sex = $4) 
+        AND ($5 = '' OR p.nationality ILIKE $5)
     `;
 
+
+const allowedSortColumns: Record<string, string> = {
+        'child_fname': 'child_fname',
+        'child_lname': 'child_lname',
+        'child_age': 'child_dob', 
+        'child_hn': 'child_hn',
+        'child_sex': 'child_sex',            
+        'child_nationality': 'child_nationality',
+        'parent_fname': 'parent_fname',
+        'parent_lname': 'parent_lname',
+        'parent_age': 'parent_dob',
+        'parent_hn': 'parent_hn',
+        'parent_sex': 'parent_sex',
+        'parent_nationality': 'parent_nationality'
+    };
+
+    const safeSortColumn = allowedSortColumns[sortBy] || 'child_fname';
+    const safeSortDir = sortDir.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
     try { 
+        // 1. Prepare text searches (Partial matches)
         const p1 = hn.trim() ? `%${hn.trim()}%` : ''; 
         const p2 = fname.trim() ? `%${fname.trim()}%` : ''; 
         const p3 = lname.trim() ? `%${lname.trim()}%` : ''; 
         
-        // ADDED "ORDER BY child_fname" at the very end
-        const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
+        // 2. Prepare filters (Exact match for sex, case-insensitive match for nationality)
+        const p4 = sex.trim(); // "M" or "F"
+        const p5 = nationality.trim(); // "thai" or "myanmar"
         
-        const res = await getClient().query(finalQuery, [p1, p2, p3]); 
+        const finalQuery = `${q1} UNION ${q2} ORDER BY ${safeSortColumn} ${safeSortDir}`;
+        
+        // 3. Pass all 5 parameters to the query array
+        const res = await getClient().query(finalQuery, [p1, p2, p3, p4, p5]); 
         return res.rows; 
     } catch (error) { 
         console.error(error); 
@@ -176,74 +211,74 @@ export const searchMultiCriteria = async (hn: string, fname: string, lname: stri
     }
 };
 
-export const searchByFirstname = async (firstname: string) => {
-    const q1 = `
-      ${baseSelect}
-      FROM child c
-      LEFT JOIN parent_child pc ON c.id = pc.child_id 
-      LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
-      WHERE c.active_status = '1' AND c.firstname ILIKE $1
-    `;
-    const q2 = `
-      ${baseSelect}
-      FROM parent p
-      LEFT JOIN parent_child pc ON p.id = pc.parent_id 
-      LEFT JOIN child c ON pc.child_id = c.id AND c.active_status = '1'
-      WHERE p.active_status = '1' AND p.firstname ILIKE $1
-    `;
-    try {
-      // ADDED ORDER BY HERE
-      const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
-      const res = await getClient().query(finalQuery, [`%${firstname}%`]);
-      return res.rows;
-    } catch (error) { console.error(error); return []; }
-};
+// export const searchByFirstname = async (firstname: string) => {
+//     const q1 = `
+//       ${baseSelect}
+//       FROM child c
+//       LEFT JOIN parent_child pc ON c.id = pc.child_id 
+//       LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
+//       WHERE c.active_status = '1' AND c.firstname ILIKE $1
+//     `;
+//     const q2 = `
+//       ${baseSelect}
+//       FROM parent p
+//       LEFT JOIN parent_child pc ON p.id = pc.parent_id 
+//       LEFT JOIN child c ON pc.child_id = c.id AND c.active_status = '1'
+//       WHERE p.active_status = '1' AND p.firstname ILIKE $1
+//     `;
+//     try {
+//       // ADDED ORDER BY HERE
+//       const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
+//       const res = await getClient().query(finalQuery, [`%${firstname}%`]);
+//       return res.rows;
+//     } catch (error) { console.error(error); return []; }
+// };
 
-export const searchByHN = async (hn: string) => {
-    const q1 = `
-      ${baseSelect}
-      FROM child c
-      LEFT JOIN parent_child pc ON c.id = pc.child_id 
-      LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
-      WHERE c.active_status = '1' AND c.hn_number like $1
-    `;
-    const q2 = `
-      ${baseSelect}
-      FROM parent p
-      LEFT JOIN parent_child pc ON p.id = pc.parent_id 
-      LEFT JOIN child c ON pc.child_id = c.id AND c.active_status = '1'
-      WHERE p.active_status = '1' AND p.hn_number like $1
-    `;
-    try {
-      // ADDED ORDER BY HERE
-      const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
-      const res = await getClient().query(finalQuery, [`%${hn}%`]);
-      return res.rows;
-    } catch (error) { console.error(error); return []; }
-};
+// export const searchByHN = async (hn: string) => {
+//     const q1 = `
+//       ${baseSelect}
+//       FROM child c
+//       LEFT JOIN parent_child pc ON c.id = pc.child_id 
+//       LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
+//       WHERE c.active_status = '1' AND c.hn_number like $1
+//     `;
+//     const q2 = `
+//       ${baseSelect}
+//       FROM parent p
+//       LEFT JOIN parent_child pc ON p.id = pc.parent_id 
+//       LEFT JOIN child c ON pc.child_id = c.id AND c.active_status = '1'
+//       WHERE p.active_status = '1' AND p.hn_number like $1
+//     `;
+//     try {
+//       // ADDED ORDER BY HERE
+//       const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
+//       const res = await getClient().query(finalQuery, [`%${hn}%`]);
+//       return res.rows;
+//     } catch (error) { console.error(error); return []; }
+// };
 
-export const searchByLastname = async (lastname: string) => {
-    const q1 = `
-      ${baseSelect}
-      FROM child c
-      LEFT JOIN parent_child pc ON c.id = pc.child_id 
-      LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
-      WHERE c.active_status = '1' AND c.lastname ILIKE $1
-    `;
-    const q2 = `
-      ${baseSelect}
-      FROM parent p
-      LEFT JOIN parent_child pc ON p.id = pc.parent_id 
-      LEFT JOIN child c ON pc.child_id = c.id AND c.active_status = '1'
-      WHERE p.active_status = '1' AND p.lastname ILIKE $1
-    `;
-    try {
-      // ADDED ORDER BY HERE
-      const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
-      const res = await getClient().query(finalQuery, [`%${lastname}%`]);
-      return res.rows;
-    } catch (error) { console.error(error); return []; }
-};
+// export const searchByLastname = async (lastname: string) => {
+//     const q1 = `
+//       ${baseSelect}
+//       FROM child c
+//       LEFT JOIN parent_child pc ON c.id = pc.child_id 
+//       LEFT JOIN parent p ON pc.parent_id = p.id AND p.active_status = '1'
+//       WHERE c.active_status = '1' AND c.lastname ILIKE $1
+//     `;
+//     const q2 = `
+//       ${baseSelect}
+//       FROM parent p
+//       LEFT JOIN parent_child pc ON p.id = pc.parent_id 
+//       LEFT JOIN child c ON pc.child_id = c.id AND c.active_status = '1'
+//       WHERE p.active_status = '1' AND p.lastname ILIKE $1
+//     `;
+//     try {
+//       // ADDED ORDER BY HERE
+//       const finalQuery = `${q1} UNION ${q2} ORDER BY child_fname ASC`;
+//       const res = await getClient().query(finalQuery, [`%${lastname}%`]);
+//       return res.rows;
+//     } catch (error) { console.error(error); return []; }
+// };
 
 // ==========================================
 // 2. INSERT ENTITIES (Updated with New Fields)
