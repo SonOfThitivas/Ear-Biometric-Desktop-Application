@@ -386,24 +386,18 @@ def expand_bbox(bbox, scale, img_width, img_height):
     return (max(0, int(cx - new_w / 2)), max(0, int(cy - new_h / 2)), 
             min(img_width - 1, int(cx + new_w / 2)), min(img_height - 1, int(cy + new_h / 2)))
 
-def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bbox):
+def save_worker_thread(color_img, depth_img, folder_path, timestamp, hn, mode, bbox):
     try:
         logging.info(f"Save Worker Started for TS: {timestamp}")
 
-        # --- NEW DATE FORMATTING LOGIC ---
-        now_utc = datetime.now(timezone.utc)
-        tz_offset = timedelta(hours=7)
-        now_bkk = now_utc + tz_offset
-        formatted_date = now_bkk.strftime("%d-%m-%Y_%H-%M-%S")
-        
-        folder_path = f"{PATIENTS_FOLDER}/{hn}_{mode}/{formatted_date}"
-        os.makedirs(folder_path, exist_ok=True)
-        # --------------------------------
-
-        # 1. Save Raw Images
+        # 1. Save Raw Images (To general folders)
         cv2.imwrite(f"{RGB_FOLDER}/rgb_{timestamp}.jpg", color_img)
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_img, alpha=0.03), cv2.COLORMAP_JET)
         cv2.imwrite(f"{DEPTH_FOLDER}/depth_{timestamp}.png", depth_colormap)
+
+        # 2. Save Raw Images (To Patient Folder)
+        cv2.imwrite(f"{folder_path}/rgb_{timestamp}.jpg", color_img)
+        cv2.imwrite(f"{folder_path}/depth_{timestamp}.png", depth_colormap)
 
         if DEBUG_FOLDER:
             cv2.imwrite(f"{DEBUG_FOLDER}/raw_{timestamp}.jpg", color_img)
@@ -424,10 +418,8 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
                         mask = cv2.resize(mask_data, (ear_crop.shape[1], ear_crop.shape[0]))
                         mask_binary = (mask > 0.5).astype(np.uint8) * 255
                         
-                        # --- UPDATED: Pass raw crop + mask to robust alignment ---
                         embedding_input = align_ear_robust(ear_crop, mask_binary)
                         
-                        # Debug: Save clean background check
                         if DEBUG_FOLDER:
                             check_bg, _ = clean_mask_background_soft(ear_crop, mask_binary)
                             cv2.imwrite(f"{DEBUG_FOLDER}/clean_bg_{timestamp}.png", check_bg)
@@ -439,7 +431,6 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
                 cv2.imwrite(f"{RGB_FOLDER}/ear_{timestamp}.png", embedding_input)
                 cv2.imwrite(f"{folder_path}/ear_{timestamp}.png", embedding_input)
 
-                # --- DEBUG: Save HOG Input (Pre-processed) ---
                 if DEBUG_FOLDER:
                     try:
                         debug_input = apply_preprocessing(embedding_input)
@@ -452,11 +443,7 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
                 
                 if embedding is not None:
                     embed_list = embedding.tolist()
-
-                    # with open("file.txt", "w") as debug_file:
-                    #     debug_file.write(str(embed_list))
                     
-                    with open(f"{EMBED_FOLDER}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
                     with open(f"{EMBED_FOLDER}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
                     with open(f"{folder_path}/embed_{timestamp}.json", "w") as f: json.dump(embed_list, f)
                     
@@ -468,7 +455,6 @@ def save_worker_thread(color_img, depth_img, points_ply, timestamp, hn, mode, bb
                     return
 
         logging.warning("Save Worker: No embedding generated.")
-        # USE SAFE PRINT
         safe_print({"event": "saved", "status": "no_embedding"})
 
     except Exception as e:
@@ -498,13 +484,42 @@ def main():
                 if save_flag:
                     timestamp = int(time.time())
                     safe_print({"info": "Saving in background..."})
+                    
+                    # --- 1. Folder Creation (Moved here so PLY can use it) ---
+                    now_utc = datetime.now(timezone.utc)
+                    tz_offset = timedelta(hours=7)
+                    now_bkk = now_utc + tz_offset
+                    formatted_date = now_bkk.strftime("%d-%m-%Y_%H-%M-%S")
+                    
+                    folder_path = f"{PATIENTS_FOLDER}/{hn_value}_{mode_value}/{formatted_date}"
+                    os.makedirs(folder_path, exist_ok=True)
+
+                    # --- 2. Generate and Save PLY IMMEDIATELY ---
+                    # (RealSense frames get deleted at the end of the loop, 
+                    # so we MUST extract the pointcloud right here!)
+                    try:
+                        pc.map_to(color_frame)
+                        points = pc.calculate(depth_frame)
+                        
+                        # Save to Patient Folder
+                        ply_patient_path = f"{folder_path}/model_{timestamp}.ply"
+                        points.export_to_ply(ply_patient_path, color_frame)
+                        
+                        # Save to General Folder
+                        if PLY_FOLDER:
+                            points.export_to_ply(f"{PLY_FOLDER}/model_{timestamp}.ply", color_frame)
+                            
+                        logging.info(f"PLY saved successfully to {ply_patient_path}")
+                    except Exception as ply_err:
+                        log_error(ply_err, "PLY Generation")
+
+                    # --- 3. Start Image/Embedding Worker ---
                     t = threading.Thread(
                         target=save_worker_thread,
-                        args=(color_image.copy(), depth_image.copy(), None, timestamp, hn_value, mode_value, last_bbox)
+                        args=(color_image.copy(), depth_image.copy(), folder_path, timestamp, hn_value, mode_value, last_bbox)
                     )
                     t.start()
-                    t.join()
-                    # save_worker_thread(color_image.copy(), depth_image.copy(), None, timestamp, hn_value, mode_value, last_bbox)
+                    t.join() 
                     save_flag = False
 
                 frame_count += 1

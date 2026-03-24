@@ -51,9 +51,9 @@ app.whenReady().then(async () => {
         shell.beep();
     });
     // --- SELECTS ---
-    ipcMain.handle('db:get-active-children', async () => {
-        return await db.getAllActiveChildren();
-    });
+    // ipcMain.handle('db:get-active-children', async () => {
+    //     return await db.getAllActiveChildren();
+    // });
 
   // ipcMain.handle('db:search-firstname', async (_event, firstname: string) => {
   //   return await db.searchByFirstname(firstname);

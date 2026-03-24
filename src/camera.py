@@ -251,10 +251,28 @@ def main():
                 depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
                 cv2.imwrite(f"{DEPTH_FOLDER}/depth_{timestamp}.png", depth_colormap)
                 
-                pc.map_to(color_frame)
-                points = pc.calculate(depth_frame)
-                ply_filename = f"{PLY_FOLDER}/model_{timestamp}.ply"
-                points.export_to_ply(ply_filename, color_frame)
+                # 3. Generate & Save PLY Pointcloud
+                try:
+                    print(json.dumps({"info": "Starting PLY generation..."}), flush=True)
+                    
+                    pc.map_to(color_frame)
+                    points = pc.calculate(depth_frame)
+                    ply_filename = f"{PLY_FOLDER}/model_{timestamp}.ply"
+                    points.export_to_ply(ply_filename, color_frame)
+                    
+                    # Verify the OS actually wrote it to the disk
+                    if os.path.exists(ply_filename):
+                        file_size = os.path.getsize(ply_filename)
+                        print(json.dumps({
+                            "info": f"SUCCESS: PLY generated! Saved at {ply_filename} (Size: {file_size} bytes)"
+                        }), flush=True)
+                    else:
+                        print(json.dumps({
+                            "error": f"FAIL: Code ran, but file is missing from {ply_filename}"
+                        }), flush=True)
+
+                except Exception as ply_err:
+                    print(json.dumps({"error": f"PLY Generation CRASHED: {str(ply_err)}"}), flush=True)
                 
                 # --- [DEBUG 1/3] Save Raw Image ---
                 if DEBUG_FOLDER:

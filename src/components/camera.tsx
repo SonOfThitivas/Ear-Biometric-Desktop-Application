@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import useCameraSocket from "../hooks/useCameraSocket";
-import { Skeleton } from "@mantine/core";
+import { Skeleton, Button, Group } from "@mantine/core";
 // interface distance range
 import { 
     IDistanceRange,
@@ -127,14 +127,22 @@ export default function Camera(
 
   return (
     <div>
-      <div style={{ marginBottom: "10px" }}>
-        <button onClick={startCamera} style={{ marginRight: "10px", padding: "8px 16px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px" }}>
-          Start Camera
-        </button>
-        <button onClick={stopCamera} style={{ padding: "8px 16px", backgroundColor: "#f44336", color: "white", border: "none", borderRadius: "4px" }}>
-          Stop Camera
-        </button>
-      </div>
+      <Group mb="10px">
+        <Button
+          onClick={startCamera}
+          color="green"
+          radius="sm"
+          >
+            Start Camera
+        </Button>
+        <Button
+          onClick={stopCamera}
+          color="red"
+          radius="sm"
+          >
+            Stop Camera
+        </Button>
+      </Group>
     
       <div style={{ position: "relative", width: "640px", height:"480px", maxWidth: "100%", border: "2px solid #333" }}>
         <Skeleton visible={loading} pos={"relative"} w={"100%"} h={"100%"}>

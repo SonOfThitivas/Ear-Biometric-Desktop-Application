@@ -20,6 +20,7 @@ import {
     FcConferenceCall, 
     FcSettings,
     FcClock,
+    FcRules
 } from "react-icons/fc";
 
 import Identify from './identify';
@@ -30,6 +31,7 @@ import Update from './update'
 import Registry from './registry';
 import EditRecord from './editRecord';
 import Activity from './activity';
+import Manual from './manual';
 
 const App = () => {
     const [active, setActive] = React.useState<string>("Identify")
@@ -47,6 +49,7 @@ const App = () => {
         {label: "Record", child:<Record tab={active} />, icon:<FcConferenceCall size={30}/>},
         {label: "Edit Record", child: <EditRecord operatorNumber={operatorNumber} />, icon:<FcSettings size={30}/>},
         {label: "Activity", child: <Activity tab={active}/>, icon:<FcClock size={30}/>},
+        {label: "Manual", child: <Manual />, icon: <FcRules size={30}/>}
     ]
 
     return (
