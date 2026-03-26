@@ -85,7 +85,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
         handleStartCapture(voiceLoad)
         setStep(1)
         setCaptures([]);
-        setCountdown(2);
+        setCountdown(1);
         setIsCapturing(true);
         setLoading(true)
     };
@@ -93,7 +93,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     // Reset countdown when ear leaves zone
     React.useEffect(() => {
         if (!isCapturing) return;
-        if (!insideZone) setCountdown(2);
+        if (!insideZone) setCountdown(1);
     }, [insideZone, isCapturing]);
 
     // Drive countdown every second
@@ -122,7 +122,7 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
     }
     setLoading(false)
     capture(hn, patient);
-    setCountdown(2);
+    setCountdown(1);
   }, [countdown, isCapturing, insideZone, capture, hn, patient]);
 
   // Store each capture result

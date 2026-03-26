@@ -96,7 +96,7 @@ export default function Identify({ operatorNumber }: IdentifyProps) {
         if (isCapturing) return
         handleStartDetection(voiceLoad)
         setChildParentRecord(recordInit)
-        setCountdown(2)
+        setCountdown(1)
         setIsCapturing(true)
         setVector(null)
         setHasCaptured(false);
@@ -107,7 +107,7 @@ export default function Identify({ operatorNumber }: IdentifyProps) {
     React.useEffect(() => {
         if (!isCapturing) return
         if (!insideZone) {
-            setCountdown(2)
+            setCountdown(1)
             return
         } 
         if (countdown <= 0) return
