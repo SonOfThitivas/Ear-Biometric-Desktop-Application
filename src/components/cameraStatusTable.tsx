@@ -39,7 +39,7 @@ export default function CameraStatusTable({ isCapturing, cameraData, patientMode
         if (dist >= minDist.current && dist <= maxDist.current) {
             return { bg: 'green.5', content: <Text fw={700}>Okay</Text> };
         } else if (dist > maxDist.current) {
-            const diff = ((dist - 0.3) * 100).toFixed(2); // Convert to cm
+            const diff = ((dist - maxDist.current) * 100).toFixed(2); // Convert to cm
             return { bg: 'red.5', content: <Text fw={700}>-{diff} cm.</Text> };
         } else {
             const diff = ((minDist.current - dist) * 100).toFixed(2); // Convert to cm
