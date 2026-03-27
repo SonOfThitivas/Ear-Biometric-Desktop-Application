@@ -23,6 +23,7 @@ import {
     handleStartDetection,
     handleDetectionFinish,
 } from './components/voicePlayer'
+import ScanTime from './components/scanTime'
 
 const recordInit: IRecordChildParent = {
     child_hn: "",
@@ -65,6 +66,9 @@ export default function Identify({ operatorNumber }: IdentifyProps) {
     const bgHori = React.useRef<string>("white")
     const bgVert = React.useRef<string>("white")
 
+    // TIMING
+    const [startTime, setStartTime] = React.useState<Date | null>(null)
+
     const handleReset = () => {
         setInsideZone(false)
         setIsCapturing(false)
@@ -78,6 +82,9 @@ export default function Identify({ operatorNumber }: IdentifyProps) {
         bgDist.current = "white"
         bgHori.current = "white"
         bgVert.current = "white"
+
+        // TIMING TO NULL
+        setStartTime(null)
 
         notifications.show({
             id: "identify-reset-id",
@@ -329,16 +336,26 @@ export default function Identify({ operatorNumber }: IdentifyProps) {
                 </Box>
 
                 <Stack pl={"xs"} gap={"sm"} align="stretch" justify="flex-start">
+
+                    {/* GUIDELINE  */}
                     <Title order={4} ta={"center"}>Guideline</Title>
-                    
-                    {/* ✅ New Table Component */}
                     <CameraStatusTable 
                         isCapturing={isCapturing} 
                         cameraData={cameraData}
                         patientMode={patient} 
                     />
 
+                    {/* TOTAL DETECTION TIME */}
+                    <Title order={4} ta={"center"}>Total Detection Time</Title>
+                    <ScanTime
+                        isCapturing={isCapturing} 
+                        startTime={startTime}
+                        setStartTime={setStartTime}
+                    />
+                    
+
                 </Stack>
+
             </Flex>
 
             <CaptureNoti 
