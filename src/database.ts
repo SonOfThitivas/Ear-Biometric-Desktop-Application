@@ -501,7 +501,7 @@ export const findClosestChild = async (vector: number[], op_number: string) => {
         FROM identity_vector_child iv
         JOIN child c ON iv.child_id = c.id
         WHERE iv.active_status = '1'
-        AND LEAST(iv.vector_1 <=> $1,iv.vector_2 <=> $1,iv.vector_3 <=> $1 ) < 0.3
+        AND LEAST(iv.vector_1 <=> $1,iv.vector_2 <=> $1,iv.vector_3 <=> $1 ) < 0.2
         ORDER BY distance ASC
         LIMIT 1;
     `;
@@ -528,7 +528,7 @@ export const findClosestParent = async (vector: number[], op_number: string) => 
         FROM identity_vector_parent iv
         JOIN parent p ON iv.parent_id = p.id
         WHERE iv.active_status = '1'
-        AND LEAST(iv.vector_1 <=> $1,iv.vector_2 <=> $1,iv.vector_3 <=> $1 ) < 0.3
+        AND LEAST(iv.vector_1 <=> $1,iv.vector_2 <=> $1,iv.vector_3 <=> $1 ) < 0.2
         ORDER BY distance ASC
         LIMIT 1;
     `;
