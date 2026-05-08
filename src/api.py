@@ -1,9 +1,14 @@
 from fastapi import FastAPI, HTTPException, Body
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Any
 import database as db
 import uvicorn
 from contextlib import asynccontextmanager
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -13,6 +18,15 @@ async def lifespan(app: FastAPI):
     # Cleanup (if needed)
 
 app = FastAPI(title="Ear Biometric DB API", lifespan=lifespan)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 # --- Pydantic Models ---
 
@@ -162,4 +176,4 @@ def deactivate_parent(hn: str, op_number: str):
     return db.deactivate_parent(hn, op_number)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=os.getenv("VITE_PYTHON_DATABASE_API_URL", 8000))
