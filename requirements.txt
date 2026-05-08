@@ -6,3 +6,6 @@ Pillow
 onnxruntime
 python-dotenv
 psycopg2-binary
+fastapi
+uvicorn
+pydantic
