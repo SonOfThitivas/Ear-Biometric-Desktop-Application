@@ -5,3 +5,4 @@ ultralytics
 Pillow
 onnxruntime
 python-dotenv
+psycopg2-binary
