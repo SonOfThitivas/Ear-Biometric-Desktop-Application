@@ -14,9 +14,7 @@ import { AiOutlineEnter } from "react-icons/ai";
 import useCameraSocket from "../hooks/useCameraSocket";
 import { notifications, Notifications } from '@mantine/notifications';
 import axios from 'axios';
-
-// Base URL for the Python API
-const API_URL = import.meta.env.VITE_PYTHON_DATABASE_API_URL || 'http://localhost:8000';
+import { api_url } from '../interface/IApi';
 
 function Login(
     {setOperatorNumberParent, setRoleParent}: // <--- ADDED setRoleParent
@@ -59,7 +57,7 @@ function Login(
 
             const connectDB = async () => {
                 try {
-                    const response = await axios.get(`${API_URL}/api/connect`);
+                    const response = await axios.get(`${api_url.database_api_url}/api/connect`);
                     const res = response.data;
                     
                     if (res.success) {
@@ -163,7 +161,7 @@ function Login(
             console.log("🚀 [UI] Sending login request...");
             
             // Call Python REST API
-            const response = await axios.post(`${API_URL}/api/auth/login`, {
+            const response = await axios.post(`${api_url.database_api_url}/api/auth/login`, {
                 username: username,
                 password: pass
             });
