@@ -17,6 +17,8 @@ import useCameraSocket from "./hooks/useCameraSocket";
 import PatientModeSelector from "./components/patientMode";
 import CaptureNoti from "./components/captureNoti";
 import { notifications } from '@mantine/notifications'
+import axios from 'axios'
+import { api_url } from './interface/IApi'
 import { useAudioPlayer } from "react-use-audio-player";
 // voice hook
 import { 
@@ -209,24 +211,21 @@ export default function UpdatePage({ operatorNumber }: UpdatePageProps) {
 
     try {
       let result;
+      const payload = {
+        hn,
+        v1,
+        v2,
+        v3,
+        path: folderPath,
+        op_number: operatorNumber
+      };
+
       if (patientMode === "child") {
-        result = await window.electronAPI.insertChildVectors(
-          hn,
-          v1,
-          v2,
-          v3,
-          folderPath,
-          operatorNumber
-        );
+        const response = await axios.post(`${api_url.database_api_url}/api/children/vectors`, payload);
+        result = response.data;
       } else {
-        result = await window.electronAPI.insertParentVectors(
-          hn,
-          v1,
-          v2,
-          v3,
-          folderPath,
-          operatorNumber
-        );
+        const response = await axios.post(`${api_url.database_api_url}/api/parents/vectors`, payload);
+        result = response.data;
       }
 
       if (result.success) {
