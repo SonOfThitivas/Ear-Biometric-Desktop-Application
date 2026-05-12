@@ -7,6 +7,8 @@ import uvicorn
 from contextlib import asynccontextmanager
 import os
 from urllib.parse import urlparse
+import asyncio
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,10 +16,23 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Connect to DB on startup
-    db.connect_db()
+    connected = False
+    while not connected:
+        try:
+            print("🔄 [DB] Attempting to connect to database...")
+            result = db.connect_db()
+            if result.get("success"):
+                connected = True
+                print("✅ [DB] Connected to database successfully.")
+            else:
+                print(f"❌ [DB] Connection failed: {result.get('message')}. Retrying in 5 seconds...")
+                await asyncio.sleep(5)
+        except Exception as e:
+            print(f"⚠️ [DB] Connection error: {e}. Retrying in 5 seconds...")
+            await asyncio.sleep(5)
     yield
     # Cleanup (if needed)
-
+    
 app = FastAPI(title="Ear Biometric DB API", lifespan=lifespan)
 
 # Add CORS middleware
