@@ -20,6 +20,8 @@ import PatientModeSelector from './components/patientMode';
 import RecordFill from './components/recordFill';
 import { MdChildCare,  } from "react-icons/md";
 import { IoIosPerson, } from "react-icons/io";
+import axios from 'axios';
+import { api_url } from './interface/IApi';
 
 function EditRecord({operatorNumber}:{operatorNumber:string}) {
     const [step, setStep] = React.useState<'identify' | 'edit'>('identify');
@@ -59,11 +61,9 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
         try {
             // 1. Select the correct API based on the patient mode (child vs parent)
             let record: any = null;
-            if (patient === "child") {
-                record = await window.electronAPI.getChildByHN(values.hn);
-            } else {
-                record = await window.electronAPI.getParentByHN(values.hn);
-            }
+            const endpoint = patient === "child" ? `/api/children/hn/${values.hn}` : `/api/parents/hn/${values.hn}`;
+            const response = await axios.get(`${api_url.database_api_url}${endpoint}`);
+            record = response.data;
             
             // 2. Check if a record was returned (it will be null if not found)
             if (record) {
@@ -100,11 +100,11 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                     autoClose:4000,
                 })
             }
-        } catch (err) {
+        } catch (err: any) {
             notifications.show({
                 id: "edit-record-error-id-hn",
                 title:"Error",
-                message: err.message,
+                message: err.response?.data?.detail || err.message,
                 color:"red",
                 bg:"red.1",
                 autoClose:4000,
@@ -139,19 +139,13 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
             }
             console.log("[Data] ", data)
             let res:{success:boolean, message?:string, error?:string}
-            if (patient === "child"){
-                res = await window.electronAPI.updateChild(
-                    hn,
-                    data,
-                    operatorNumber,
-                )
-            } else {
-                res = await window.electronAPI.updateParent(
-                    hn,
-                    data,
-                    operatorNumber,
-                )
-            }
+            
+            const endpoint = patient === "child" ? `/api/children/${hn}` : `/api/parents/${hn}`;
+            const response = await axios.put(`${api_url.database_api_url}${endpoint}`, {
+                data: data,
+                op_number: operatorNumber
+            });
+            res = response.data;
 
             if (res.success) {
                 notifications.show({
@@ -172,11 +166,11 @@ function EditRecord({operatorNumber}:{operatorNumber:string}) {
                     autoClose:4000,
                 })
             }
-        } catch (err) {
+        } catch (err: any) {
             notifications.show({
                 id: "edit-record-edit-error-id-2",
                 title: "Error!",
-                message: err.message,
+                message: err.response?.data?.detail || err.message,
                 color: "red",
                 bg: "red.1",
                 autoClose:4000,

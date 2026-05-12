@@ -21,6 +21,8 @@ import { notifications, Notifications } from '@mantine/notifications'
 import { IActivityCategory } from './interface/IActivityCategory'
 import { TbSortAscendingNumbers, TbSortDescendingNumbers  } from "react-icons/tb";
 import dayjs from 'dayjs'
+import axios from 'axios';
+import { api_url } from './interface/IApi';
 
 function Activity(
     {tab}:
@@ -66,7 +68,11 @@ function Activity(
         // no username and checkbox item
         try {
             // fetching
-            const res = await window.electronAPI.getActivityLogs(payload)
+            const response = await axios.get(`${api_url.database_api_url}/api/logs`, {
+                params: { ordering: payload.ordering }
+            });
+            const res = response.data;
+
             // fail
             if (res.length === 0){
                 throw Error("Fail to get data. Please, try again.")

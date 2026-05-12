@@ -13,6 +13,8 @@ import {
 } from '@mantine/core'
 import { TbAlertCircle, TbCheck, TbTrash, TbLinkOff } from "react-icons/tb";
 import PatientModeSelector from './components/patientMode';
+import axios from 'axios';
+import { api_url } from './interface/IApi';
 
 interface DeleteProps {
     role: string;
@@ -58,11 +60,17 @@ function Delete({ role, operatorNumber }: DeleteProps) {
         try {
             let result;
             if (role === 'admin') {
-                if (targetType === 'child') result = await window.electronAPI.hardDeleteChild(hn, operatorNumber);
-                else result = await window.electronAPI.hardDeleteParent(hn, operatorNumber);
+                const endpoint = targetType === 'child' ? `/api/children/${hn}` : `/api/parents/${hn}`;
+                const response = await axios.delete(`${api_url.database_api_url}${endpoint}`, {
+                    params: { op_number: operatorNumber }
+                });
+                result = response.data;
             } else {
-                if (targetType === 'child') result = await window.electronAPI.deactivateChild(hn, operatorNumber);
-                else result = await window.electronAPI.deactivateParent(hn, operatorNumber);
+                const endpoint = targetType === 'child' ? `/api/deactivate/child/${hn}` : `/api/deactivate/parent/${hn}`;
+                const response = await axios.post(`${api_url.database_api_url}${endpoint}`, null, {
+                    params: { op_number: operatorNumber }
+                });
+                result = response.data;
             }
 
             if (result.success) {
@@ -73,7 +81,7 @@ function Delete({ role, operatorNumber }: DeleteProps) {
             }
 
         } catch (err: any) {
-            setAlert({ show: true, type: 'error', msg: err.message || "System Error." });
+            setAlert({ show: true, type: 'error', msg: err.response?.data?.detail || err.message || "System Error." });
         } finally {
             setLoading(false);
         }
@@ -89,7 +97,10 @@ function Delete({ role, operatorNumber }: DeleteProps) {
         setLoading(true);
 
         try {
-            const result = await window.electronAPI.unlinkParentChild(parentHn, childHn, operatorNumber);
+            const response = await axios.delete(`${api_url.database_api_url}/api/link/parent-child`, {
+                params: { parent_hn: parentHn, child_hn: childHn, op_number: operatorNumber }
+            });
+            const result = response.data;
 
             if (result.success) {
                 setAlert({ show: true, type: 'success', msg: `Successfully unlinked ${parentHn} and ${childHn}.` });
@@ -100,7 +111,7 @@ function Delete({ role, operatorNumber }: DeleteProps) {
             }
 
         } catch (err: any) {
-            setAlert({ show: true, type: 'error', msg: err.message || "System Error." });
+            setAlert({ show: true, type: 'error', msg: err.response?.data?.detail || err.message || "System Error." });
         } finally {
             setLoading(false);
         }
