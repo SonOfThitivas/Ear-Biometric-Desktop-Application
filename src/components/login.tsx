@@ -59,7 +59,7 @@ function Login(
 
             const connectDB = async () => {
                 try {
-                    const response = await axios.get(`${API_URL}/connect`);
+                    const response = await axios.get(`${API_URL}/api/connect`);
                     const res = response.data;
                     
                     if (res.success) {
@@ -163,7 +163,7 @@ function Login(
             console.log("🚀 [UI] Sending login request...");
             
             // Call Python REST API
-            const response = await axios.post(`${API_URL}/auth/login`, {
+            const response = await axios.post(`${API_URL}/api/auth/login`, {
                 username: username,
                 password: pass
             });
