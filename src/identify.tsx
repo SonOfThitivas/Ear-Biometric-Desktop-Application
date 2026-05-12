@@ -17,6 +17,8 @@ import useCameraSocket from "./hooks/useCameraSocket"
 import PatientModeSelector from './components/patientMode'
 import CaptureNoti from './components/captureNoti'
 import { notifications } from '@mantine/notifications'
+import axios from 'axios'
+import { api_url } from './interface/IApi'
 
 import { useAudioPlayer } from 'react-use-audio-player'
 import { 
@@ -187,21 +189,21 @@ export default function Identify({ operatorNumber }: IdentifyProps) {
             }
 
             console.log(`👶🧑 [Identify] Patient mode: ${patient}`);
-            console.log("📤 [Identify] Sending vector to Electron...");
+            console.log("📤 [Identify] Sending vector to Python API...");
 
-            // ✅ Call Electron backend
-            if (patient === "child") {
-                console.log("➡️ [Identify] Calling findClosestChild()");
-                res = await window.electronAPI.findClosestChild(vector, operatorNumber);
-            } else {
-                console.log("➡️ [Identify] Calling findClosestParent()");
-                res = await window.electronAPI.findClosestParent(vector, operatorNumber);
-            }
+            // ✅ Call Python API
+            const identifyUrl = patient === "child" ? "/api/identify/child" : "/api/identify/parent";
+            console.log(`➡️ [Identify] Calling ${identifyUrl}`);
+            const identifyRes = await axios.post(`${api_url.database_api_url}${identifyUrl}`, {
+                vector,
+                op_number: operatorNumber
+            });
+            res = identifyRes.data;
 
-            console.log("✅ [Identify] Electron returned:", res);
+            console.log("✅ [Identify] API returned:", res);
 
             if (!res || !res.hn) {
-                console.error("❌ [Identify] Electron returned invalid result:", res);
+                console.error("❌ [Identify] API returned invalid result:", res);
                 throw new Error("Matching failed. Please try again.");
             }
 
@@ -209,7 +211,8 @@ export default function Identify({ operatorNumber }: IdentifyProps) {
             console.log("📥 [Identify] Searching DB for HN:", hn);
 
             // ✅ Query DB
-            const data = await window.electronAPI.searchByHN(hn);
+            const searchRes = await axios.get(`${api_url.database_api_url}/api/search/hn/${hn}`);
+            const data = searchRes.data;
 
             console.log("📄 [Identify] DB returned:", data);
 
