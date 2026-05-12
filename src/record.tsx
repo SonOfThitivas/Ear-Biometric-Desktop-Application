@@ -14,6 +14,8 @@ import TableRecord from './components/tableRecord'
 import { notifications, Notifications } from '@mantine/notifications'
 import { useDebouncedCallback } from '@mantine/hooks';
 import PatientModeSelector from './components/patientMode'
+import axios from 'axios'
+import { api_url } from './interface/IApi'
 
 function Record({
     tab="Record"
@@ -76,7 +78,12 @@ function Record({
             console.log(`🚀 [UI] Searching Multi: HN="${searchHn}", First="${searchFirst}", Last="${searchLast}"`);
             
             // Call API with the determined values
-            const res = await window.electronAPI.searchMultiCriteria(searchHn, searchFirst, searchLast);
+            const response = await axios.post(`${api_url.database_api_url}/api/search/multi`, {
+                hn: searchHn,
+                firstname: searchFirst,
+                lastname: searchLast
+            });
+            const res = response.data;
 
             console.log(`✅ [UI] Found ${res.length} records`);
             console.log(res)
