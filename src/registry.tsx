@@ -17,6 +17,8 @@ import PatientModeSelector from "./components/patientMode";
 import { useForm } from "@mantine/form"
 import "dayjs"
 import { notifications, Notifications } from '@mantine/notifications';
+import axios from 'axios';
+import { api_url } from './interface/IApi';
 
 interface RegistryProps {
     operatorNumber: string;
@@ -272,15 +274,21 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 // Add op_number to the call
                 let insertRes;
                 if (patient === "child") {
-                    insertRes = await window.electronAPI.insertChild(payload, operatorNumber);
+                    const response = await axios.post(`${api_url.database_api_url}/api/children/insert`, payload, {
+                        params: { op_number: operatorNumber }
+                    });
+                    insertRes = response.data;
                 } else {
-                    insertRes = await window.electronAPI.insertParent(payload, operatorNumber);
+                    const response = await axios.post(`${api_url.database_api_url}/api/parents/insert`, payload, {
+                        params: { op_number: operatorNumber }
+                    });
+                    insertRes = response.data;
                 }
 
                 if (insertRes.success) {
                     insertSuccess = true;
                 } else {
-                    const errString = insertRes.error?.toLowerCase() || "";
+                    const errString = (insertRes.error || insertRes.message || "").toLowerCase();
                     
                     // 👇 FIX IS HERE: Only ignore duplicate if we have a relation to link!
                     if ((errString.includes("duplicate") || errString.includes("unique") || errString.includes("exists")) && hasRelation) {
@@ -290,7 +298,7 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                         // If NO relation provided, this is a real error!
                         throw new Error(`The HN "${hn}" is already registered.`);
                     } else {
-                        throw new Error(insertRes.error || "Registration unsuccessfully.");
+                        throw new Error(insertRes.error || insertRes.message || "Registration unsuccessfully.");
                     }
                 }
             } else {
@@ -309,18 +317,21 @@ const Registry = ({ operatorNumber }: RegistryProps) => {
                 const p_hn = patient === "child" ? record.parent_hn : hn as string;
                 const c_hn = patient === "child" ? hn as string : record.child_hn;
 
-                const linkRes = await window.electronAPI.linkParentChild(p_hn, c_hn);
+                const response = await axios.post(`${api_url.database_api_url}/api/link/parent-child`, null, {
+                    params: { parent_hn: p_hn, child_hn: c_hn }
+                });
+                const linkRes = response.data;
 
                 if (linkRes.success) {
                     linkMessage = " & Relation Linked!";
                 } else {
-                    const linkErr = linkRes.error?.toLowerCase() || "";
+                    const linkErr = (linkRes.error || linkRes.message || "").toLowerCase();
                     if (linkErr.includes("duplicate") || linkErr.includes("unique")) {
                         linkMessage = " (Relation already linked)";
                     } else {
                         // If we just registered them, but linking failed, warn the user
                         // But don't throw an error if the registration part was actually new
-                        throw new Error(`Patient saved, but linking failed: ${linkRes.error}`);
+                        throw new Error(`Patient saved, but linking failed: ${linkRes.error || linkRes.message}`);
                     }
                 }
             }
