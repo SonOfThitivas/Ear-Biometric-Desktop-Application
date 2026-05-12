@@ -13,24 +13,41 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Connect to DB on startup
+async def connect_db_task():
     connected = False
     while not connected:
         try:
             print("🔄 [DB] Attempting to connect to database...")
-            result = db.connect_db()
+            # Run sync DB connect in a thread to keep event loop responsive
+            result = await asyncio.to_thread(db.connect_db)
             if result.get("success"):
                 connected = True
                 print("✅ [DB] Connected to database successfully.")
             else:
                 print(f"❌ [DB] Connection failed: {result.get('message')}. Retrying in 5 seconds...")
                 await asyncio.sleep(5)
+        except asyncio.CancelledError:
+            print("🛑 [DB] Connection task cancelled.")
+            break
         except Exception as e:
             print(f"⚠️ [DB] Connection error: {e}. Retrying in 5 seconds...")
-            await asyncio.sleep(5)
+            try:
+                await asyncio.sleep(5)
+            except asyncio.CancelledError:
+                break
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start the connection loop in the background.
+    # This allows the server to finish starting up and remain responsive to Ctrl+C.
+    task = asyncio.create_task(connect_db_task())
     yield
+    # Cleanup: Cancel the task if it's still running
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
     # Cleanup (if needed)
     
 app = FastAPI(title="Ear Biometric DB API", lifespan=lifespan)
