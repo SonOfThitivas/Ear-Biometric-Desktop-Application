@@ -214,6 +214,14 @@ def deactivate_child(hn: str, op_number: str):
 def deactivate_parent(hn: str, op_number: str):
     return db.deactivate_parent(hn, op_number)
 
+@router.delete("/children/{hn}")
+def hard_delete_child(hn: str, op_number: str):
+    return db.hard_delete_child(hn, op_number)
+
+@router.delete("/parents/{hn}")
+def hard_delete_parent(hn: str, op_number: str):
+    return db.hard_delete_parent(hn, op_number)
+
 app.include_router(router)
 
 if __name__ == "__main__":
